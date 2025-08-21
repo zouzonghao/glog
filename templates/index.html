@@ -4,7 +4,12 @@
     <div class="post-list">
         {{ range .posts }}
             <article>
-                <h2><a href="/post/{{ .Slug }}">{{ .Title }}</a></h2>
+                <h2>
+                    <a href="/post/{{ .Slug }}">{{ .Title }}</a>
+                    {{ if .IsPrivate }}
+                        <img src="/static/pic/lock.svg" alt="Private" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                    {{ end }}
+                </h2>
                 <p class="excerpt">{{ .Excerpt }}</p>
                 <div class="meta">
                     <span>发布于 {{ .PublishedAt.Format "2006-01-02" }}</span>

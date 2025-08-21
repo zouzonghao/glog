@@ -1,0 +1,18 @@
+{{define "title"}}Login{{end}}
+
+{{define "content"}}
+<div class="container">
+    <div class="login-form">
+        <h2>请输入密码</h2>
+        {{if .error}}
+        <p class="error">{{range .error}}{{.}}{{end}}</p>
+        {{end}}
+        <form action="/login" method="post">
+            <div class="form-group">
+                <input type="password" id="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+</div>
+{{end}}

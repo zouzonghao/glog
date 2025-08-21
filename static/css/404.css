@@ -1,0 +1,49 @@
+.not-found-container {
+    text-align: center;
+    margin: 80px auto;
+    max-width: 600px;
+}
+
+.not-found-container h1 {
+    font-size: 6rem;
+    margin: 0;
+    color: #e0e0e0;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+.not-found-container p {
+    font-size: 1.2rem;
+    color: #777;
+    margin-top: 10px;
+}
+
+.not-found-container .home-link {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 12px 25px;
+    background-color: #333;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.not-found-container .home-link:hover {
+    background-color: #555;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+}

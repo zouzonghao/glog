@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"glog/internal/services"
-	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,25 +22,17 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.postService.SearchPosts(query)
+	isLoggedIn, _ := c.Get("IsLoggedIn")
+
+	posts, err := h.postService.SearchPosts(query, isLoggedIn.(bool))
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+		render(c, http.StatusInternalServerError, "error.html", gin.H{
 			"error": "Search failed",
 		})
 		return
 	}
 
-	// 每次请求都显式解析正确的模板文件组合
-	tmpl, err := template.ParseFiles("templates/base.html", "templates/search.html")
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"error": "Failed to parse templates",
-		})
-		return
-	}
-
-	// 使用解析好的模板执行渲染
-	tmpl.ExecuteTemplate(c.Writer, "base.html", gin.H{
+	render(c, http.StatusOK, "search.html", gin.H{
 		"posts": posts,
 		"query": query,
 	})

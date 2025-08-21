@@ -3,7 +3,7 @@ package handlers
 import (
 	"glog/internal/models"
 	"glog/internal/services"
-	"html/template"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -11,50 +11,83 @@ import (
 )
 
 type AdminHandler struct {
-	postService *services.PostService
+	postService    *services.PostService
+	settingService *services.SettingService
+	aiService      *services.AIService
 }
 
-func NewAdminHandler(postService *services.PostService) *AdminHandler {
-	return &AdminHandler{postService: postService}
+func NewAdminHandler(postService *services.PostService, settingService *services.SettingService, aiService *services.AIService) *AdminHandler {
+	return &AdminHandler{
+		postService:    postService,
+		settingService: settingService,
+		aiService:      aiService,
+	}
 }
 
 func (h *AdminHandler) ListPosts(c *gin.Context) {
-	posts, err := h.postService.GetAllPosts()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	query := c.Query("query")
+	pageSize := 10 // 每页显示10篇文章
+
+	var posts []models.Post
+	var total int64
+	var err error
+
+	if query != "" {
+		posts, total, err = h.postService.SearchPostsPage(query, page, pageSize)
+	} else {
+		posts, total, err = h.postService.GetPostsPage(page, pageSize)
+	}
+
 	if err != nil {
-		// In a real app, you'd have a proper error template
 		c.String(http.StatusInternalServerError, "Failed to load posts")
 		return
 	}
 
-	tmpl, err := template.ParseFiles("templates/base.html", "templates/admin.html")
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Failed to parse templates")
-		return
-	}
-	tmpl.ExecuteTemplate(c.Writer, "base.html", gin.H{"posts": posts})
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	render(c, http.StatusOK, "admin.html", gin.H{
+		"posts":       posts,
+		"CurrentPage": page,
+		"TotalPages":  totalPages,
+		"HasPrev":     page > 1,
+		"HasNext":     page < totalPages,
+		"PrevPage":    page - 1,
+		"NextPage":    page + 1,
+		"Query":       query,
+	})
+}
+
+func (h *AdminHandler) NewPost(c *gin.Context) {
+	render(c, http.StatusOK, "editor.html", gin.H{
+		"post": nil, // Pass a nil post to indicate a new post
+	})
 }
 
 func (h *AdminHandler) Editor(c *gin.Context) {
 	idStr := c.Query("id")
-	var post *models.Post
-	var err error
+	status := c.Query("status") // For feedback from non-AJAX fallbacks if any
 
-	if idStr != "" {
-		id, _ := strconv.ParseUint(idStr, 10, 64)
-		post, err = h.postService.GetPostByID(uint(id))
-		if err != nil {
-			c.Redirect(http.StatusFound, "/admin")
-			return
-		}
-	}
-
-	tmpl, err := template.ParseFiles("templates/base.html", "templates/editor.html")
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Failed to parse templates")
+	if idStr == "" {
+		c.Redirect(http.StatusFound, "/admin")
 		return
 	}
-	tmpl.ExecuteTemplate(c.Writer, "base.html", gin.H{
-		"post": post,
+
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/admin")
+		return
+	}
+
+	post, err := h.postService.GetPostByID(uint(id))
+	if err != nil {
+		c.Redirect(http.StatusFound, "/admin")
+		return
+	}
+
+	render(c, http.StatusOK, "editor.html", gin.H{
+		"post":   post,
+		"status": status,
 	})
 }
 
@@ -63,27 +96,44 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	title := c.PostForm("title")
 	content := c.PostForm("content")
 	published := c.PostForm("published") == "on"
+	isPrivate := c.PostForm("is_private") == "on"
+
+	// Check for lock before proceeding
+	if idStr != "" && idStr != "0" {
+		id, _ := strconv.ParseUint(idStr, 10, 64)
+		if h.postService.CheckPostLock(uint(id)) {
+			c.JSON(http.StatusConflict, gin.H{
+				"status":  "locked",
+				"message": "正在生成AI摘要，文章已锁定，请稍候再试。",
+			})
+			return
+		}
+	}
 
 	var post *models.Post
 	var err error
 
 	if idStr == "" || idStr == "0" {
-		post, err = h.postService.CreatePost(title, content, published)
+		post, err = h.postService.CreatePost(title, content, published, isPrivate)
 	} else {
 		id, _ := strconv.ParseUint(idStr, 10, 64)
-		post, err = h.postService.UpdatePost(uint(id), title, content, published)
+		post, err = h.postService.UpdatePost(uint(id), title, content, published, isPrivate)
 	}
 
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Failed to save post")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "保存文章失败: " + err.Error(),
+		})
 		return
 	}
 
-	if published {
-		c.Redirect(http.StatusFound, "/post/"+post.Slug)
-	} else {
-		c.Redirect(http.StatusFound, "/admin/editor?id="+strconv.Itoa(int(post.ID)))
-	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "文章已保存。",
+		"post_id": post.ID,
+		"slug":    post.Slug,
+	})
 }
 
 func (h *AdminHandler) DeletePost(c *gin.Context) {
@@ -101,4 +151,62 @@ func (h *AdminHandler) DeletePost(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, "/admin")
+}
+
+func (h *AdminHandler) ShowSettingsPage(c *gin.Context) {
+	// The render function will automatically inject settings from the context.
+	render(c, http.StatusOK, "settings.html", gin.H{})
+}
+
+func (h *AdminHandler) UpdateSettings(c *gin.Context) {
+	settingsToUpdate := make(map[string]string)
+
+	if err := c.Request.ParseForm(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的表单数据"})
+		return
+	}
+
+	for key, values := range c.Request.PostForm {
+		if len(values) > 0 {
+			value := values[0]
+			// Special handling for password fields: only update if not empty
+			if (key == "password" || key == "openai_token") && value == "" {
+				continue
+			}
+			settingsToUpdate[key] = value
+		}
+	}
+
+	err := h.settingService.UpdateSettings(settingsToUpdate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "更新设置失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "设置已成功保存！"})
+}
+
+func (h *AdminHandler) TestAISettings(c *gin.Context) {
+	baseURL := c.PostForm("openai_base_url")
+	token := c.PostForm("openai_token")
+	model := c.PostForm("openai_model")
+
+	if token == "" {
+		// If the token field is empty, try to get the existing token from settings
+		// This allows testing without re-entering the token
+		settings, err := h.settingService.GetAllSettings()
+		if err == nil {
+			token = settings["openai_token"]
+		}
+	}
+
+	testContent := "这是一个用于测试AI摘要功能的文本。"
+	_, err := h.aiService.GenerateExcerpt(testContent, baseURL, token, model)
+
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "测试失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "测试成功！连接和配置均有效。"})
 }

@@ -1,37 +1,68 @@
-{{ template "base.html" . }}
+{{define "title"}}后台管理{{end}}
 
-{{ define "title" }}后台管理{{ end }}
-
-{{ define "content" }}
+{{define "content"}}
     <div class="admin-header">
         <h2>文章管理</h2>
-        <a href="/admin/editor" class="btn">写新文章</a>
+        <form action="/admin" method="GET" class="admin-search-form">
+            <input type="text" name="query" placeholder="搜索标题或内容..." value="{{.Query}}">
+            <button type="submit" class="btn">搜索</button>
+        </form>
+        <a href="/admin/new" class="btn">写新文章</a>
     </div>
+
     <table class="admin-table">
         <thead>
             <tr>
                 <th>标题</th>
                 <th>状态</th>
+                <th>私密</th>
                 <th>发布日期</th>
                 <th>操作</th>
             </tr>
         </thead>
         <tbody>
-            {{ range .posts }}
+            {{range .posts}}
             <tr>
-                <td><a href="/post/{{ .Slug }}" target="_blank">{{ .Title }}</a></td>
-                <td>{{ if .Published }}已发布{{ else }}草稿{{ end }}</td>
-                <td>{{ if .Published }}{{ .PublishedAt.Format "2006-01-02" }}{{ else }}-{{ end }}</td>
                 <td>
-                    <a href="/admin/editor?id={{ .ID }}">编辑</a>
-                    <a href="/admin/delete/{{ .ID }}" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
+                    {{if .Published}}
+                        <a href="/post/{{.Slug}}" target="_blank">{{.Title}}</a>
+                    {{else}}
+                        {{.Title}}
+                    {{end}}
+                </td>
+                <td>{{if .Published}}已发布{{else}}草稿{{end}}</td>
+                <td>{{if .IsPrivate}}是{{end}}</td>
+                <td>{{if .Published}}{{.PublishedAt.Format "2006-01-02"}}{{else}}-{{end}}</td>
+                <td>
+                    <a href="/admin/editor?id={{.ID}}">编辑</a>
+                    <a href="/admin/delete/{{.ID}}" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
                 </td>
             </tr>
-            {{ else }}
+            {{else}}
             <tr>
-                <td colspan="4">没有文章。</td>
+                <td colspan="5">
+                    {{if .Query}}
+                    没有找到与 "{{.Query}}" 相关的文章。
+                    {{else}}
+                    没有文章。
+                    {{end}}
+                </td>
             </tr>
-            {{ end }}
+            {{end}}
         </tbody>
     </table>
-{{ end }}
+
+    {{if gt .TotalPages 1}}
+    <div class="pagination">
+        {{if .HasPrev}}
+        <a href="/admin/?page={{.PrevPage}}{{if .Query}}&query={{.Query}}{{end}}" class="page-link">« 上一页</a>
+        {{end}}
+
+        <span class="page-info">第 {{.CurrentPage}} 页 / 共 {{.TotalPages}} 页</span>
+
+        {{if .HasNext}}
+        <a href="/admin/?page={{.NextPage}}{{if .Query}}&query={{.Query}}{{end}}" class="page-link">下一页 »</a>
+        {{end}}
+    </div>
+    {{end}}
+{{end}}

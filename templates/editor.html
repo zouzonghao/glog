@@ -1,25 +1,41 @@
-{{ template "base.html" . }}
-
 {{ define "title" }}{{ if .post }}编辑文章{{ else }}写新文章{{ end }}{{ end }}
 
 {{ define "head" }}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    {{/* By default, we don't load the editor CSS anymore */}}
 {{ end }}
 
 {{ define "content" }}
-    <form action="/admin/save" method="POST" class="editor-form">
-        <input type="hidden" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
+    <div id="editor-alert-container"></div>
+    {{ if .status }}
+        {{ if eq .status "locked" }}
+            <div class="alert info">正在生成AI摘要，文章已锁定，请稍候再试。</div>
+        {{ else if eq .status "saved" }}
+            <div class="alert success">文章已保存。</div>
+        {{ end }}
+    {{ end }}
+
+    <form id="editor-form" action="/admin/save" method="POST" class="editor-form">
+        <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
         <div class="form-group">
             <label for="title">标题</label>
             <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ end }}" required>
         </div>
         <div class="form-group">
-            <label for="content">内容 (Markdown)</label>
-            <textarea id="content" name="content" rows="20">{{ if .post }}{{ .post.Content }}{{ end }}</textarea>
+            <label for="content">内容</label>
+            <textarea id="content" name="content" rows="20">{{ if .post }}{{ .post.Content }}{{ else }}
+<!--more-->{{ end }}</textarea>
+        </div>
+        <div class="form-group-inline">
+            <input type="checkbox" id="load-editor">
+            <label for="load-editor">加载富文本编辑器</label>
         </div>
         <div class="form-group-inline">
             <input type="checkbox" id="published" name="published" {{ if .post }}{{ if .post.Published }}checked{{ end }}{{ end }}>
             <label for="published">发布</label>
+        </div>
+        <div class="form-group-inline">
+            <input type="checkbox" id="is_private" name="is_private" {{ if .post }}{{ if .post.IsPrivate }}checked{{ end }}{{ end }}>
+            <label for="is_private">私密</label>
         </div>
         <div class="form-group">
             <button type="submit">保存</button>
@@ -28,8 +44,64 @@
 {{ end }}
 
 {{ define "scripts" }}
-    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
     <script>
-        var simplemde = new SimpleMDE({ element: document.getElementById("content") });
+        // Rich text editor loader
+        document.getElementById('load-editor').addEventListener('change', function() {
+            if (this.checked) {
+                this.disabled = true;
+                this.parentElement.querySelector('label').textContent = '正在加载编辑器...';
+                var cssLink = document.createElement('link');
+                cssLink.rel = 'stylesheet';
+                cssLink.href = 'https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css';
+                document.head.appendChild(cssLink);
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js';
+                document.body.appendChild(script);
+                script.onload = function() {
+                    new SimpleMDE({
+                        element: document.getElementById("content"),
+                        spellChecker: false
+                    });
+                    document.getElementById('load-editor').parentElement.querySelector('label').textContent = '编辑器加载完毕';
+                };
+            }
+        });
+
+        // AJAX form submission
+        document.getElementById('editor-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const alertContainer = document.getElementById('editor-alert-container');
+            const postIdInput = document.getElementById('post-id');
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                let alertClass = 'info';
+                if (data.status === 'success') {
+                    alertClass = 'success';
+                    // Update post ID for new posts
+                    if (postIdInput.value === '0' && data.post_id) {
+                        postIdInput.value = data.post_id;
+                        // Update browser URL to reflect the new post ID for editing
+                        const newUrl = `/admin/editor?id=${data.post_id}`;
+                        history.pushState({path: newUrl}, '', newUrl);
+                    }
+                } else if (data.status === 'error' || data.status === 'locked') {
+                    alertClass = 'error';
+                }
+                
+                alertContainer.innerHTML = `<div class="alert ${alertClass}">${data.message}</div>`;
+                setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
+            })
+            .catch(error => {
+                console.error('Save error:', error);
+                alertContainer.innerHTML = `<div class="alert error">保存时发生错误，请检查网络。</div>`;
+            });
+        });
     </script>
 {{ end }}

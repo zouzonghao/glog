@@ -14,6 +14,7 @@ type Post struct {
 	Content     string    `gorm:"type:text;not null" json:"content" form:"content"`
 	Excerpt     string    `json:"excerpt"`
 	Published   bool      `gorm:"default:false" json:"published" form:"published"`
+	IsPrivate   bool      `gorm:"default:false" json:"is_private" form:"is_private"`
 	PublishedAt time.Time `json:"published_at"`
 }
 
@@ -22,8 +23,10 @@ type RenderedPost struct {
 	gorm.Model
 	Title       string
 	Slug        string
-	Content     template.HTML // Use template.HTML to prevent escaping
-	Excerpt     string
+	Summary     template.HTML // Rendered HTML of the content before <!--more-->
+	Body        template.HTML // Rendered HTML of the content after <!--more-->
+	Excerpt     string        // Plain text excerpt for lists
 	Published   bool
+	IsPrivate   bool
 	PublishedAt time.Time
 }

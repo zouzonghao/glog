@@ -1,17 +1,42 @@
 {{ template "base.html" . }}
 
-{{ define "title" }}{{ .post.Title }}{{ end }}
+{{ define "title" }}{{ .post.Title }} - {{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}{{ end }}
+
+{{ define "head" }}
+    <link rel="stylesheet" href="/static/css/prism.css">
+{{ end }}
 
 {{ define "content" }}
     <article class="post-full">
         <header>
-            <h1>{{ .post.Title }}</h1>
+            <h1>
+                {{ .post.Title }}
+                {{ if .post.IsPrivate }}
+                    <img src="/static/pic/lock.svg" alt="Private" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                {{ end }}
+            </h1>
             <div class="meta">
                 <span>发布于 {{ .post.PublishedAt.Format "2006-01-02" }}</span>
+                {{ if .IsLoggedIn }}
+                <span class="edit-link">
+                    <a href="/admin/editor?id={{ .post.ID }}">编辑此文章</a>
+                </span>
+                {{ end }}
             </div>
         </header>
+
+        {{ if .post.Summary }}
+        <div class="post-excerpt-box">
+            {{ .post.Summary }}
+        </div>
+        {{ end }}
+
         <div class="content">
-            {{ .post.Content }}
+            {{ .post.Body }}
         </div>
     </article>
+{{ end }}
+
+{{ define "scripts" }}
+    <script src="/static/js/prism.js"></script>
 {{ end }}

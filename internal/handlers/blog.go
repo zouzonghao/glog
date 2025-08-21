@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"glog/internal/services"
-	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,52 +16,36 @@ func NewBlogHandler(postService *services.PostService) *BlogHandler {
 }
 
 func (h *BlogHandler) Index(c *gin.Context) {
-	posts, err := h.postService.GetAllPublishedPosts()
+	isLoggedIn, _ := c.Get("IsLoggedIn")
+	posts, err := h.postService.GetAllPublishedPosts(isLoggedIn.(bool))
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+		render(c, http.StatusInternalServerError, "error.html", gin.H{
 			"error": "Failed to load posts",
 		})
 		return
 	}
 
-	// 每次请求都显式解析正确的模板文件组合
-	tmpl, err := template.ParseFiles("templates/base.html", "templates/index.html")
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"error": "Failed to parse templates",
-		})
-		return
-	}
-
-	// 使用解析好的模板执行渲染
-	tmpl.ExecuteTemplate(c.Writer, "base.html", gin.H{
+	render(c, http.StatusOK, "index.html", gin.H{
 		"posts": posts,
 	})
 }
 
 func (h *BlogHandler) ShowPost(c *gin.Context) {
 	slug := c.Param("slug")
+	isLoggedIn, _ := c.Get("IsLoggedIn")
 
-	// GetRenderedPostBySlug 现在返回 *models.RenderedPost
-	post, err := h.postService.GetRenderedPostBySlug(slug)
+	post, err := h.postService.GetRenderedPostBySlug(slug, isLoggedIn.(bool))
 	if err != nil {
-		c.HTML(http.StatusNotFound, "error.html", gin.H{
-			"error": "Post not found",
-		})
+		// Render custom 404 page
+		render(c, http.StatusNotFound, "404.html", gin.H{})
 		return
 	}
 
-	// 每次请求都显式解析正确的模板文件组合
-	tmpl, err := template.ParseFiles("templates/base.html", "templates/post.html")
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-			"error": "Failed to parse templates",
-		})
-		return
-	}
-
-	// 使用解析好的模板执行渲染
-	tmpl.ExecuteTemplate(c.Writer, "base.html", gin.H{
+	render(c, http.StatusOK, "post.html", gin.H{
 		"post": post,
 	})
+}
+
+func (h *BlogHandler) NotFound(c *gin.Context) {
+	render(c, http.StatusNotFound, "404.html", gin.H{})
 }
