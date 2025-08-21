@@ -1,0 +1,17 @@
+{{ template "base.html" . }}
+
+{{ define "content" }}
+    <div class="post-list">
+        {{ range .posts }}
+            <article>
+                <h2><a href="/post/{{ .Slug }}">{{ .Title }}</a></h2>
+                <p class="excerpt">{{ .Excerpt }}</p>
+                <div class="meta">
+                    <span>发布于 {{ .PublishedAt.Format "2006-01-02" }}</span>
+                </div>
+            </article>
+        {{ else }}
+            <p>还没有文章。</p>
+        {{ end }}
+    </div>
+{{ end }}

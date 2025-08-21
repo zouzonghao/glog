@@ -1,0 +1,17 @@
+{{ template "base.html" . }}
+
+{{ define "title" }}{{ .post.Title }}{{ end }}
+
+{{ define "content" }}
+    <article class="post-full">
+        <header>
+            <h1>{{ .post.Title }}</h1>
+            <div class="meta">
+                <span>发布于 {{ .post.PublishedAt.Format "2006-01-02" }}</span>
+            </div>
+        </header>
+        <div class="content">
+            {{ .post.Content }}
+        </div>
+    </article>
+{{ end }}

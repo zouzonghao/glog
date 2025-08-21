@@ -1,0 +1,20 @@
+{{ template "base.html" . }}
+
+{{ define "title" }}搜索结果: {{ .query }}{{ end }}
+
+{{ define "content" }}
+    <h2>搜索结果 for "{{ .query }}"</h2>
+    <div class="post-list">
+        {{ range .posts }}
+            <article>
+                <h2><a href="/post/{{ .Slug }}">{{ .Title }}</a></h2>
+                <p class="excerpt">{{ .Excerpt }}</p>
+                <div class="meta">
+                    <span>发布于 {{ .PublishedAt.Format "2006-01-02" }}</span>
+                </div>
+            </article>
+        {{ else }}
+            <p>没有找到与 "{{ .query }}" 相关的文章。</p>
+        {{ end }}
+    </div>
+{{ end }}

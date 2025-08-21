@@ -1,0 +1,37 @@
+{{ template "base.html" . }}
+
+{{ define "title" }}后台管理{{ end }}
+
+{{ define "content" }}
+    <div class="admin-header">
+        <h2>文章管理</h2>
+        <a href="/admin/editor" class="btn">写新文章</a>
+    </div>
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>标题</th>
+                <th>状态</th>
+                <th>发布日期</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .posts }}
+            <tr>
+                <td><a href="/post/{{ .Slug }}" target="_blank">{{ .Title }}</a></td>
+                <td>{{ if .Published }}已发布{{ else }}草稿{{ end }}</td>
+                <td>{{ if .Published }}{{ .PublishedAt.Format "2006-01-02" }}{{ else }}-{{ end }}</td>
+                <td>
+                    <a href="/admin/editor?id={{ .ID }}">编辑</a>
+                    <a href="/admin/delete/{{ .ID }}" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
+                </td>
+            </tr>
+            {{ else }}
+            <tr>
+                <td colspan="4">没有文章。</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+{{ end }}
