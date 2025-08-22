@@ -68,6 +68,7 @@
             <p>&copy; <span id="current-year"></span> {{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}. Powered by Glog.</p>
         </footer>
     </div>
+<a href="#" id="back-to-top" class="back-to-top" title="Back to top">&uarr;</a>
     
     {{ block "scripts" . }}{{ end }}
     <script src="/static/js/theme-toggle.js"></script>
@@ -78,6 +79,21 @@
             e.preventDefault();
             document.getElementById('search-form').submit();
         });
+const backToTopButton = document.getElementById('back-to-top');
+
+        window.onscroll = function() {
+            if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+                backToTopButton.style.display = "block";
+            } else {
+                backToTopButton.style.display = "none";
+            }
+        };
+
+        backToTopButton.onclick = function(e) {
+            e.preventDefault();
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        };
     </script>
 </body>
 </html>

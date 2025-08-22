@@ -14,7 +14,7 @@
     </div>
 
     <div class="form-group">
-        <label for="site_logo">站点 Logo URL</label>
+        <label for="site_logo">站点 Logo url</label>
         <input type="text" id="site_logo" name="site_logo" value="{{ .site_logo }}">
     </div>
 
@@ -24,12 +24,12 @@
     </div>
 
     <div class="form-group">
-        <label for="site_description">站点描述 (Meta Description)</label>
+        <label for="site_description">站点描述</label>
         <input type="text" id="site_description" name="site_description" value="{{ .site_description }}">
     </div>
 
-    <hr>
-    <h3>AI 摘要设置</h3>
+
+    <h3>AI 设置</h3>
     <div id="ai-test-alert-container"></div>
 
     <div class="form-group">
@@ -53,7 +53,9 @@
 
     <hr>
 
-    <a href="#" id="save-settings-btn">保存设置</a>
+    <div class="editor-actions">
+        <a href="#" id="save-settings-btn">保存设置</a>
+    </div>
 </form>
 {{end}}
 

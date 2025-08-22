@@ -525,7 +525,7 @@ html.dark .post-list-item:hover {
     background-color: #374151;
 }
 
-.col-title { width: 360px; flex-shrink: 0; padding-right: 0rem; }
+.col-title { width: 400px; flex-shrink: 0; padding-right: 0rem; }
 .col-status { width: 70px; flex-shrink: 0; text-align: center; }
 .col-private { width: 60px; flex-shrink: 0; text-align: center; }
 .col-date { width: 110px; flex-shrink: 0; text-align: center; }
@@ -581,7 +581,24 @@ html.dark .post-list-item:hover {
 
 @media (max-width: 768px) {
     .post-list-header {
+        justify-content: space-between;
+    }
+
+    .post-list-header .col-status,
+    .post-list-header .col-private,
+    .post-list-header .col-date {
         display: none;
+.post-list-header .col-title {
+        width: calc(100% - 110px);
+        text-align: left;
+        padding-right: 0;
+    }
+
+    .post-list-header .col-actions {
+        width: 90px;
+        text-align: center;
+        justify-content: center;
+    }
     }
 
     .post-list-item {
@@ -640,7 +657,7 @@ html.dark .editor-container {
 }
 
 .editor-form .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.0rem;
     background-color: var(--bgColor);
 }
 
@@ -694,6 +711,7 @@ html.dark .editor-container {
 .editor-actions {
     margin-top: 2rem;
     text-align: right;
+    font-size: 1.2em;
 }
 
 /* Alert styles */
@@ -741,4 +759,91 @@ html.dark .alert.info {
     background-color: #1c3d5a;
     color: #a8d4ff;
     border-color: #2a5a8b;
+}
+
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: none;
+    width: 45px;
+    height: 45px;
+    background-color: var(--accentColor);
+    color: var(--bgColor);
+    text-align: center;
+    line-height: 45px;
+    font-size: 20px;
+    text-decoration: none;
+    border-radius: 50%;
+    z-index: 1000;
+    transition: opacity 0.3s, visibility 0.3s, background-color 0.3s;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.back-to-top:hover {
+    background-color: var(--textColor);
+    color: var(--bgColor);
+    border: none;
+}
+
+
+/* 17. Post Content Styles
+---------------------------------------------------------------------------------------------------- */
+.post-content {
+    line-height: 1.7;
+}
+
+.post-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5rem auto;
+    border-radius: 8px;
+}
+
+.post-content pre {    
+    background-color: #2d2d2d; /* A dark background for all code blocks 代码块 */
+    color: #cccccc;           /* A light text color */
+    padding: 1em;
+    margin: .5em 0;
+    overflow-x: auto;
+    border-radius: 0.3em;
+}
+
+.post-content code {
+    word-break: break-all;
+}
+
+.post-content blockquote {
+    border-left: 3px solid var(--accentColor);
+    padding-left: 1.5rem;
+    margin-left: 0;
+    font-style: italic;
+    color: var(--quoteColor);
+}
+
+.post-summary {
+    border-left: 3px solid var(--accentColor);
+    padding-left: 1.5rem;
+    margin-left: 0;
+    margin-bottom: 2rem;
+    font-style: italic;
+    color: var(--quoteColor);
+}
+
+/* 18. Inline Code Styles
+---------------------------------------------------------------------------------------------------- */
+:not(pre) > code {
+    color: #28a0c1;
+    background-color: #edf8facf;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 90%;
+    font-family: var(--font-mono);
+}
+
+html.dark :not(pre) > code {
+    color: #ff7597; /* A lighter pink for dark mode */
+    background-color: #38232a; /* A dark, reddish background */
 }
