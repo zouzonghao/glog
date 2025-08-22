@@ -5,7 +5,7 @@
 {{ define "content" }}
     <div class="admin-header">
         <h2>文章管理</h2>
-        <a href="/admin/new" class="btn">写新文章</a>
+        <a href="/admin/new">写新文章</a>
     </div>
 
     <div class="post-list-container">
@@ -38,8 +38,8 @@
                     {{if .Published}}{{.PublishedAt.Format "2006-01-02"}}{{else}}-{{end}}
                 </div>
                 <div class="col-actions">
-                    <a href="/admin/editor?id={{.ID}}" class="btn-action">编辑</a>
-                    <a href="/admin/delete/{{.ID}}" class="btn-action btn-delete" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
+                    <a href="/admin/editor?id={{.ID}}">编辑</a>
+                    <a href="/admin/delete/{{.ID}}" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
                 </div>
             </div>
             {{else}}

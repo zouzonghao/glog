@@ -5,46 +5,54 @@
 {{ end }}
 
 {{ define "content" }}
-    <div id="editor-alert-container"></div>
-    {{ if .status }}
-        {{ if eq .status "locked" }}
-            <div class="alert info">正在生成AI摘要，文章已锁定，请稍候再试。</div>
-        {{ else if eq .status "saved" }}
-            <div class="alert success">文章已保存。</div>
+    <div class="editor-container">
+        <div id="editor-alert-container"></div>
+        {{ if .status }}
+            {{ if eq .status "locked" }}
+                <div class="alert info">正在生成AI摘要，文章已锁定，请稍候再试。</div>
+            {{ else if eq .status "saved" }}
+                <div class="alert success">文章已保存。</div>
+            {{ end }}
         {{ end }}
-    {{ end }}
 
-    <form id="editor-form" action="/admin/save" method="POST" class="editor-form">
-        <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
-        <div class="form-group">
-            <label for="title">标题</label>
-            <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名{{ end }}" required>
-        </div>
-        <div class="form-group">
-            <label for="content">内容</label>
-            <textarea id="content" name="content" rows="20">{{ if .post }}{{ .post.Content }}{{ else }}
+        <form id="editor-form" action="/admin/save" method="POST" class="editor-form">
+            <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
+            
+            <div class="form-group">
+                <label for="title">标题</label>
+                <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名{{ end }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="content">内容</label>
+                <textarea id="content" name="content" rows="20">{{ if .post }}{{ .post.Content }}{{ else }}
 <!--more-->{{ end }}</textarea>
-        </div>
-        <div class="form-group-inline">
-            <input type="checkbox" id="load-editor">
-            <label for="load-editor">加载富文本编辑器</label>
-        </div>
-<div class="form-group-inline">
-            <input type="checkbox" id="ai_summary" name="ai_summary">
-            <label for="ai_summary">AI摘要</label>
-        </div>
-        <div class="form-group-inline">
-            <input type="checkbox" id="published" name="published" {{ if .post }}{{ if .post.Published }}checked{{ end }}{{ end }}>
-            <label for="published">发布</label>
-        </div>
-        <div class="form-group-inline">
-            <input type="checkbox" id="is_private" name="is_private" {{ if .post }}{{ if .post.IsPrivate }}checked{{ end }}{{ end }}>
-            <label for="is_private">私密</label>
-        </div>
-        <div class="form-group">
-            <button type="submit">保存</button>
-        </div>
-    </form>
+            </div>
+            
+            <div class="editor-options">
+                <div class="form-group-inline">
+                    <input type="checkbox" id="load-editor">
+                    <label for="load-editor">加载富文本编辑器</label>
+                </div>
+                <div class="form-group-inline">
+                    <input type="checkbox" id="ai_summary" name="ai_summary">
+                    <label for="ai_summary">AI摘要</label>
+                </div>
+                <div class="form-group-inline">
+                    <input type="checkbox" id="published" name="published" {{ if .post }}{{ if .post.Published }}checked{{ end }}{{ end }}>
+                    <label for="published">发布</label>
+                </div>
+                <div class="form-group-inline">
+                    <input type="checkbox" id="is_private" name="is_private" {{ if .post }}{{ if .post.IsPrivate }}checked{{ end }}{{ end }}>
+                    <label for="is_private">私密</label>
+                </div>
+            </div>
+
+            <div class="editor-actions">
+                <a href="#" id="save-btn">保存</a>
+            </div>
+        </form>
+    </div>
 {{ end }}
 
 {{ define "scripts" }}
@@ -72,9 +80,9 @@
         });
 
         // AJAX form submission
-        document.getElementById('editor-form').addEventListener('submit', function(event) {
+        document.getElementById('save-btn').addEventListener('click', function(event) {
             event.preventDefault();
-            const form = event.target;
+            const form = document.getElementById('editor-form');
             const formData = new FormData(form);
             const alertContainer = document.getElementById('editor-alert-container');
             const postIdInput = document.getElementById('post-id');

@@ -16,10 +16,10 @@
                 {{ end }}
             </h1>
             <div class="meta">
-                <span>发布于 {{ .post.PublishedAt.Format "January 2, 2006" }}</span>
+                <span>编辑时间：{{ .post.PublishedAt.Format "2006-01-02" }}</span>
                 {{ if .IsLoggedIn }}
                 <span class="edit-link">
-                    · <a href="/admin/editor?id={{ .post.ID }}">编辑此文章</a>
+                    |  <a href="/admin/editor?id={{ .post.ID }}">编辑此文章</a>
                 </span>
                 {{ end }}
             </div>

@@ -48,22 +48,22 @@
     </div>
 
     <div class="form-group">
-        <button type="button" id="test-ai-btn" class="btn btn-secondary">测试连接</button>
+        <a href="#" id="test-ai-btn">测试连接</a>
     </div>
 
     <hr>
 
-    <button type="submit" class="btn">保存设置</button>
+    <a href="#" id="save-settings-btn">保存设置</a>
 </form>
 {{end}}
 
 {{define "scripts"}}
 <script>
 // AJAX for saving settings
-document.getElementById('settings-form').addEventListener('submit', function(event) {
+document.getElementById('save-settings-btn').addEventListener('click', function(event) {
     event.preventDefault();
 
-    const form = event.target;
+    const form = document.getElementById('settings-form');
     const formData = new FormData(form);
     const alertContainer = document.getElementById('alert-container');
     alertContainer.innerHTML = ''; // Clear previous messages
@@ -91,7 +91,8 @@ document.getElementById('settings-form').addEventListener('submit', function(eve
 });
 
 // AJAX for testing AI connection
-document.getElementById('test-ai-btn').addEventListener('click', function() {
+document.getElementById('test-ai-btn').addEventListener('click', function(event) {
+    event.preventDefault();
     const baseURL = document.getElementById('openai_base_url').value;
     const token = document.getElementById('openai_token').value;
     const model = document.getElementById('openai_model').value;
@@ -99,7 +100,8 @@ document.getElementById('test-ai-btn').addEventListener('click', function() {
     const testBtn = this;
 
     alertContainer.innerHTML = `<div class="alert info">测试中...</div>`;
-    testBtn.disabled = true;
+    testBtn.style.pointerEvents = 'none'; // Disable link
+    testBtn.style.opacity = '0.5';
 
     const formData = new URLSearchParams();
     formData.append('openai_base_url', baseURL);
@@ -120,7 +122,8 @@ document.getElementById('test-ai-btn').addEventListener('click', function() {
         alertContainer.innerHTML = `<div class="alert error">测试请求失败，请检查网络或后台日志。</div>`;
     })
     .finally(() => {
-        testBtn.disabled = false;
+        testBtn.style.pointerEvents = 'auto'; // Re-enable link
+        testBtn.style.opacity = '1';
         setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
     });
 });

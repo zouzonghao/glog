@@ -45,7 +45,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    padding: 3rem 1.5rem;
+    padding: 2rem 0.5rem;
     margin: 0 auto;
     max-width: 48rem;
 }
@@ -55,12 +55,11 @@ main { flex-grow: 1; margin-top: 3rem; }
 ---------------------------------------------------------------------------------------------------- */
 h1, h2, h3, h4, h5, h6 {
     font-weight: normal;
-    line-height: 1.2;
     margin-top: 2em;
     margin-bottom: 0.8em;
     color: var(--accentColor);
 }
-h1 { font-size: 2rem; }
+h1 { font-size: 1.8rem; margin-top: 0em; }
 h2 { font-size: 1.5rem; }
 h3 { font-size: 1.25rem; }
 
@@ -584,21 +583,162 @@ html.dark .post-list-item:hover {
     .post-list-header {
         display: none;
     }
+
     .post-list-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
     }
-    .col-title, .col-status, .col-private, .col-date, .col-actions {
-        width: 100%;
+
+    .post-list-item .col-status,
+    .post-list-item .col-private,
+    .post-list-item .col-date {
+        display: none;
+    }
+
+    .col-title {
+        width: calc(100% - 110px); /* 减去操作列宽度和间距 */
+        flex-shrink: 1;
+        min-width: 0;
+        padding-right: 0;
         text-align: left;
+        border-top: none;
+        padding-top: 0;
     }
-    .col-title span, .col-title a {
-        max-width: 100%; /* 在移动端不截断 */
-    }
+
     .col-actions {
-        justify-content: flex-start;
-        padding-top: 0.5rem;
-        border-top: 1px solid var(--accent2Color);
+        width: 90px;
+        flex-shrink: 0;
+        text-align: center;
+        justify-content: center;
+        border-top: none;
+        padding-top: 0;
     }
+
+    .col-title span, .col-title a {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+/* 16. Editor Styles
+---------------------------------------------------------------------------------------------------- */
+.editor-container {
+    max-width: 800px;
+    margin: 0rem auto;
+    background-color: var(--bgColor);
+    /* border: 1px solid var(--accent2Color); */
+    border-radius: 8px;
+}
+
+html.dark .editor-container {
+    background-color: var(--bgColor); /* A slightly lighter dark shade for the container */
+}
+
+.editor-form .form-group {
+    margin-bottom: 1.5rem;
+    background-color: var(--bgColor);
+}
+
+.editor-form label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 450;
+    color: var(--textColor);
+    background-color: var(--bgColor);
+}
+
+.editor-form input[type="text"],
+.editor-form input[type="password"],
+.editor-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--accent2Color);
+    border-radius: 4px;
+    background-color: var(--bgColor);
+    color: var(--textColor);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.editor-form input[type="text"]:focus,
+.editor-form input[type="password"]:focus,
+.editor-form textarea:focus {
+    outline: none;
+    border-color: var(--accentColor);
+}
+
+.editor-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1.0rem;
+
+}
+
+.editor-options .form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.editor-options input[type="checkbox"] {
+    width: 1.2em;
+    height: 1.2em;
+}
+
+.editor-actions {
+    margin-top: 2rem;
+    text-align: right;
+}
+
+/* Alert styles */
+#editor-alert-container, #alert-container, #ai-test-alert-container {
+    margin-bottom: 1rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.alert.success {
+    background-color: #e6f9f0;
+    color: #006400;
+    border: 1px solid #b3e6c7;
+}
+
+html.dark .alert.success {
+    background-color: #1e4620;
+    color: #a7d7a7;
+    border-color: #2a6430;
+}
+
+.alert.error {
+    background-color: #fff0f0;
+    color: #d8000c;
+    border: 1px solid #ffbaba;
+}
+
+html.dark .alert.error {
+    background-color: #5a1d1d;
+    color: #f8baba;
+    border-color: #8b2c2c;
+}
+
+.alert.info {
+    background-color: #eef7ff;
+    color: #005a9e;
+    border: 1px solid #b3d9ff;
+}
+
+html.dark .alert.info {
+    background-color: #1c3d5a;
+    color: #a8d4ff;
+    border-color: #2a5a8b;
 }

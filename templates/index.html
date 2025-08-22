@@ -7,7 +7,7 @@
         <ul class="post-list-minimal">
             {{ range .posts }}
                 <li>
-                    <span class="date">{{ .PublishedAt.Format "2006年1月2日" }}</span>
+                    <span class="date">{{ .PublishedAt.Format "2006年01月02日" }}</span>
                     <a href="/post/{{ .Slug }}" class="title">{{ .Title }}</a>
                 </li>
             {{ else }}
