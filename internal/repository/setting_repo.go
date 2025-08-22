@@ -4,6 +4,7 @@ import (
 	"glog/internal/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type SettingRepository struct {
@@ -37,7 +38,11 @@ func (r *SettingRepository) GetAllSettings() (map[string]string, error) {
 	return settingsMap, nil
 }
 
-// UpdateSetting updates a setting's value by its key.
+// UpdateSetting updates or creates a setting.
 func (r *SettingRepository) UpdateSetting(key, value string) error {
-	return r.db.Model(&models.Setting{}).Where("key = ?", key).Update("value", value).Error
+	setting := models.Setting{Key: key, Value: value}
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "key"}},
+		DoUpdates: clause.AssignmentColumns([]string{"value"}),
+	}).Create(&setting).Error
 }

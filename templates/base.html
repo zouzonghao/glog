@@ -6,12 +6,17 @@
     <meta name="description" content="{{ .site_description }}">
     <title>{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    {{ if .site_logo }}
+    <link rel="icon" href="{{ .site_logo }}" type="image/x-icon">
+    {{ else }}
+    <link rel="icon" href="/static/pic/favicon.ico" type="image/x-icon">
+    {{ end }}
     {{ block "head" . }}{{ end }}
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><a href="/">{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}</a></h1>
+            
             <nav>
                 <a href="/">首页</a>
                 {{ if .IsLoggedIn }}
@@ -24,7 +29,7 @@
             </nav>
             <form action="/search" method="GET" class="search-form">
                 <input type="text" name="q" placeholder="搜索..." value="{{ .query }}">
-                <button type="submit">搜索</button>
+                <button type="submit"></button>
             </form>
         </header>
         <main>

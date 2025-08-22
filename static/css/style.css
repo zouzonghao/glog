@@ -19,7 +19,7 @@ body {
 /* Header */
 header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     border-bottom: 1px solid #eee;
     padding-bottom: 20px;
@@ -36,8 +36,12 @@ header h1 a {
     text-decoration: none;
 }
 
+header nav {
+    margin-right: auto;
+}
+
 header nav a {
-    margin-left: 20px;
+    margin-right: 20px;
     color: #555;
     text-decoration: none;
 }
@@ -52,13 +56,25 @@ header nav a:hover {
     border-radius: 4px;
 }
 
+.search-form {
+    position: relative;
+}
+
+.search-form input {
+    padding-right: 30px; 
+}
+
 .search-form button {
-    padding: 8px 12px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 30px;
+    height: 100%;
+    background: url('/static/pic/search.png') no-repeat center center;
+    background-size: 16px 16px;
     border: none;
-    background-color: #333;
-    color: #fff;
-    border-radius: 4px;
     cursor: pointer;
+    text-indent: -9999px;
 }
 
 /* Post List */
@@ -506,4 +522,25 @@ footer {
     color: #31708f;
     background-color: #d9edf7;
     border-color: #bce8f1;
+}
+.search-form {
+    position: relative;
+}
+
+.search-form input {
+    padding-right: 30px; 
+}
+
+.search-form button {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: url('/static/pic/search.png') no-repeat center center;
+    background-size: 24px 24px;
+    border: none;
+    cursor: pointer;
+    text-indent: -9999px;
 }
