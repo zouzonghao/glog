@@ -119,12 +119,12 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post, aiSummary bool
 	s.postLocks.Store(post.ID, true)
 	defer s.postLocks.Delete(post.ID)
 
-	log.Printf("Starting AI summary generation for post ID %d", post.ID)
+	log.Printf("开始为文章 ID 生成 AI 摘要 %d", post.ID)
 
 	// Get AI settings
 	settings, err := s.settingService.GetAllSettings()
 	if err != nil {
-		log.Printf("Error getting settings for AI summary (post ID %d): %v", post.ID, err)
+		log.Printf("获取 AI 摘要设置失败 (文章 ID %d): %v", post.ID, err)
 		return
 	}
 	baseURL := settings["openai_base_url"]
@@ -132,7 +132,7 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post, aiSummary bool
 	model := settings["openai_model"]
 
 	if baseURL == "" || token == "" || model == "" {
-		log.Printf("AI settings not configured, skipping summary generation for post ID %d", post.ID)
+		log.Printf("AI 未配置，跳过为文章 ID 生成摘要 %d", post.ID)
 		return
 	}
 
@@ -143,10 +143,10 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post, aiSummary bool
 		contentForAI = string(runes[:maxContentForAI])
 	}
 
-	needsTitle := post.Title == "未命名"
+	needsTitle := post.Title == "未命名标题"
 	aiResp, err := s.aiService.GenerateSummaryAndTitle(contentForAI, needsTitle, baseURL, token, model)
 	if err != nil {
-		log.Printf("Error generating AI content for post ID %d: %v", post.ID, err)
+		log.Printf("为文章 ID 生成 AI 内容失败 %d: %v", post.ID, err)
 		return
 	}
 	summary := "AI摘要：" + aiResp.Summary
@@ -154,7 +154,7 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post, aiSummary bool
 	// Update the post with the new summary and title
 	latestPost, err := s.repo.FindByID(post.ID)
 	if err != nil {
-		log.Printf("Error fetching latest post data for ID %d: %v", post.ID, err)
+		log.Printf("获取文章最新数据失败，ID %d: %v", post.ID, err)
 		return
 	}
 
@@ -163,7 +163,7 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post, aiSummary bool
 		baseSlug := slug.Make(aiResp.Title)
 		latestPost.Slug, err = s.findAvailableSlug(baseSlug, latestPost.ID)
 		if err != nil {
-			log.Printf("Error generating slug for new title for post ID %d: %v", post.ID, err)
+			log.Printf("为文章新标题生成 slug 失败，文章 ID %d: %v", post.ID, err)
 		}
 	}
 
@@ -182,11 +182,11 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post, aiSummary bool
 	}
 
 	if err := s.repo.Update(latestPost); err != nil {
-		log.Printf("Error saving AI summary for post ID %d: %v", post.ID, err)
+		log.Printf("保存 AI 摘要失败，文章 ID %d: %v", post.ID, err)
 		return
 	}
 
-	log.Printf("Successfully generated and saved AI summary for post ID %d", post.ID)
+	log.Printf("成功为文章 ID 生成并保存 AI 摘要 %d", post.ID)
 }
 
 // isAISummaryNeeded checks if the content requires an AI summary.
@@ -311,19 +311,38 @@ func formatFTSQuery(query string) string {
 }
 
 func (s *PostService) SearchPublishedPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
-	ftsQuery := formatFTSQuery(query)
-	if ftsQuery == "" {
+	if query == "" {
 		return []models.Post{}, 0, nil
 	}
 
-	posts, err := s.repo.SearchPage(ftsQuery, page, pageSize, isLoggedIn)
+	searchEngine, err := s.settingService.GetSetting("search_engine")
 	if err != nil {
-		return nil, 0, err
+		// Fallback to 'like' if setting is not found
+		searchEngine = "like"
 	}
 
-	total, err := s.repo.CountByQuery(ftsQuery, isLoggedIn)
-	if err != nil {
-		return nil, 0, err
+	var posts []models.Post
+	var total int64
+
+	if searchEngine == "fts5" {
+		ftsQuery := formatFTSQuery(query)
+		posts, err = s.repo.SearchPage(ftsQuery, page, pageSize, isLoggedIn)
+		if err != nil {
+			return nil, 0, err
+		}
+		total, err = s.repo.CountByQuery(ftsQuery, isLoggedIn)
+		if err != nil {
+			return nil, 0, err
+		}
+	} else { // Default to "like"
+		posts, err = s.repo.SearchPageWithLike(query, page, pageSize, isLoggedIn)
+		if err != nil {
+			return nil, 0, err
+		}
+		total, err = s.repo.CountByQueryWithLike(query, isLoggedIn)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return posts, total, nil

@@ -22,11 +22,12 @@ func (h *BlogHandler) Index(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize := 10 // 每页显示15篇文章
 
-	isLoggedIn, _ := c.Get("IsLoggedIn")
-	posts, total, err := h.postService.GetPublishedPostsPage(page, pageSize, isLoggedIn.(bool))
+	isLoggedInValue, exists := c.Get("IsLoggedIn")
+	isLoggedIn := exists && isLoggedInValue.(bool)
+	posts, total, err := h.postService.GetPublishedPostsPage(page, pageSize, isLoggedIn)
 	if err != nil {
 		render(c, http.StatusInternalServerError, "error.html", gin.H{
-			"error": "Failed to load posts",
+			"error": "加载文章失败",
 		})
 		return
 	}

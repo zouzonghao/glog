@@ -33,7 +33,7 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 
 	posts, total, err := h.postService.GetPostsPage(page, pageSize, query, status)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Failed to load posts")
+		c.String(http.StatusInternalServerError, "加载文章失败")
 		return
 	}
 
@@ -120,7 +120,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	}
 
 	message := "文章已保存。"
-	if aiSummary && title == "未命名" {
+	if aiSummary && title == "未命名标题" {
 		message = "文章已保存，AI正在生成标题和摘要，请稍后刷新查看。"
 	} else if aiSummary {
 		message = "文章已保存，AI摘要正在生成中..."
@@ -133,7 +133,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	}
 
 	// Only return slug if AI is not going to rename the post
-	if !(aiSummary && title == "未命名") {
+	if !(aiSummary && title == "未命名标题") {
 		response["slug"] = post.Slug
 	}
 
@@ -144,13 +144,13 @@ func (h *AdminHandler) DeletePost(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.String(http.StatusBadRequest, "Invalid post ID")
+		c.String(http.StatusBadRequest, "无效的文章 ID")
 		return
 	}
 
 	err = h.postService.DeletePost(uint(id))
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Failed to delete post")
+		c.String(http.StatusInternalServerError, "删除文章失败")
 		return
 	}
 

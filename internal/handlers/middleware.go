@@ -3,12 +3,47 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"glog/internal/services"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
+
+// APIAuthMiddleware checks for a valid Bearer token.
+func APIAuthMiddleware(settingService *services.SettingService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		adminPassword, err := settingService.GetSetting("password")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器内部错误"})
+			c.Abort()
+			return
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "需要 Authorization 请求头"})
+			c.Abort()
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization 请求头格式必须为 Bearer {token}"})
+			c.Abort()
+			return
+		}
+
+		if parts[1] != adminPassword {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "无效的 token"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
 
 // AuthMiddleware checks if a user is authenticated via session flag.
 func AuthMiddleware() gin.HandlerFunc {
@@ -35,7 +70,7 @@ func SettingsMiddleware(settingService *services.SettingService) gin.HandlerFunc
 		if err != nil {
 			// Log the error but don't block the request.
 			// The application can run with default settings.
-			log.Printf("Could not load settings: %v", err)
+			log.Printf("无法加载设置: %v", err)
 			c.Set("settings", make(map[string]string))
 		} else {
 			c.Set("settings", settings)

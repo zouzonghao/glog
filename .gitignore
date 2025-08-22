@@ -1,2 +1,8 @@
 Astro-theme-Cactus
 .DS_Store
+glog
+blog.db
+*.db.*
+glog_server*
+glog*
+*/.DS_Store

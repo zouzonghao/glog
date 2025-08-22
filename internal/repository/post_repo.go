@@ -165,3 +165,48 @@ func (r *PostRepository) CountByQuery(ftsQuery string, isLoggedIn bool) (int64, 
 	err := dbQuery.Count(&count).Error
 	return count, err
 }
+
+// SearchPageWithLike searches published posts with pagination using LIKE, respecting login status.
+func (r *PostRepository) SearchPageWithLike(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
+	var posts []models.Post
+	dbQuery := r.db.Where("published = ?", true)
+
+	keywords := strings.Fields(strings.ReplaceAll(query, ",", " "))
+	for _, keyword := range keywords {
+		trimmedKeyword := strings.TrimSpace(keyword)
+		if trimmedKeyword != "" {
+			searchQuery := "%" + trimmedKeyword + "%"
+			dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", searchQuery, searchQuery)
+		}
+	}
+
+	if !isLoggedIn {
+		dbQuery = dbQuery.Where("is_private = ?", false)
+	}
+
+	offset := (page - 1) * pageSize
+	err := dbQuery.Order("published_at desc").Offset(offset).Limit(pageSize).Find(&posts).Error
+	return posts, err
+}
+
+// CountByQueryWithLike counts the total number of published posts matching a LIKE query, respecting login status.
+func (r *PostRepository) CountByQueryWithLike(query string, isLoggedIn bool) (int64, error) {
+	var count int64
+	dbQuery := r.db.Model(&models.Post{}).Where("published = ?", true)
+
+	keywords := strings.Fields(strings.ReplaceAll(query, ",", " "))
+	for _, keyword := range keywords {
+		trimmedKeyword := strings.TrimSpace(keyword)
+		if trimmedKeyword != "" {
+			searchQuery := "%" + trimmedKeyword + "%"
+			dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", searchQuery, searchQuery)
+		}
+	}
+
+	if !isLoggedIn {
+		dbQuery = dbQuery.Where("is_private = ?", false)
+	}
+
+	err := dbQuery.Count(&count).Error
+	return count, err
+}

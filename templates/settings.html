@@ -1,8 +1,8 @@
 {{define "title"}}站点设置{{end}}
 
 {{define "content"}}
-<div class="admin-header">
-    <h2>站点设置</h2>
+<div class="setting-header">
+    <h2 class="group-title">站点设置</h2>
 </div>
 
 <div id="alert-container"></div>
@@ -14,7 +14,7 @@
     </div>
 
     <div class="form-group">
-        <label for="site_logo">站点 Logo url</label>
+        <label for="site_logo">站点 Logo URL</label>
         <input type="text" id="site_logo" name="site_logo" value="{{ .site_logo }}">
     </div>
 
@@ -28,33 +28,42 @@
         <input type="text" id="site_description" name="site_description" value="{{ .site_description }}">
     </div>
 
+    <div class="form-group">
+        <label for="search_engine">搜索引擎</label>
+        <select id="search_engine" name="search_engine">
+            <option value="like" {{if eq .search_engine "like"}}selected{{end}}>Like</option>
+            <option value="fts5" {{if eq .search_engine "fts5"}}selected{{end}}>FTS5</option>
+        </select>
+    </div>
 
-    <h3>AI 设置</h3>
+    <div class="setting-header">
+        <h2 class="group-title">AI 设置</h2>
+    </div>
     <div id="ai-test-alert-container"></div>
 
     <div class="form-group">
-        <label for="openai_base_url">OpenAI Compatible Base URL</label>
+        <label for="openai_base_url">OpenAI 兼容 Base URL</label>
         <input type="text" id="openai_base_url" name="openai_base_url" value="{{ .openai_base_url }}">
     </div>
 
     <div class="form-group">
-        <label for="openai_token">Token</label>
+        <label for="openai_token">密钥</label>
         <input type="password" id="openai_token" name="openai_token" placeholder="留空则不修改" autocomplete="new-password">
     </div>
 
     <div class="form-group">
-        <label for="openai_model">Model</label>
+        <label for="openai_model">模型</label>
         <input type="text" id="openai_model" name="openai_model" value="{{ .openai_model }}">
     </div>
 
     <div class="form-group">
-        <a href="#" id="test-ai-btn">测试连接</a>
+        <a href="#" id="test-ai-btn">🚀 测试连接</a>
     </div>
 
     <hr>
 
     <div class="editor-actions">
-        <a href="#" id="save-settings-btn">保存设置</a>
+        <a href="#" id="save-settings-btn">💾 保存设置</a>
     </div>
 </form>
 {{end}}
@@ -87,7 +96,7 @@ document.getElementById('save-settings-btn').addEventListener('click', function(
         setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
     })
     .catch(error => {
-        console.error('Form submission error:', error);
+        console.error('表单提交错误：', error);
         alertContainer.innerHTML = `<div class="alert error">保存时发生错误，请检查网络连接。</div>`;
     });
 });
@@ -120,7 +129,7 @@ document.getElementById('test-ai-btn').addEventListener('click', function(event)
         alertContainer.innerHTML = `<div class="alert ${alertClass}">${data.message}</div>`;
     })
     .catch(error => {
-        console.error('AI test error:', error);
+        console.error('AI 测试错误：', error);
         alertContainer.innerHTML = `<div class="alert error">测试请求失败，请检查网络或后台日志。</div>`;
     })
     .finally(() => {

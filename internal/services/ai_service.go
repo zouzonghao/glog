@@ -53,7 +53,7 @@ type AIResponse struct {
 // GenerateSummaryAndTitle generates a summary and optionally a title for the given content.
 func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, baseURL, token, model string) (*AIResponse, error) {
 	if baseURL == "" || token == "" || model == "" {
-		return nil, errors.New("AI settings are not configured")
+		return nil, errors.New("AI 接口未配置！")
 	}
 
 	prompt := "请为以下文章生成摘要。"
@@ -74,12 +74,12 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, fmt.Errorf("序列化请求体失败: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -87,22 +87,22 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 
 	resp, err := s.Client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request to AI API: %w", err)
+		return nil, fmt.Errorf("发送请求至 AI API 失败: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("AI API returned non-200 status code %d: %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("AI API 返回非 200 状态码 %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var apiResp openAIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return nil, fmt.Errorf("failed to decode AI API response: %w", err)
+		return nil, fmt.Errorf("解码 AI API 响应失败: %w", err)
 	}
 
 	if len(apiResp.Choices) == 0 || apiResp.Choices[0].Message.Content == "" {
-		return nil, errors.New("AI API returned no choices or an empty message")
+		return nil, errors.New("AI API 返回无效回复")
 	}
 
 	var aiResp AIResponse
@@ -112,8 +112,8 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 	rawJSON = strings.TrimSuffix(rawJSON, "\n```")
 
 	if err := json.Unmarshal([]byte(rawJSON), &aiResp); err != nil {
-		log.Printf("Failed to unmarshal AI response JSON. Raw content: %s", rawJSON)
-		return nil, fmt.Errorf("failed to unmarshal AI response JSON: %w", err)
+		log.Printf("无法解析 AI 响应 JSON。原始内容: %s", rawJSON)
+		return nil, fmt.Errorf("无法解析 AI 响应 JSON: %w", err)
 	}
 
 	return &aiResp, nil

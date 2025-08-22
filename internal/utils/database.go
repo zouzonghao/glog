@@ -68,10 +68,11 @@ func seedSettings(db *gorm.DB) error {
 	defaultSettings := map[string]string{
 		"password":         "admin",
 		"site_logo":        "",
-		"site_description": "A blog powered by Glog",
+		"site_description": "由 Glog 驱动的博客",
 		"openai_base_url":  "",
 		"openai_token":     "",
 		"openai_model":     "gpt-3.5-turbo",
+		"search_engine":    "like", // "like" or "fts5"
 	}
 
 	for key, value := range defaultSettings {

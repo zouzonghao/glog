@@ -33,14 +33,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	adminPassword, err := h.settingService.GetSetting("password")
 	if err != nil {
-		session.AddFlash("Internal server error", "error")
+		session.AddFlash("服务器内部错误", "error")
 		session.Save()
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
 
 	if submittedPassword != adminPassword {
-		session.AddFlash("Invalid password", "error")
+		session.AddFlash("密码错误！请重新输入。", "error")
 		session.Save()
 		c.Redirect(http.StatusFound, "/login")
 		return

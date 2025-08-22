@@ -5,6 +5,7 @@
 {{ end }}
 
 {{ define "content" }}
+    <h2 class="group-title">{{ if .post }}文章编辑{{ else }}文章新建{{ end }}</h2>
     <div class="editor-container">
         <div id="editor-alert-container"></div>
         {{ if .status }}
@@ -19,12 +20,12 @@
             <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
             
             <div class="form-group">
-                <label for="title">标题</label>
-                <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名{{ end }}" required>
+                <!-- <label for="title">标题</label> -->
+                <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名标题{{ end }}" required>
             </div>
             
             <div class="form-group">
-                <label for="content">内容</label>
+                <!-- <label for="content">内容</label> -->
                 <textarea id="content" name="content" rows="20">{{ if .post }}{{ .post.Content }}{{ else }}
 <!--more-->{{ end }}</textarea>
             </div>
@@ -52,7 +53,7 @@
                 <a href="#" id="save-btn">💾 保存文章</a>
                 {{ if .post }}
                     {{ if .post.Published }}
-                        <a href="/post/{{ .post.Slug }}" target="_blank" class="open-post-link">🔗 打开文章</a>
+                        <a href="/post/{{ .post.Slug }}"  class="open-post-link">🔗 打开文章</a>
                     {{ end }}
                 {{ end }}
             </div>
@@ -69,10 +70,10 @@
                 this.parentElement.querySelector('label').textContent = '正在加载编辑器...';
                 var cssLink = document.createElement('link');
                 cssLink.rel = 'stylesheet';
-                cssLink.href = 'https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css';
+                cssLink.href = '/static/css/simplemde.min.css';
                 document.head.appendChild(cssLink);
                 var script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js';
+                script.src = '/static/js/simplemde.min.js';
                 document.body.appendChild(script);
                 script.onload = function() {
                     new SimpleMDE({
@@ -136,7 +137,7 @@
                 setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
             })
             .catch(error => {
-                console.error('Save error:', error);
+                console.error('保存错误：', error);
                 alertContainer.innerHTML = `<div class="alert error">保存时发生错误，请检查网络。</div>`;
             });
         });
