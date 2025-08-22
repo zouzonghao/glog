@@ -18,7 +18,7 @@
         <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
         <div class="form-group">
             <label for="title">标题</label>
-            <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ end }}" required>
+            <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名{{ end }}" required>
         </div>
         <div class="form-group">
             <label for="content">内容</label>
@@ -28,6 +28,10 @@
         <div class="form-group-inline">
             <input type="checkbox" id="load-editor">
             <label for="load-editor">加载富文本编辑器</label>
+        </div>
+<div class="form-group-inline">
+            <input type="checkbox" id="ai_summary" name="ai_summary">
+            <label for="ai_summary">AI摘要</label>
         </div>
         <div class="form-group-inline">
             <input type="checkbox" id="published" name="published" {{ if .post }}{{ if .post.Published }}checked{{ end }}{{ end }}>

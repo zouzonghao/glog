@@ -97,6 +97,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	content := c.PostForm("content")
 	published := c.PostForm("published") == "on"
 	isPrivate := c.PostForm("is_private") == "on"
+	aiSummary := c.PostForm("ai_summary") == "on"
 
 	// Check for lock before proceeding
 	if idStr != "" && idStr != "0" {
@@ -114,10 +115,10 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	var err error
 
 	if idStr == "" || idStr == "0" {
-		post, err = h.postService.CreatePost(title, content, published, isPrivate)
+		post, err = h.postService.CreatePost(title, content, published, isPrivate, aiSummary)
 	} else {
 		id, _ := strconv.ParseUint(idStr, 10, 64)
-		post, err = h.postService.UpdatePost(uint(id), title, content, published, isPrivate)
+		post, err = h.postService.UpdatePost(uint(id), title, content, published, isPrivate, aiSummary)
 	}
 
 	if err != nil {
@@ -201,7 +202,7 @@ func (h *AdminHandler) TestAISettings(c *gin.Context) {
 	}
 
 	testContent := "这是一个用于测试AI摘要功能的文本。"
-	_, err := h.aiService.GenerateExcerpt(testContent, baseURL, token, model)
+	_, err := h.aiService.GenerateSummaryAndTitle(testContent, false, baseURL, token, model)
 
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "测试失败: " + err.Error()})

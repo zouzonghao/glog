@@ -42,7 +42,7 @@ func (s *PostService) CheckPostLock(id uint) bool {
 	return locked
 }
 
-func (s *PostService) CreatePost(title, content string, published bool, isPrivate bool) (*models.Post, error) {
+func (s *PostService) CreatePost(title, content string, published bool, isPrivate bool, aiSummary bool) (*models.Post, error) {
 	// First, save the post to get an ID
 	baseSlug := slug.Make(title)
 	finalSlug, err := s.findAvailableSlug(baseSlug, 0)
@@ -68,12 +68,12 @@ func (s *PostService) CreatePost(title, content string, published bool, isPrivat
 	}
 
 	// After saving, check and generate AI summary asynchronously
-	go s.generateAndSaveAISummary(post)
+	go s.generateAndSaveAISummary(post, aiSummary)
 
 	return post, nil
 }
 
-func (s *PostService) UpdatePost(id uint, title, content string, published bool, isPrivate bool) (*models.Post, error) {
+func (s *PostService) UpdatePost(id uint, title, content string, published bool, isPrivate bool, aiSummary bool) (*models.Post, error) {
 	post, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -103,15 +103,15 @@ func (s *PostService) UpdatePost(id uint, title, content string, published bool,
 	}
 
 	// After saving, check and generate AI summary asynchronously
-	go s.generateAndSaveAISummary(post)
+	go s.generateAndSaveAISummary(post, aiSummary)
 
 	return post, nil
 }
 
 // generateAndSaveAISummary is the core async logic for AI summary generation.
-func (s *PostService) generateAndSaveAISummary(post *models.Post) {
+func (s *PostService) generateAndSaveAISummary(post *models.Post, aiSummary bool) {
 	// Check if AI summary generation is needed
-	if !s.isAISummaryNeeded(post.Content) {
+	if !s.isAISummaryNeeded(post.Content, aiSummary) {
 		return
 	}
 
@@ -143,18 +143,28 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post) {
 		contentForAI = string(runes[:maxContentForAI])
 	}
 
-	// Generate summary
-	summary, err := s.aiService.GenerateExcerpt(contentForAI, baseURL, token, model)
+	needsTitle := post.Title == "未命名"
+	aiResp, err := s.aiService.GenerateSummaryAndTitle(contentForAI, needsTitle, baseURL, token, model)
 	if err != nil {
-		log.Printf("Error generating AI summary for post ID %d: %v", post.ID, err)
+		log.Printf("Error generating AI content for post ID %d: %v", post.ID, err)
 		return
 	}
+	summary := "AI摘要：" + aiResp.Summary
 
-	// Update the post with the new summary
+	// Update the post with the new summary and title
 	latestPost, err := s.repo.FindByID(post.ID)
 	if err != nil {
 		log.Printf("Error fetching latest post data for ID %d: %v", post.ID, err)
 		return
+	}
+
+	if needsTitle && aiResp.Title != "" {
+		latestPost.Title = aiResp.Title
+		baseSlug := slug.Make(aiResp.Title)
+		latestPost.Slug, err = s.findAvailableSlug(baseSlug, latestPost.ID)
+		if err != nil {
+			log.Printf("Error generating slug for new title for post ID %d: %v", post.ID, err)
+		}
 	}
 
 	// Also update the Excerpt field with the AI-generated summary
@@ -167,8 +177,7 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post) {
 		body := parts[1]
 		latestPost.Content = summary + "\n\n" + excerptSeparator + body
 	} else {
-		// This case should not be reached if isAISummaryNeeded is correct,
-		// but as a fallback, prepend to the whole content.
+		// If no separator, prepend to the whole content.
 		latestPost.Content = summary + "\n\n" + excerptSeparator + "\n\n" + latestPost.Content
 	}
 
@@ -181,11 +190,14 @@ func (s *PostService) generateAndSaveAISummary(post *models.Post) {
 }
 
 // isAISummaryNeeded checks if the content requires an AI summary.
-func (s *PostService) isAISummaryNeeded(content string) bool {
+func (s *PostService) isAISummaryNeeded(content string, aiSummary bool) bool {
+	if !aiSummary {
+		return false
+	}
 	parts := strings.SplitN(content, excerptSeparator, 2)
 	if len(parts) < 2 {
-		// No separator, so we can't insert a summary.
-		return false
+		// No separator, but user wants AI summary
+		return true
 	}
 	// Check if the part before the separator is empty or just whitespace.
 	return strings.TrimSpace(parts[0]) == ""
