@@ -27,23 +27,24 @@ func NewAdminHandler(postService *services.PostService, settingService *services
 
 func (h *AdminHandler) ListPosts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize := 10 // 每页显示10篇文章
+	query := c.Query("query")
+	status := c.DefaultQuery("status", "all")
+	pageSize := 10
 
-	posts, total, err := h.postService.GetPostsPage(page, pageSize)
-
+	posts, total, err := h.postService.GetPostsPage(page, pageSize, query, status)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Failed to load posts")
 		return
 	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
-
 	pagination := utils.GeneratePagination(page, totalPages)
 
 	render(c, http.StatusOK, "admin.html", gin.H{
 		"posts":      posts,
 		"Pagination": pagination,
-		"Query":      "", // Was removed, keep the key for the template
+		"Query":      query,
+		"Status":     status,
 	})
 }
 

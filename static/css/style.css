@@ -10,8 +10,8 @@
     --textColor: #22272a;
     --linkColor: #7a8288; /* 一个柔和的灰色链接 */
     --accentColor: #cb2a42;
-    --accent2Color: #22272a;
-    --quoteColor: #9fa6ab; /* 用于元信息的浅灰色 */
+    --accent2Color: #bfc1c2; /* A lighter gray for borders */
+    --quoteColor: #848a8f; /* 用于元信息的浅灰色 */
     --bgColor-transparent: rgba(250, 250, 250, 0.8);
 
     --font-sans: ui-sans-serif, system-ui, sans-serif;
@@ -34,7 +34,7 @@ body {
     color: var(--textColor);
     font-family: var(--font-sans);
     font-size: 16px; /* 根据图像确定的基础字号 */
-    line-height: 1.7;
+    line-height: 1.6;
     margin: 0;
     padding: 0;
 }
@@ -49,7 +49,7 @@ body {
     margin: 0 auto;
     max-width: 48rem;
 }
-main { flex-grow: 1; }
+main { flex-grow: 1; margin-top: 3rem; }
 
 /* 4. 排版
 ---------------------------------------------------------------------------------------------------- */
@@ -68,9 +68,13 @@ p { margin-bottom: 1.25em; }
 a {
     color: var(--textColor);
     text-decoration: none;
-    transition: color 0.2s ease-in-out;
+    border-bottom: 1px solid var(--textColor);
+    padding-bottom: 0; /* 减小边框与文字的距离 */
 }
-a:hover { color: var(--accentColor); }
+a:hover {
+    color: var(--accentColor);
+    border-bottom-color: var(--accentColor);
+}
 strong { font-weight: 600; }
 
 /* 5. 头部与导航
@@ -80,6 +84,17 @@ header.main-header {
     justify-content: space-between;
     align-items: flex-start;
     position: relative; /* 为绝对定位的导航菜单提供上下文 */
+    padding-bottom: 1.5rem;
+    
+}
+header.main-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    border-bottom: 1px solid var(--accent2Color);
 }
 
 .header-left {
@@ -100,10 +115,12 @@ header.main-header {
     align-items: flex-start;
 }
 
+
 .site-title {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 500;
     margin-bottom: 0.25rem;
+    border-bottom: none;
 }
 
 nav.main-nav ul {
@@ -113,22 +130,10 @@ nav.main-nav ul {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
-nav.main-nav a {
-    color: var(--textColor);
-    text-decoration: none;
-    padding-bottom: 2px;
-    border-bottom: 2px solid transparent;
-    transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
-    font-weight: normal; /* 确保不加粗 */
-}
 
-nav.main-nav a:hover {
-    color: var(--accentColor);
-    border-bottom-color: var(--accentColor);
-}
 
 nav.main-nav li:not(:last-child)::after {
     content: "|";
@@ -147,7 +152,6 @@ nav.main-nav li:not(:last-child)::after {
     width: 24px;
     height: 24px;
     opacity: 0.7;
-    transition: opacity 0.2s ease-in-out;
 }
 .search-icon:hover {
     opacity: 1;
@@ -159,9 +163,8 @@ footer.main-footer {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 4rem;
+    margin-top: 0; /* 进一步减小间隙 */
     padding-top: 2rem;
-    border-top: 1px solid var(--accent2Color);
     opacity: 0.5;
     color: var(--quoteColor);
     font-size: 0.875rem;
@@ -170,7 +173,7 @@ footer.main-footer {
 /* 7. 简约文章列表 (用于首页)
 ---------------------------------------------------------------------------------------------------- */
 .posts-group {
-    margin-top: 3rem;
+    margin-top: 0;
 }
 
 .group-title {
@@ -202,15 +205,6 @@ footer.main-footer {
 
 .post-list-minimal .title {
     font-weight: normal;
-    border-bottom: 1px solid var(--textColor);
-    padding-bottom: 1px;
-    color: var(--textColor);
-    transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
-}
-
-.post-list-minimal .title:hover {
-    color: var(--accentColor);
-    border-bottom-color: var(--accentColor);
 }
 /* 8. 主题切换
 ---------------------------------------------------------------------------------------------------- */
@@ -243,7 +237,7 @@ html.dark {
     --textColor: #d4d5d6;
     --linkColor: #a6a7a9;
     --accentColor: #29bc89;
-    --accent2Color: #d4d5d6;
+    --accent2Color: #444; /* Darker gray for borders in dark mode */
     --quoteColor: #8c8d8f;
     --bgColor-transparent: rgba(29, 31, 32, 0.8);
 }
@@ -254,10 +248,9 @@ html.dark {
     align-items: center;
     background-color: var(--bgColor);
     border: 1px solid var(--accent2Color);
-    opacity: 0.5;
+    opacity: 0.8;
     border-radius: 2rem;
     padding: 0.25rem;
-    transition: border-color 0.2s ease-in-out;
 }
 
 .search-form:focus-within {
@@ -277,7 +270,6 @@ html.dark {
 
 .search-input::placeholder {
     color: var(--quoteColor);
-    opacity: 0.8;
 }
 
 .search-button {
@@ -289,7 +281,6 @@ html.dark {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: background-color 0.2s ease-in-out;
 }
 
 .search-button:hover {
@@ -302,35 +293,7 @@ html.dark {
     height: 20px;
     opacity: 0.7;
 }
-/* 10. 分页
----------------------------------------------------------------------------------------------------- */
-.pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 4rem;
-    font-size: 0.9rem;
-}
 
-.pagination a {
-    color: var(--accentColor);
-    text-decoration: none;
-    transition: opacity 0.2s ease-in-out;
-}
-
-.pagination a:hover {
-    opacity: 0.7;
-}
-
-.pagination .disabled {
-    color: var(--quoteColor);
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.pagination .page-number {
-    color: var(--quoteColor);
-}
 /* 11. New Pagination
 ---------------------------------------------------------------------------------------------------- */
 .pagination-new {
@@ -355,15 +318,7 @@ html.dark {
 }
 
 .pagination-new a.page-number {
-    color: var(--textColor);
-    border-bottom: 1px solid var(--textColor);
     padding-bottom: 0;
-    transition: color 0.2s, border-bottom-color 0.2s;
-}
-
-.pagination-new a.page-number:hover {
-    color: var(--accentColor);
-    border-bottom-color: var(--accentColor);
 }
 
 .pagination-new .current {
@@ -375,9 +330,7 @@ html.dark {
 }
 
 .pagination-new .prev-next {
-    color: var(--accentColor);
     font-size: 0.9rem;
-    padding: 0;
 }
 
 .pagination-new .prev-next.disabled {
@@ -396,7 +349,7 @@ html.dark {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-    margin-top: 3rem; /* Add top margin to match homepage */
+    margin-top: 0; /* Removed top margin, now handled by main element */
 }
 
 .admin-header h2 {
@@ -503,9 +456,6 @@ html.dark {
     background-color: var(--textColor);
     border-radius: 4px;
     position: absolute;
-    transition-property: transform;
-    transition-duration: 0.15s;
-    transition-timing-function: ease;
 }
 
 .hamburger-inner::before, .hamburger-inner::after {
@@ -534,4 +484,121 @@ html.dark {
 .menu-toggle.is-active .hamburger-inner::after {
     transform: translate3d(0, -8px, 0) rotate(-90deg);
     background-color: var(--accentColor);
+}
+/* 15. Admin High-Contrast List View
+---------------------------------------------------------------------------------------------------- */
+
+
+.post-list-container {
+    border: none;
+}
+
+.post-list-header, .post-list-item {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 1rem;
+}
+
+.post-list-header {
+    font-weight: 600;
+    color: var(--textColor);
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--accent2Color);
+    background-color: #e2e3e4;
+}
+html.dark .post-list-header {
+    background-color: #27303d;
+}
+
+
+.post-list-item {
+    border-bottom: 1px solid var(--accent2Color);
+    color: var(--textColor);
+    font-size: 0.9rem;
+}
+.post-list-body .post-list-item:last-child {
+    border-bottom: none;
+}
+.post-list-item:hover {
+    background-color: #f9fafb;
+}
+html.dark .post-list-item:hover {
+    background-color: #374151;
+}
+
+.col-title { width: 360px; flex-shrink: 0; padding-right: 0rem; }
+.col-status { width: 70px; flex-shrink: 0; text-align: center; }
+.col-private { width: 60px; flex-shrink: 0; text-align: center; }
+.col-date { width: 110px; flex-shrink: 0; text-align: center; }
+.col-actions { width: 90px; flex-shrink: 0; text-align: center; }
+
+.col-title span, .col-title a {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-title a {
+    font-weight: normal;
+    border-bottom: none; /* Admin links don't need underlines */
+}
+.col-title a:hover {
+    border-bottom: none;
+}
+
+.col-status {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.meta-item {
+    font-size: 0.9rem;
+    color: var(--textColor);
+}
+
+.col-private, .col-date {
+    font-size: 0.9rem;
+    color: var(--textColor);
+}
+
+.col-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.btn-
+.btn-action:hover { color: var(--accentColor); }
+.btn-delete:hover { color: #dc3545; }
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--quoteColor);
+    border-top: 1px solid var(--accent2Color);
+}
+
+@media (max-width: 768px) {
+    .post-list-header {
+        display: none;
+    }
+    .post-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    .col-title, .col-status, .col-private, .col-date, .col-actions {
+        width: 100%;
+        text-align: left;
+    }
+    .col-title span, .col-title a {
+        max-width: 100%; /* 在移动端不截断 */
+    }
+    .col-actions {
+        justify-content: flex-start;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--accent2Color);
+    }
 }

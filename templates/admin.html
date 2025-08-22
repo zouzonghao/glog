@@ -8,52 +8,51 @@
         <a href="/admin/new" class="btn">写新文章</a>
     </div>
 
-    <form action="/admin" method="GET" class="search-form" style="max-width: 100%; margin-bottom: 2rem;">
-        <input type="text" name="query" placeholder="搜索标题或内容..." value="{{.Query}}">
-        <button type="submit">Search</button>
-    </form>
-
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>标题</th>
-                <th>状态</th>
-                <th>私密</th>
-                <th>发布日期</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
+    <div class="post-list-container">
+        <div class="post-list-header">
+            <div class="col-title">标题</div>
+            <div class="col-status">状态</div>
+            <div class="col-private">私密</div>
+            <div class="col-date">发布日期</div>
+            <div class="col-actions">操作</div>
+        </div>
+        <div class="post-list-body">
             {{range .posts}}
-            <tr>
-                <td>
+            <div class="post-list-item">
+                <div class="col-title" title="{{.Title}}">
                     {{if .Published}}
                         <a href="/post/{{.Slug}}" target="_blank">{{.Title}}</a>
                     {{else}}
-                        {{.Title}}
+                        <span>{{.Title}}</span>
                     {{end}}
-                </td>
-                <td>{{if .Published}}已发布{{else}}草稿{{end}}</td>
-                <td>{{if .IsPrivate}}是{{end}}</td>
-                <td>{{if .Published}}{{.PublishedAt.Format "2006-01-02"}}{{else}}-{{end}}</td>
-                <td>
-                    <a href="/admin/editor?id={{.ID}}">编辑</a>
-                    <a href="/admin/delete/{{.ID}}" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
-                </td>
-            </tr>
+                </div>
+                <div class="col-status">
+                    <span class="meta-item status-{{if .Published}}published{{else}}draft{{end}}">
+                        {{if .Published}}已发布{{else}}草稿{{end}}
+                    </span>
+                </div>
+                <div class="col-private">
+                    {{if .IsPrivate}}是{{else}}-{{end}}
+                </div>
+                <div class="col-date">
+                    {{if .Published}}{{.PublishedAt.Format "2006-01-02"}}{{else}}-{{end}}
+                </div>
+                <div class="col-actions">
+                    <a href="/admin/editor?id={{.ID}}" class="btn-action">编辑</a>
+                    <a href="/admin/delete/{{.ID}}" class="btn-action btn-delete" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
+                </div>
+            </div>
             {{else}}
-            <tr>
-                <td colspan="5">
-                    {{if .Query}}
-                    没有找到与 "{{.Query}}" 相关的文章。
-                    {{else}}
-                    没有文章。
-                    {{end}}
-                </td>
-            </tr>
+            <div class="empty-state">
+                {{if .Query}}
+                <p>没有找到与 "{{.Query}}" 相关的文章。</p>
+                {{else}}
+                <p>没有文章。</p>
+                {{end}}
+            </div>
             {{end}}
-        </tbody>
-    </table>
+        </div>
+    </div>
 
     {{ template "pagination" . }}
 {{ end }}

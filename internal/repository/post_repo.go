@@ -2,6 +2,7 @@ package repository
 
 import (
 	"glog/internal/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -91,16 +92,44 @@ func (r *PostRepository) CountPublished(isLoggedIn bool) (int64, error) {
 	return count, err
 }
 
-func (r *PostRepository) FindAll(page, pageSize int) ([]models.Post, error) {
+func (r *PostRepository) FindAll(page, pageSize int, query, status string) ([]models.Post, error) {
 	var posts []models.Post
+	dbQuery := r.db.Order("created_at desc")
+
+	if query != "" {
+		searchQuery := "%" + strings.ToLower(query) + "%"
+		dbQuery = dbQuery.Where("LOWER(title) LIKE ? OR LOWER(content) LIKE ?", searchQuery, searchQuery)
+	}
+
+	switch status {
+	case "published":
+		dbQuery = dbQuery.Where("published = ?", true)
+	case "draft":
+		dbQuery = dbQuery.Where("published = ?", false)
+	}
+
 	offset := (page - 1) * pageSize
-	err := r.db.Order("created_at desc").Offset(offset).Limit(pageSize).Find(&posts).Error
+	err := dbQuery.Offset(offset).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 
-func (r *PostRepository) CountAll() (int64, error) {
+func (r *PostRepository) CountAll(query, status string) (int64, error) {
 	var count int64
-	err := r.db.Model(&models.Post{}).Count(&count).Error
+	dbQuery := r.db.Model(&models.Post{})
+
+	if query != "" {
+		searchQuery := "%" + strings.ToLower(query) + "%"
+		dbQuery = dbQuery.Where("LOWER(title) LIKE ? OR LOWER(content) LIKE ?", searchQuery, searchQuery)
+	}
+
+	switch status {
+	case "published":
+		dbQuery = dbQuery.Where("published = ?", true)
+	case "draft":
+		dbQuery = dbQuery.Where("published = ?", false)
+	}
+
+	err := dbQuery.Count(&count).Error
 	return count, err
 }
 

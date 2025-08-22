@@ -290,12 +290,12 @@ func (s *PostService) GetPublishedPostsPage(page, pageSize int, isLoggedIn bool)
 	return posts, total, nil
 }
 
-func (s *PostService) GetPostsPage(page, pageSize int) ([]models.Post, int64, error) {
-	posts, err := s.repo.FindAll(page, pageSize)
+func (s *PostService) GetPostsPage(page, pageSize int, query, status string) ([]models.Post, int64, error) {
+	posts, err := s.repo.FindAll(page, pageSize, query, status)
 	if err != nil {
 		return nil, 0, err
 	}
-	total, err := s.repo.CountAll()
+	total, err := s.repo.CountAll(query, status)
 	if err != nil {
 		return nil, 0, err
 	}
