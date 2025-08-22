@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"glog/internal/services"
+	"glog/internal/utils"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,9 +25,12 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		return
 	}
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize := 15 // 与首页保持一致
+
 	isLoggedIn, _ := c.Get("IsLoggedIn")
 
-	posts, err := h.postService.SearchPosts(query, isLoggedIn.(bool))
+	posts, total, err := h.postService.SearchPublishedPostsPage(query, page, pageSize, isLoggedIn.(bool))
 	if err != nil {
 		render(c, http.StatusInternalServerError, "error.html", gin.H{
 			"error": "Search failed",
@@ -32,8 +38,13 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		return
 	}
 
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	pagination := utils.GeneratePagination(page, totalPages)
+
 	render(c, http.StatusOK, "search.html", gin.H{
-		"posts": posts,
-		"query": query,
+		"posts":      posts,
+		"query":      query,
+		"Pagination": pagination,
 	})
 }

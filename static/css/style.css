@@ -1,546 +1,537 @@
-/* General Body & Layout */
+/*
+ * Glog 的 Cactus 主题移植 (修订版 2)
+ * 基于用户提供的视觉目标。
+ */
+
+/* 1. 设计变量
+---------------------------------------------------------------------------------------------------- */
+:root {
+    --bgColor: #fafafa;
+    --textColor: #22272a;
+    --linkColor: #7a8288; /* 一个柔和的灰色链接 */
+    --accentColor: #cb2a42;
+    --accent2Color: #22272a;
+    --quoteColor: #9fa6ab; /* 用于元信息的浅灰色 */
+    --bgColor-transparent: rgba(250, 250, 250, 0.8);
+
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
+    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* 2. 基础与全局样式
+---------------------------------------------------------------------------------------------------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击蓝色背景 */
+}
+html {
+    font-family: var(--font-sans);
+    scrollbar-gutter: stable;
+}
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    background-color: #fdfdfd;
+    background-color: var(--bgColor);
+    color: var(--textColor);
+    font-family: var(--font-sans);
+    font-size: 16px; /* 根据图像确定的基础字号 */
+    line-height: 1.7;
     margin: 0;
-    padding: 20px;
+    padding: 0;
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: #fff;
-    padding: 20px 30px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
-}
-
-/* Header */
-header {
+/* 3. 布局
+---------------------------------------------------------------------------------------------------- */
+.main-wrapper {
     display: flex;
-    justify-content: flex-start;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 3rem 1.5rem;
+    margin: 0 auto;
+    max-width: 48rem;
+}
+main { flex-grow: 1; }
+
+/* 4. 排版
+---------------------------------------------------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: normal;
+    line-height: 1.2;
+    margin-top: 2em;
+    margin-bottom: 0.8em;
+    color: var(--accentColor);
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+
+p { margin-bottom: 1.25em; }
+a {
+    color: var(--textColor);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+a:hover { color: var(--accentColor); }
+strong { font-weight: 600; }
+
+/* 5. 头部与导航
+---------------------------------------------------------------------------------------------------- */
+header.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative; /* 为绝对定位的导航菜单提供上下文 */
+}
+
+.header-left {
+    display: flex;
     align-items: center;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 20px;
-    margin-bottom: 30px;
+    gap: 1rem;
 }
 
-header h1 {
+.site-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+.site-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.site-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+nav.main-nav ul {
+    list-style: none;
+    padding: 0;
     margin: 0;
-    font-size: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.9rem;
 }
 
-header h1 a {
-    color: #333;
+nav.main-nav a {
+    color: var(--textColor);
     text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+    font-weight: normal; /* 确保不加粗 */
 }
 
-header nav {
-    margin-right: auto;
+nav.main-nav a:hover {
+    color: var(--accentColor);
+    border-bottom-color: var(--accentColor);
 }
 
-header nav a {
-    margin-right: 20px;
-    color: #555;
-    text-decoration: none;
+nav.main-nav li:not(:last-child)::after {
+    content: "|";
+    margin-left: 0.5rem;
+    color: var(--quoteColor);
 }
 
-header nav a:hover {
-    text-decoration: underline;
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.5rem; /* 与标题对齐 */
 }
 
-.search-form input {
-    border: 1px solid #ddd;
-    padding: 8px;
-    border-radius: 4px;
+.search-icon {
+    width: 24px;
+    height: 24px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease-in-out;
+}
+.search-icon:hover {
+    opacity: 1;
 }
 
-.search-form {
-    position: relative;
+/* 6. 页脚
+---------------------------------------------------------------------------------------------------- */
+footer.main-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--accent2Color);
+    opacity: 0.5;
+    color: var(--quoteColor);
+    font-size: 0.875rem;
 }
 
-.search-form input {
-    padding-right: 30px; 
+/* 7. 简约文章列表 (用于首页)
+---------------------------------------------------------------------------------------------------- */
+.posts-group {
+    margin-top: 3rem;
 }
 
-.search-form button {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 30px;
-    height: 100%;
-    background: url('/static/pic/search.png') no-repeat center center;
-    background-size: 16px 16px;
-    border: none;
-    cursor: pointer;
-    text-indent: -9999px;
-}
-
-/* Post List */
-.post-list article {
-    margin-bottom: 40px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 20px;
-}
-
-.post-list h2 {
+.group-title {
+    font-size: 1.25rem;
+    color: var(--accentColor);
+    margin-bottom: 2rem;
     margin-top: 0;
 }
 
-.post-list h2 a {
-    color: #333;
+.post-list-minimal {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.post-list-minimal li {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.post-list-minimal .date {
+    color: var(--quoteColor);
+    font-size: 0.9rem;
+    width: 120px; /* 固定宽度以便对齐 */
+    flex-shrink: 0; /* 防止收缩 */
+}
+
+.post-list-minimal .title {
+    font-weight: normal;
+    border-bottom: 1px solid var(--textColor);
+    padding-bottom: 1px;
+    color: var(--textColor);
+    transition: color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
+}
+
+.post-list-minimal .title:hover {
+    color: var(--accentColor);
+    border-bottom-color: var(--accentColor);
+}
+/* 8. 主题切换
+---------------------------------------------------------------------------------------------------- */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    color: var(--textColor);
+}
+.theme-toggle:hover {
+    opacity: 0.7;
+}
+.sun-icon, .moon-icon {
+    width: 24px;
+    height: 24px;
+}
+.dark .sun-icon { display: block; }
+.dark .moon-icon { display: none; }
+.light .sun-icon { display: none; }
+.light .moon-icon { display: block; }
+
+
+/* 暗色模式变量
+---------------------------------------------------------------------------------------------------- */
+html.dark {
+    --bgColor: #1d1f20;
+    --textColor: #d4d5d6;
+    --linkColor: #a6a7a9;
+    --accentColor: #29bc89;
+    --accent2Color: #d4d5d6;
+    --quoteColor: #8c8d8f;
+    --bgColor-transparent: rgba(29, 31, 32, 0.8);
+}
+/* 9. 搜索表单
+---------------------------------------------------------------------------------------------------- */
+.search-form {
+    display: flex;
+    align-items: center;
+    background-color: var(--bgColor);
+    border: 1px solid var(--accent2Color);
+    opacity: 0.5;
+    border-radius: 2rem;
+    padding: 0.25rem;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.search-form:focus-within {
+    border-color: var(--accentColor);
+    opacity: 1;
+}
+
+.search-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--textColor);
+    font-size: 0.9rem;
+    padding: 0 0.75rem;
+    width: 150px; /* 根据需要调整 */
+}
+
+.search-input::placeholder {
+    color: var(--quoteColor);
+    opacity: 0.8;
+}
+
+.search-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.search-button:hover {
+    background-color: var(--accent2Color);
+    opacity: 0.1;
+}
+
+.search-button .search-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+}
+/* 10. 分页
+---------------------------------------------------------------------------------------------------- */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4rem;
+    font-size: 0.9rem;
+}
+
+.pagination a {
+    color: var(--accentColor);
     text-decoration: none;
+    transition: opacity 0.2s ease-in-out;
 }
 
-.post-list h2 a:hover {
-    color: #007bff;
+.pagination a:hover {
+    opacity: 0.7;
 }
 
-.excerpt {
-    color: #666;
+.pagination .disabled {
+    color: var(--quoteColor);
+    opacity: 0.6;
+    pointer-events: none;
 }
 
-.meta {
-    font-size: 14px;
-    color: #999;
+.pagination .page-number {
+    color: var(--quoteColor);
+}
+/* 11. New Pagination
+---------------------------------------------------------------------------------------------------- */
+.pagination-new {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4rem;
+    font-size: 0.9rem;
 }
 
-/* Full Post */
-.post-full header {
-    border-bottom: none;
-    margin-bottom: 20px;
-    display: block;
+.pagination-new .page-numbers {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.post-full h1 {
-    font-size: 36px;
-    margin-bottom: 10px;
+.pagination-new .page-number,
+.pagination-new .ellipsis {
+    padding: 0;
+    border-radius: 0;
 }
 
-.post-excerpt-box {
-    position: relative;
-    padding: 20px 20px 20px 30px; /* 左侧留出更多空间 */
-    background-color: #f8f9fa; /* 一个非常浅的背景色 */
-    border-radius: 8px; /* 给整个容器加个圆角 */
-    margin: 20px 0;
-}
-.post-excerpt-box::before {
-    content: ''; /* 内容为空 */
-    position: absolute;
-    top: 15px; /* 调整垂直位置 */
-    left: 0;
-    width: 4px; /* 竖线的宽度 */
-    height: calc(100% - 30px); /* 竖线的高度，上下留出间距 */
-    background-color: #333333; /* 使用主题色或醒目的颜色 */
-    border-radius: 2px;
-}
-/* 摘要文字可以稍微调整 */
-.post-excerpt-box p {
-    color: #555;
-    line-height: 1.7;
+.pagination-new a.page-number {
+    color: var(--textColor);
+    border-bottom: 1px solid var(--textColor);
+    padding-bottom: 0;
+    transition: color 0.2s, border-bottom-color 0.2s;
 }
 
-.post-full .content {
-    font-size: 16px;
+.pagination-new a.page-number:hover {
+    color: var(--accentColor);
+    border-bottom-color: var(--accentColor);
 }
 
-.post-full .content h2, .post-full .content h3 {
-    margin-top: 40px;
+.pagination-new .current {
+    background-color: transparent;
+    color: var(--quoteColor); /* 改为浅灰色 */
+    border: none;
+    font-weight: normal;
+    padding-bottom: 1px; /* 保持对齐 */
 }
 
-.post-full .content p {
-    margin-bottom: 20px;
+.pagination-new .prev-next {
+    color: var(--accentColor);
+    font-size: 0.9rem;
+    padding: 0;
 }
 
-.post-full .content pre {
-    background: #f4f4f4;
-    padding: 15px;
-    border-radius: 5px;
-    overflow-x: auto;
+.pagination-new .prev-next.disabled {
+    color: var(--quoteColor);
+    opacity: 0.6;
+    pointer-events: none;
 }
 
-.post-full .content code {
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+.pagination-new .ellipsis {
+    color: var(--quoteColor);
 }
-
-.post-full .content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 5px;
-}
-/* Admin */
+/* 12. Admin & Settings Pages
+---------------------------------------------------------------------------------------------------- */
 .admin-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 2rem;
+    margin-top: 3rem; /* Add top margin to match homepage */
 }
 
 .admin-header h2 {
-    margin-right: auto; /* Pushes other elements to the right */
+    font-size: 1.25rem; /* Unify with .group-title */
+    margin-top: 0;
+    margin-bottom: 0;
 }
-
-.admin-search-form {
-    display: flex;
-    margin: 0 20px;
-    max-width: 400px; /* Limit search bar width */
-    flex-grow: 1;
-}
-
-.admin-search-form input {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px 0 0 4px;
-    box-sizing: border-box;
-}
-
-.admin-search-form button, .admin-search-form a {
-    border-radius: 0;
-}
-.admin-search-form a {
-    border-radius: 0 4px 4px 0;
-}
-
-
-.btn {
-    display: inline-block;
-    padding: 10px 15px;
-    background: #333;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 5px;
-    white-space: nowrap; /* Prevent button text from wrapping */
-}
-
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-
-.admin-table th, .admin-table td {
-    border: 1px solid #ddd;
-    padding: 12px;
-    text-align: left;
-}
-
-.admin-table th {
-    background-color: #f7f7f7;
-}
-
-.admin-table th:nth-child(1) { width: 45%; }
-.admin-table th:nth-child(2) { width: 15%; }
-.admin-table th:nth-child(3) { width: 10%; }
-.admin-table th:nth-child(4) { width: 15%; }
-.admin-table th:nth-child(5) { width: 15%; }
-
-.admin-table a {
-    margin-right: 10px;
-}
-
-/* Editor Form */
-.editor-form .form-group {
-    margin-bottom: 20px;
-}
-
-.editor-form label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.editor-form input[type="text"], .editor-form input[type="password"], .editor-form textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-.editor-form textarea {
-    min-height: 400px;
-    font-family: inherit;
-}
-
-.editor-form .form-group-inline {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.editor-form .form-group-inline input {
-    margin-right: 10px;
-}
-
-.editor-form button {
-    padding: 12px 20px;
-    border: none;
-    background: #333;
-    color: #fff;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-/* Footer */
-footer {
-    text-align: center;
-    margin-top: 40px;
-    padding-top: 20px;
-    color: #999;
-    font-size: 14px;
-}
-/* Login Form Styles */
-.login-form {
-    max-width: 400px;
-    margin: 50px auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-}
-
-.login-form h2 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.login-form .form-group {
-    margin-bottom: 15px;
-}
-
-.login-form label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.login-form input[type="text"],
-.login-form input[type="password"] {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-}
-
-.login-form .btn {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 3px;
-    background-color: #333;
-    color: #fff;
-    cursor: pointer;
-}
-
-.login-form .btn:hover {
-    background-color: #555;
-}
-
-.login-form .error {
-    color: #d9534f;
-    margin-bottom: 15px;
-    text-align: center;
-}
-/* Pagination Styles */
-.pagination {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.pagination .page-link {
-    display: inline-block;
-    padding: 8px 12px;
-    margin: 0 5px;
-    border: 1px solid #ddd;
-    color: #333;
-    text-decoration: none;
-    border-radius: 3px;
-}
-
-.pagination .page-link:hover {
-    background-color: #f5f5f5;
-}
-
-.pagination .page-info {
-    display: inline-block;
-    padding: 8px 12px;
-    color: #777;
-}
-/* Admin Search */
-.search-container {
-    margin-bottom: 20px;
-}
-
-.search-container form {
-    display: flex;
-}
-
-.search-container input[type="text"] {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px 0 0 4px;
-    box-sizing: border-box;
-}
-
-.search-container button {
-    padding: 10px 15px;
-    border: none;
-    background: #333;
-    color: #fff;
-    border-radius: 0 4px 4px 0;
-    cursor: pointer;
-}
-.btn-secondary {
-    background-color: #6c757d;
-    margin-left: 10px;
-}
-/* Code Block with Copy Button */
-.post-full .content pre {
-    position: relative;
-    background: #282c34; /* atom-one-dark background */
-    padding: 1.2em 1em 1em;
-    border-radius: 5px;
-    overflow-x: auto;
-}
-
-.post-full .content pre code {
+/* 13. 响应式设计
+---------------------------------------------------------------------------------------------------- */
+.menu-toggle {
+    display: none; /* 默认隐藏 */
     background: none;
-    padding: 0;
-}
-
-.copy-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: #4f566b;
-    color: #abb2bf;
     border: none;
-    padding: 5px 10px;
-    border-radius: 3px;
     cursor: pointer;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.2s;
+    padding: 0;
+    color: var(--textColor);
 }
 
-.post-full .content pre:hover .copy-btn {
-    opacity: 1;
-}
-
-.copy-btn:hover {
-    background-color: #5c6378;
-}
-.edit-link {
-    margin-left: 15px;
-}
-
-.edit-link a {
-    color: #007bff;
-    text-decoration: none;
-    font-size: 14px;
-}
-
-.edit-link a:hover {
-    text-decoration: underline;
-}
-/* Prism.js visibility fix */
-
-/* Ensure code inside pre blocks without a language is also visible */
-.post-full .content pre code:not([class*="language-"]) {
-    color: #f8f8f2; /* Make it light on dark background */
-    background-color: transparent; /* No separate background */
-}
-
-/* Override for inline code to make it visible on light background */
-.post-full .content :not(pre) > code {
-    color: #c7254e; /* A common inline code color */
-    background-color: #f9f2f4;
-    padding: 2px 4px;
-    border-radius: 4px;
-}
-
-/* Responsive Styles */
 @media (max-width: 768px) {
-    header {
+    .main-wrapper {
+        padding: 1.5rem 1rem;
+    }
+
+    header.main-header {
+        align-items: center; /* 垂直居中对齐 */
+    }
+
+    .site-title {
+        display: none; /* 在移动设备上隐藏站点标题 */
+    }
+
+    .menu-toggle {
+        display: block; /* 在移动设备上显示菜单按钮 */
+        z-index: 1100; /* 确保在最上层 */
+    }
+
+    nav.main-nav {
+        display: none; /* 默认隐藏导航 */
+        position: absolute;
+        top: 100%; /* 定位在头部的正下方 */
+        left: 0;
+        right: 0;
+        background-color: var(--bgColor-transparent);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        border-radius: 10px;
+        margin-top: 10px; /* 与头部保持距离 */
+    }
+
+    nav.main-nav.is-open {
+        display: block; /* 点击按钮时显示 */
+    }
+
+    nav.main-nav ul {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: flex-start; /* 靠左对齐 */
+        padding: 1rem; /* 增加内边距 */
+        gap: 1rem; /* 增加链接之间的间距 */
     }
 
-    header h1 {
-        margin-bottom: 10px;
+    nav.main-nav li {
+        margin-bottom: 0; /* 移除底边距，使用 gap */
     }
 
-    header nav {
-        margin: 10px 0;
-    }
-
-    header nav a {
+    nav.main-nav li:not(:last-child)::after {
+        content: ""; /* 移除竖线 */
         margin-left: 0;
-        margin-right: 15px;
     }
 
-    .search-form {
-        width: 100%;
-        display: flex;
+    .search-input {
+        width: 100px; /* 缩短搜索框 */
     }
 
-    .search-form input {
-        flex-grow: 1;
-    }
-
-    body {
-        padding: 10px;
-    }
-
-    .container {
-        padding: 15px;
+    .header-right {
+        padding-top: 0; /* 移除顶内边距以实现对齐 */
     }
 }
-/* Alert Messages */
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-}
 
-.alert.success {
-    color: #3c763d;
-    background-color: #dff0d8;
-    border-color: #d6e9c6;
-}
-.alert.error {
-    color: #a94442;
-    background-color: #f2dede;
-    border-color: #ebccd1;
-}
-.alert.info {
-    color: #31708f;
-    background-color: #d9edf7;
-    border-color: #bce8f1;
-}
-.search-form {
-    position: relative;
-}
-
-.search-form input {
-    padding-right: 30px; 
-}
-
-.search-form button {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
+/* 14. 汉堡菜单动画
+---------------------------------------------------------------------------------------------------- */
+.menu-toggle {
     width: 24px;
     height: 24px;
-    background: url('/static/pic/search.png') no-repeat center center;
-    background-size: 24px 24px;
-    border: none;
-    cursor: pointer;
-    text-indent: -9999px;
+    position: relative;
+}
+
+.hamburger-box {
+    position: relative;
+    width: 24px;
+    height: 24px;
+}
+
+.hamburger-inner {
+    display: block;
+    top: 50%;
+    margin-top: -1px;
+}
+
+.hamburger-inner, .hamburger-inner::before, .hamburger-inner::after {
+    width: 24px;
+    height: 2px;
+    background-color: var(--textColor);
+    border-radius: 4px;
+    position: absolute;
+    transition-property: transform;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+}
+
+.hamburger-inner::before, .hamburger-inner::after {
+    content: "";
+    display: block;
+}
+
+.hamburger-inner::before {
+    top: -8px;
+}
+
+.hamburger-inner::after {
+    bottom: -8px;
+}
+
+.menu-toggle.is-active .hamburger-inner {
+    transform: translate3d(0, 0, 0) rotate(45deg);
+    background-color: var(--accentColor);
+}
+
+.menu-toggle.is-active .hamburger-inner::before {
+    transform: translate3d(0, 8px, 0) rotate(-90deg);
+    background-color: var(--accentColor);
+}
+
+.menu-toggle.is-active .hamburger-inner::after {
+    transform: translate3d(0, -8px, 0) rotate(-90deg);
+    background-color: var(--accentColor);
 }

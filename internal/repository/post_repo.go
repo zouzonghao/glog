@@ -70,6 +70,27 @@ func (r *PostRepository) FindAllPublished(isLoggedIn bool) ([]models.Post, error
 	return posts, err
 }
 
+func (r *PostRepository) FindPublishedPage(page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
+	var posts []models.Post
+	query := r.db.Where("published = ?", true)
+	if !isLoggedIn {
+		query = query.Where("is_private = ?", false)
+	}
+	offset := (page - 1) * pageSize
+	err := query.Order("published_at desc").Offset(offset).Limit(pageSize).Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepository) CountPublished(isLoggedIn bool) (int64, error) {
+	var count int64
+	query := r.db.Model(&models.Post{}).Where("published = ?", true)
+	if !isLoggedIn {
+		query = query.Where("is_private = ?", false)
+	}
+	err := query.Count(&count).Error
+	return count, err
+}
+
 func (r *PostRepository) FindAll(page, pageSize int) ([]models.Post, error) {
 	var posts []models.Post
 	offset := (page - 1) * pageSize
@@ -83,43 +104,35 @@ func (r *PostRepository) CountAll() (int64, error) {
 	return count, err
 }
 
-func (r *PostRepository) Search(ftsQuery string, isLoggedIn bool) ([]models.Post, error) {
+// SearchPage searches published posts with pagination using FTS, respecting login status.
+func (r *PostRepository) SearchPage(ftsQuery string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
 
-	// Subquery to get matching rowids from FTS table
 	subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", ftsQuery)
 
-	// Main query to get posts from the posts table
 	dbQuery := r.db.Where("id IN (?)", subQuery).Where("published = ?", true)
 
 	if !isLoggedIn {
 		dbQuery = dbQuery.Where("is_private = ?", false)
 	}
 
-	// To maintain relevance order from FTS, we need a more complex query.
-	// For simplicity, we'll order by published_at for now.
-	err := dbQuery.Order("published_at desc").Find(&posts).Error
-	return posts, err
-}
-
-// SearchAll searches all posts (published or not) with pagination using FTS.
-func (r *PostRepository) SearchAll(ftsQuery string, page, pageSize int) ([]models.Post, error) {
-	var posts []models.Post
-
-	subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", ftsQuery)
-
 	offset := (page - 1) * pageSize
-	err := r.db.Where("id IN (?)", subQuery).
-		Order("created_at desc").Offset(offset).Limit(pageSize).Find(&posts).Error
+	err := dbQuery.Order("published_at desc").Offset(offset).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 
-// CountAllByQuery counts the total number of posts matching an FTS query.
-func (r *PostRepository) CountAllByQuery(ftsQuery string) (int64, error) {
+// CountByQuery counts the total number of published posts matching an FTS query, respecting login status.
+func (r *PostRepository) CountByQuery(ftsQuery string, isLoggedIn bool) (int64, error) {
 	var count int64
 
 	subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", ftsQuery)
 
-	err := r.db.Model(&models.Post{}).Where("id IN (?)", subQuery).Count(&count).Error
+	dbQuery := r.db.Model(&models.Post{}).Where("id IN (?)", subQuery).Where("published = ?", true)
+
+	if !isLoggedIn {
+		dbQuery = dbQuery.Where("is_private = ?", false)
+	}
+
+	err := dbQuery.Count(&count).Error
 	return count, err
 }

@@ -7,7 +7,7 @@
 
 <div id="alert-container"></div>
 
-<form id="settings-form" action="/admin/settings" method="POST" class="editor-form">
+<form id="settings-form" action="/settings" method="POST" class="editor-form">
     <div class="form-group">
         <label for="password">管理员密码</label>
         <input type="password" id="password" name="password" placeholder="留空则不修改" autocomplete="new-password">
@@ -106,7 +106,7 @@ document.getElementById('test-ai-btn').addEventListener('click', function() {
     formData.append('openai_token', token);
     formData.append('openai_model', model);
 
-    fetch('/admin/settings/test-ai', {
+    fetch('/settings/test-ai', {
         method: 'POST',
         body: formData
     })

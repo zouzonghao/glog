@@ -3,6 +3,7 @@ package handlers
 import (
 	"glog/internal/models"
 	"glog/internal/services"
+	"glog/internal/utils"
 	"math"
 	"net/http"
 	"strconv"
@@ -26,18 +27,9 @@ func NewAdminHandler(postService *services.PostService, settingService *services
 
 func (h *AdminHandler) ListPosts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	query := c.Query("query")
 	pageSize := 10 // 每页显示10篇文章
 
-	var posts []models.Post
-	var total int64
-	var err error
-
-	if query != "" {
-		posts, total, err = h.postService.SearchPostsPage(query, page, pageSize)
-	} else {
-		posts, total, err = h.postService.GetPostsPage(page, pageSize)
-	}
+	posts, total, err := h.postService.GetPostsPage(page, pageSize)
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Failed to load posts")
@@ -46,15 +38,12 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 
 	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
 
+	pagination := utils.GeneratePagination(page, totalPages)
+
 	render(c, http.StatusOK, "admin.html", gin.H{
-		"posts":       posts,
-		"CurrentPage": page,
-		"TotalPages":  totalPages,
-		"HasPrev":     page > 1,
-		"HasNext":     page < totalPages,
-		"PrevPage":    page - 1,
-		"NextPage":    page + 1,
-		"Query":       query,
+		"posts":      posts,
+		"Pagination": pagination,
+		"Query":      "", // Was removed, keep the key for the template
 	})
 }
 

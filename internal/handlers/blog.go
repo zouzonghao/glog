@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"glog/internal/services"
+	"glog/internal/utils"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +19,11 @@ func NewBlogHandler(postService *services.PostService) *BlogHandler {
 }
 
 func (h *BlogHandler) Index(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize := 10 // 每页显示15篇文章
+
 	isLoggedIn, _ := c.Get("IsLoggedIn")
-	posts, err := h.postService.GetAllPublishedPosts(isLoggedIn.(bool))
+	posts, total, err := h.postService.GetPublishedPostsPage(page, pageSize, isLoggedIn.(bool))
 	if err != nil {
 		render(c, http.StatusInternalServerError, "error.html", gin.H{
 			"error": "Failed to load posts",
@@ -25,8 +31,13 @@ func (h *BlogHandler) Index(c *gin.Context) {
 		return
 	}
 
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	pagination := utils.GeneratePagination(page, totalPages)
+
 	render(c, http.StatusOK, "index.html", gin.H{
-		"posts": posts,
+		"posts":      posts,
+		"Pagination": pagination,
 	})
 }
 

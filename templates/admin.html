@@ -1,14 +1,17 @@
-{{define "title"}}后台管理{{end}}
+{{ template "base.html" . }}
 
-{{define "content"}}
+{{ define "title" }}后台管理{{ end }}
+
+{{ define "content" }}
     <div class="admin-header">
         <h2>文章管理</h2>
-        <form action="/admin" method="GET" class="admin-search-form">
-            <input type="text" name="query" placeholder="搜索标题或内容..." value="{{.Query}}">
-            <button type="submit" class="btn">搜索</button>
-        </form>
         <a href="/admin/new" class="btn">写新文章</a>
     </div>
+
+    <form action="/admin" method="GET" class="search-form" style="max-width: 100%; margin-bottom: 2rem;">
+        <input type="text" name="query" placeholder="搜索标题或内容..." value="{{.Query}}">
+        <button type="submit">Search</button>
+    </form>
 
     <table class="admin-table">
         <thead>
@@ -52,17 +55,5 @@
         </tbody>
     </table>
 
-    {{if gt .TotalPages 1}}
-    <div class="pagination">
-        {{if .HasPrev}}
-        <a href="/admin/?page={{.PrevPage}}{{if .Query}}&query={{.Query}}{{end}}" class="page-link">« 上一页</a>
-        {{end}}
-
-        <span class="page-info">第 {{.CurrentPage}} 页 / 共 {{.TotalPages}} 页</span>
-
-        {{if .HasNext}}
-        <a href="/admin/?page={{.NextPage}}{{if .Query}}&query={{.Query}}{{end}}" class="page-link">下一页 »</a>
-        {{end}}
-    </div>
-    {{end}}
-{{end}}
+    {{ template "pagination" . }}
+{{ end }}

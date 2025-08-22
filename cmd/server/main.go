@@ -16,13 +16,13 @@ import (
 
 func createRenderer() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
-	r.AddFromFiles("index.html", "templates/base.html", "templates/index.html")
+	r.AddFromFiles("index.html", "templates/base.html", "templates/index.html", "templates/_pagination.html")
 	r.AddFromFiles("post.html", "templates/base.html", "templates/post.html")
-	r.AddFromFiles("admin.html", "templates/base.html", "templates/admin.html")
+	r.AddFromFiles("admin.html", "templates/base.html", "templates/admin.html", "templates/_pagination.html")
 	r.AddFromFiles("editor.html", "templates/base.html", "templates/editor.html")
 	r.AddFromFiles("settings.html", "templates/base.html", "templates/settings.html")
 	r.AddFromFiles("login.html", "templates/base.html", "templates/login.html")
-	r.AddFromFiles("search.html", "templates/base.html", "templates/search.html")
+	r.AddFromFiles("search.html", "templates/base.html", "templates/search.html", "templates/_pagination.html")
 	r.AddFromFiles("404.html", "templates/base.html", "templates/404.html")
 	// Assuming error.html exists and is used by handlers
 	r.AddFromFiles("error.html", "templates/base.html", "templates/error.html")
@@ -82,9 +82,14 @@ func main() {
 		admin.GET("/editor", adminHandler.Editor)
 		admin.POST("/save", adminHandler.SavePost)
 		admin.GET("/delete/:id", adminHandler.DeletePost)
-		admin.GET("/settings", adminHandler.ShowSettingsPage)
-		admin.POST("/settings", adminHandler.UpdateSettings)
-		admin.POST("/settings/test-ai", adminHandler.TestAISettings)
+	}
+
+	settings := r.Group("/settings")
+	settings.Use(handlers.AuthMiddleware())
+	{
+		settings.GET("/", adminHandler.ShowSettingsPage)
+		settings.POST("/", adminHandler.UpdateSettings)
+		settings.POST("/test-ai", adminHandler.TestAISettings)
 	}
 
 	// 404处理

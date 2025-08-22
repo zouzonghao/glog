@@ -278,6 +278,18 @@ func (s *PostService) GetAllPublishedPosts(isLoggedIn bool) ([]models.Post, erro
 	return s.repo.FindAllPublished(isLoggedIn)
 }
 
+func (s *PostService) GetPublishedPostsPage(page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
+	posts, err := s.repo.FindPublishedPage(page, pageSize, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.repo.CountPublished(isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+	return posts, total, nil
+}
+
 func (s *PostService) GetPostsPage(page, pageSize int) ([]models.Post, int64, error) {
 	posts, err := s.repo.FindAll(page, pageSize)
 	if err != nil {
@@ -298,28 +310,23 @@ func formatFTSQuery(query string) string {
 	return strings.Join(keywords, " AND ")
 }
 
-func (s *PostService) SearchPostsPage(query string, page, pageSize int) ([]models.Post, int64, error) {
+func (s *PostService) SearchPublishedPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
 	ftsQuery := formatFTSQuery(query)
 	if ftsQuery == "" {
 		return []models.Post{}, 0, nil
 	}
-	posts, err := s.repo.SearchAll(ftsQuery, page, pageSize)
-	if err != nil {
-		return nil, 0, err
-	}
-	total, err := s.repo.CountAllByQuery(ftsQuery)
-	if err != nil {
-		return nil, 0, err
-	}
-	return posts, total, nil
-}
 
-func (s *PostService) SearchPosts(query string, isLoggedIn bool) ([]models.Post, error) {
-	ftsQuery := formatFTSQuery(query)
-	if ftsQuery == "" {
-		return []models.Post{}, nil
+	posts, err := s.repo.SearchPage(ftsQuery, page, pageSize, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
 	}
-	return s.repo.Search(ftsQuery, isLoggedIn)
+
+	total, err := s.repo.CountByQuery(ftsQuery, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return posts, total, nil
 }
 
 func (s *PostService) DeletePost(id uint) error {
