@@ -39,7 +39,7 @@
                     <label for="ai_summary">AI摘要</label>
                 </div>
                 <div class="form-group-inline">
-                    <input type="checkbox" id="published" name="published" {{ if .post }}{{ if .post.Published }}checked{{ end }}{{ end }}>
+                    <input type="checkbox" id="published" name="published" {{ if or (not .post) .post.Published }}checked{{ end }}>
                     <label for="published">发布</label>
                 </div>
                 <div class="form-group-inline">
@@ -49,7 +49,12 @@
             </div>
 
             <div class="editor-actions">
-                <a href="#" id="save-btn">保存文章</a>
+                <a href="#" id="save-btn">💾 保存文章</a>
+                {{ if .post }}
+                    {{ if .post.Published }}
+                        <a href="/post/{{ .post.Slug }}" target="_blank" class="open-post-link">🔗 打开文章</a>
+                    {{ end }}
+                {{ end }}
             </div>
         </form>
     </div>
@@ -102,6 +107,26 @@
                         // Update browser URL to reflect the new post ID for editing
                         const newUrl = `/admin/editor?id=${data.post_id}`;
                         history.pushState({path: newUrl}, '', newUrl);
+                    }
+
+                    // Dynamically update "Open Post" link
+                    const isPublished = document.getElementById('published').checked;
+                    const editorActions = document.querySelector('.editor-actions');
+                    let openLink = editorActions.querySelector('a.open-post-link');
+
+                    if (isPublished && data.slug) {
+                        if (!openLink) {
+                            openLink = document.createElement('a');
+                            openLink.className = 'open-post-link';
+                            openLink.target = '_blank';
+                            editorActions.appendChild(openLink);
+                        }
+                        openLink.href = `/post/${data.slug}`;
+                        openLink.textContent = '打开文章';
+                    } else {
+                        if (openLink) {
+                            openLink.remove();
+                        }
                     }
                 } else if (data.status === 'error' || data.status === 'locked') {
                     alertClass = 'error';

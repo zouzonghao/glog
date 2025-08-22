@@ -81,9 +81,9 @@ strong { font-weight: 600; }
 header.main-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     position: relative; /* 为绝对定位的导航菜单提供上下文 */
-    padding-bottom: 1.5rem;
+    padding-bottom: 2rem;
     
 }
 header.main-header::after {
@@ -120,6 +120,12 @@ header.main-header::after {
     font-weight: 500;
     margin-bottom: 0.25rem;
     border-bottom: none;
+    color: var(--accentColor);
+    transition: text-shadow 0.3s ease;
+}
+
+.site-title:hover {
+    text-shadow: 0 0 10px var(--accentColor);
 }
 
 nav.main-nav ul {
@@ -232,13 +238,13 @@ footer.main-footer {
 /* 暗色模式变量
 ---------------------------------------------------------------------------------------------------- */
 html.dark {
-    --bgColor: #1d1f20;
-    --textColor: #d4d5d6;
-    --linkColor: #a6a7a9;
-    --accentColor: #29bc89;
-    --accent2Color: #444; /* Darker gray for borders in dark mode */
-    --quoteColor: #8c8d8f;
-    --bgColor-transparent: rgba(29, 31, 32, 0.8);
+    --bgColor: #1d1f20; /* 深色模式下的背景颜色 */
+    --textColor: #bebdbd; /* 深色模式下的主要文字颜色 */
+    --linkColor: #cbcaca; /* 深色模式下的链接颜色 */
+    --accentColor: #29bc89; /* 深色模式下的强调色，如标题和链接悬停 */
+    --accent2Color: #444; /* 深色模式下的边框颜色 */
+    --quoteColor: #8c8d8f; /* 深色模式下的引用和元信息颜色 */
+    --bgColor-transparent: rgba(29, 31, 32, 0.8); /* 深色模式下的半透明背景颜色 */
 }
 /* 9. 搜索表单
 ---------------------------------------------------------------------------------------------------- */
@@ -248,8 +254,8 @@ html.dark {
     background-color: var(--bgColor);
     border: 1px solid var(--accent2Color);
     opacity: 0.8;
-    border-radius: 2rem;
-    padding: 0.25rem;
+    border-radius: 0.3rem;
+    padding: 0.2rem;
 }
 
 .search-form:focus-within {
@@ -263,7 +269,7 @@ html.dark {
     outline: none;
     color: var(--textColor);
     font-size: 0.9rem;
-    padding: 0 0.75rem;
+    padding: 0.2rem 0.75rem;
     width: 150px; /* 根据需要调整 */
 }
 
@@ -275,21 +281,18 @@ html.dark {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.4rem;
+    padding: 0.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
 }
 
-.search-button:hover {
-    background-color: var(--accent2Color);
-    opacity: 0.1;
-}
+
 
 .search-button .search-icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     opacity: 0.7;
 }
 
@@ -678,7 +681,7 @@ html.dark .editor-container {
     border-radius: 4px;
     background-color: var(--bgColor);
     color: var(--textColor);
-    font-size: 1rem;
+    font-size: 0.9rem;
     transition: border-color 0.2s;
 }
 
@@ -713,6 +716,7 @@ html.dark .editor-container {
     text-align: right;
     font-size: 1.2em;
 }
+
 
 /* Alert styles */
 #editor-alert-container, #alert-container, #ai-test-alert-container {
@@ -846,4 +850,16 @@ html.dark .alert.info {
 html.dark :not(pre) > code {
     color: #ff7597; /* A lighter pink for dark mode */
     background-color: #38232a; /* A dark, reddish background */
+}
+
+.lock-dark {
+    display: none;
+}
+
+html.dark .lock-dark {
+    display: inline-block;
+}
+
+html.dark .lock-light {
+    display: none;
 }

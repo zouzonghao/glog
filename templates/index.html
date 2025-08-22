@@ -8,7 +8,13 @@
             {{ range .posts }}
                 <li>
                     <span class="date">{{ .PublishedAt.Format "2006年01月02日" }}</span>
-                    <a href="/post/{{ .Slug }}" class="title">{{ .Title }}</a>
+                    <a href="/post/{{ .Slug }}" class="title">
+                        {{ .Title }}
+                        {{ if .IsPrivate }}
+                            <img src="/static/pic/lock.svg" alt="Private" class="lock-light" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                            <img src="/static/pic/lock-w.svg" alt="Private" class="lock-dark" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                        {{ end }}
+                    </a>
                 </li>
             {{ else }}
                 <li><p>还没有文章。</p></li>

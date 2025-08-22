@@ -12,7 +12,8 @@
             <h1>
                 {{ .post.Title }}
                 {{ if .post.IsPrivate }}
-                    <img src="/static/pic/lock.svg" alt="Private" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                    <img src="/static/pic/lock.svg" alt="Private" class="lock-light" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                    <img src="/static/pic/lock-w.svg" alt="Private" class="lock-dark" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
                 {{ end }}
             </h1>
             <div class="meta">

@@ -119,12 +119,25 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	message := "文章已保存。"
+	if aiSummary && title == "未命名" {
+		message = "文章已保存，AI正在生成标题和摘要，请稍后刷新查看。"
+	} else if aiSummary {
+		message = "文章已保存，AI摘要正在生成中..."
+	}
+
+	response := gin.H{
 		"status":  "success",
-		"message": "文章已保存。",
+		"message": message,
 		"post_id": post.ID,
-		"slug":    post.Slug,
-	})
+	}
+
+	// Only return slug if AI is not going to rename the post
+	if !(aiSummary && title == "未命名") {
+		response["slug"] = post.Slug
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *AdminHandler) DeletePost(c *gin.Context) {

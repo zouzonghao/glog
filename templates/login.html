@@ -1,19 +1,31 @@
 {{ template "base.html" . }}
 
-{{ define "title" }}Login{{ end }}
+{{ define "title" }}登录{{ end }}
 
 {{ define "content" }}
-<div class="form-wrapper">
-    <h2>请输入密码</h2>
+<div class="editor-container" style="margin-top: 4rem;">
+
+    
     {{ if .error }}
-    <p class="error">{{ range .error }}{{ . }}{{ end }}</p>
+    <div id="alert-container">
+        <div class="alert error">{{ range .error }}{{ . }}{{ end }}</div>
+    </div>
     {{ end }}
-    <form action="/login" method="post">
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+
+    <form id="login-form" action="/login" method="post" class="editor-form">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="请输入密码" style="flex-grow: 1; max-width: 200px;">
+            <a href="#" id="login-btn" style="font-size: 1.2em; flex-shrink: 0;">登录</a>
         </div>
-        <button type="submit" class="btn">Login</button>
     </form>
 </div>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+document.getElementById('login-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('login-form').submit();
+});
+</script>
 {{ end }}
