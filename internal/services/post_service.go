@@ -67,8 +67,8 @@ func (s *PostService) CreatePost(title, content string, published bool, isPrivat
 		return nil, err
 	}
 
-	// After saving, check and generate AI summary asynchronously
-	go s.generateAndSaveAISummary(post, aiSummary)
+	// After saving, update FTS index and generate AI summary asynchronously
+	go s.updateFtsAndAISummary(post, aiSummary)
 
 	return post, nil
 }
@@ -102,10 +102,23 @@ func (s *PostService) UpdatePost(id uint, title, content string, published bool,
 		return nil, err
 	}
 
-	// After saving, check and generate AI summary asynchronously
-	go s.generateAndSaveAISummary(post, aiSummary)
+	// After saving, update FTS index and generate AI summary asynchronously
+	go s.updateFtsAndAISummary(post, aiSummary)
 
 	return post, nil
+}
+
+// updateFtsAndAISummary handles asynchronous post-save operations.
+func (s *PostService) updateFtsAndAISummary(post *models.Post, aiSummary bool) {
+	// Update FTS index
+	segmentedTitle := SegmentTextForIndex(post.Title)
+	segmentedContent := SegmentTextForIndex(post.Content)
+	if err := s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent); err != nil {
+		log.Printf("更新 FTS 索引失败，文章 ID %d: %v", post.ID, err)
+	}
+
+	// Generate AI summary
+	s.generateAndSaveAISummary(post, aiSummary)
 }
 
 // generateAndSaveAISummary is the core async logic for AI summary generation.
@@ -302,52 +315,28 @@ func (s *PostService) GetPostsPage(page, pageSize int, query, status string) ([]
 	return posts, total, nil
 }
 
-func formatFTSQuery(query string) string {
-	keywords := strings.Fields(strings.ReplaceAll(query, ",", " "))
-	for i, keyword := range keywords {
-		keywords[i] = keyword + "*"
-	}
-	return strings.Join(keywords, " AND ")
-}
-
 func (s *PostService) SearchPublishedPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
 	if query == "" {
 		return []models.Post{}, 0, nil
 	}
 
-	searchEngine, err := s.settingService.GetSetting("search_engine")
+	ftsQuery := SegmentTextForQuery(query)
+	posts, err := s.repo.SearchPage(ftsQuery, page, pageSize, isLoggedIn)
 	if err != nil {
-		// Fallback to 'like' if setting is not found
-		searchEngine = "like"
+		return nil, 0, err
 	}
-
-	var posts []models.Post
-	var total int64
-
-	if searchEngine == "fts5" {
-		ftsQuery := formatFTSQuery(query)
-		posts, err = s.repo.SearchPage(ftsQuery, page, pageSize, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
-		total, err = s.repo.CountByQuery(ftsQuery, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
-	} else { // Default to "like"
-		posts, err = s.repo.SearchPageWithLike(query, page, pageSize, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
-		total, err = s.repo.CountByQueryWithLike(query, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
+	total, err := s.repo.CountByQuery(ftsQuery, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
 	}
-
 	return posts, total, nil
 }
 
 func (s *PostService) DeletePost(id uint) error {
+	// It's better to delete the index first.
+	if err := s.repo.DeleteFtsIndex(id); err != nil {
+		// Log the error but continue to delete the main post entry.
+		log.Printf("删除 FTS 索引失败，文章 ID %d: %v", id, err)
+	}
 	return s.repo.Delete(id)
 }

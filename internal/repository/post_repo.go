@@ -2,7 +2,6 @@ package repository
 
 import (
 	"glog/internal/models"
-	"strings"
 
 	"gorm.io/gorm"
 )
@@ -25,6 +24,19 @@ func (r *PostRepository) Update(post *models.Post) error {
 
 func (r *PostRepository) Delete(id uint) error {
 	return r.db.Unscoped().Delete(&models.Post{}, id).Error
+}
+
+// UpdateFtsIndex 更新文章的 FTS 索引
+func (r *PostRepository) UpdateFtsIndex(id uint, title, content string) error {
+	// 使用 INSERT OR REPLACE 来插入或更新索引
+	query := `INSERT OR REPLACE INTO posts_fts (rowid, title, content) VALUES (?, ?, ?)`
+	return r.db.Exec(query, id, title, content).Error
+}
+
+// DeleteFtsIndex 删除文章的 FTS 索引
+func (r *PostRepository) DeleteFtsIndex(id uint) error {
+	query := `DELETE FROM posts_fts WHERE rowid = ?`
+	return r.db.Exec(query, id).Error
 }
 
 func (r *PostRepository) FindByID(id uint) (*models.Post, error) {
@@ -97,8 +109,8 @@ func (r *PostRepository) FindAll(page, pageSize int, query, status string) ([]mo
 	dbQuery := r.db.Order("created_at desc")
 
 	if query != "" {
-		searchQuery := "%" + strings.ToLower(query) + "%"
-		dbQuery = dbQuery.Where("LOWER(title) LIKE ? OR LOWER(content) LIKE ?", searchQuery, searchQuery)
+		subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", query)
+		dbQuery = dbQuery.Where("id IN (?)", subQuery)
 	}
 
 	switch status {
@@ -118,8 +130,8 @@ func (r *PostRepository) CountAll(query, status string) (int64, error) {
 	dbQuery := r.db.Model(&models.Post{})
 
 	if query != "" {
-		searchQuery := "%" + strings.ToLower(query) + "%"
-		dbQuery = dbQuery.Where("LOWER(title) LIKE ? OR LOWER(content) LIKE ?", searchQuery, searchQuery)
+		subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", query)
+		dbQuery = dbQuery.Where("id IN (?)", subQuery)
 	}
 
 	switch status {
@@ -157,51 +169,6 @@ func (r *PostRepository) CountByQuery(ftsQuery string, isLoggedIn bool) (int64, 
 	subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", ftsQuery)
 
 	dbQuery := r.db.Model(&models.Post{}).Where("id IN (?)", subQuery).Where("published = ?", true)
-
-	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ?", false)
-	}
-
-	err := dbQuery.Count(&count).Error
-	return count, err
-}
-
-// SearchPageWithLike searches published posts with pagination using LIKE, respecting login status.
-func (r *PostRepository) SearchPageWithLike(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
-	var posts []models.Post
-	dbQuery := r.db.Where("published = ?", true)
-
-	keywords := strings.Fields(strings.ReplaceAll(query, ",", " "))
-	for _, keyword := range keywords {
-		trimmedKeyword := strings.TrimSpace(keyword)
-		if trimmedKeyword != "" {
-			searchQuery := "%" + trimmedKeyword + "%"
-			dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", searchQuery, searchQuery)
-		}
-	}
-
-	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ?", false)
-	}
-
-	offset := (page - 1) * pageSize
-	err := dbQuery.Order("published_at desc").Offset(offset).Limit(pageSize).Find(&posts).Error
-	return posts, err
-}
-
-// CountByQueryWithLike counts the total number of published posts matching a LIKE query, respecting login status.
-func (r *PostRepository) CountByQueryWithLike(query string, isLoggedIn bool) (int64, error) {
-	var count int64
-	dbQuery := r.db.Model(&models.Post{}).Where("published = ?", true)
-
-	keywords := strings.Fields(strings.ReplaceAll(query, ",", " "))
-	for _, keyword := range keywords {
-		trimmedKeyword := strings.TrimSpace(keyword)
-		if trimmedKeyword != "" {
-			searchQuery := "%" + trimmedKeyword + "%"
-			dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", searchQuery, searchQuery)
-		}
-	}
 
 	if !isLoggedIn {
 		dbQuery = dbQuery.Where("is_private = ?", false)

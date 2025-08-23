@@ -326,6 +326,7 @@ html.dark {
     font-size: 0.9rem;
     padding: 0.2rem 0.75rem;
     width: 150px; /* 根据需要调整 */
+transition: width 0.3s ease;
 }
 
 .search-input::placeholder {
@@ -852,10 +853,18 @@ html.dark .alert.info {
     text-decoration: none;
     border-radius: 50%;
     z-index: 1000;
-    transition: opacity 0.3s, background-color 0.3s;
+    transition: opacity 0.3s, visibility 0.3s, background-color 0.3s;
     border: none;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.back-to-top.show {
     opacity: 0.7;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .back-to-top:hover {

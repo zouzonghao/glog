@@ -32,7 +32,11 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	status := c.DefaultQuery("status", "all")
 	pageSize := 10
 
-	posts, total, err := h.postService.GetPostsPage(page, pageSize, query, status)
+	searchQuery := query
+	if searchQuery != "" {
+		searchQuery = services.SegmentTextForQuery(searchQuery)
+	}
+	posts, total, err := h.postService.GetPostsPage(page, pageSize, searchQuery, status)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "加载文章失败")
 		return

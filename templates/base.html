@@ -6,6 +6,19 @@
     <meta name="description" content="{{ .site_description }}">
     <title>{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}</title>
     
+<script>
+        (function() {
+            const savedTheme = localStorage.getItem("theme");
+            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            let theme = "light"; // 默认主题
+            if (savedTheme) {
+                theme = savedTheme;
+            } else if (prefersDark) {
+                theme = "dark";
+            }
+            document.documentElement.classList.add(theme);
+        })();
+    </script>
     <link rel="stylesheet" href="/static/css/style.css">
     
     {{ if .site_logo }}
@@ -72,8 +85,7 @@
 <a href="#top" id="back-to-top" class="back-to-top" title="Back to top">&uarr;</a>
     
 <div id="notification-container"></div>
-    <script src="/static/js/notification.js"></script>
     {{ block "scripts" . }}{{ end }}
-    <script src="/static/js/theme-toggle.js"></script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

@@ -41,12 +41,14 @@ func createRenderer() multitemplate.Renderer {
 	add("login.html", "base.html", "login.html")
 	add("search.html", "base.html", "search.html", "_pagination.html")
 	add("404.html", "base.html", "404.html")
-	add("error.html", "base.html", "error.html")
 
 	return r
 }
 
 func main() {
+	// Defer the freeing of jieba resources
+	defer services.FreeJieba()
+
 	// Asset loading is now handled automatically by build tags.
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
 	flag.Parse()
