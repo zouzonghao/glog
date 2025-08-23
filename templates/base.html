@@ -16,15 +16,16 @@
     
     {{ block "head" . }}{{ end }}
 </head>
-<body>
+<body id="top">
     <div class="main-wrapper">
         <header class="main-header">
             <div class="header-left">
-                <a href="#" id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">
+                <input type="checkbox" id="menu-toggle" class="nav-toggle-checkbox">
+                <label for="menu-toggle" class="menu-toggle" aria-label="Toggle menu">
                     <div class="hamburger-box">
                         <div class="hamburger-inner"></div>
                     </div>
-                </a>
+                </label>
                 {{ if .site_logo }}
                 <a href="/" class="site-logo-link"><img src="{{ .site_logo }}" alt="Logo" class="site-logo"></a>
                 {{ end }}
@@ -49,9 +50,9 @@
             <div class="header-right">
                 <form id="search-form" action="/search" method="get" class="search-form">
                     <input type="search" name="q" placeholder="搜索..." class="search-input" value="{{ .query }}">
-                    <a href="#" id="search-button" class="search-button" aria-label="Search">
+                    <button type="submit" id="search-button" class="search-button" aria-label="Search">
                         <img src="/static/pic/search.png" alt="Search" class="search-icon">
-                    </a>
+                    </button>
                 </form>
                 <a href="#" id="theme-toggle" class="theme-toggle" title="Toggle theme">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -65,35 +66,14 @@
         </main>
         
         <footer class="main-footer">
-            <p>&copy; <span id="current-year"></span> {{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}. Powered by Glog.</p>
+            <p>&copy; {{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}. Powered by Glog.</p>
         </footer>
     </div>
-<a href="#" id="back-to-top" class="back-to-top" title="Back to top">&uarr;</a>
+<a href="#top" id="back-to-top" class="back-to-top" title="Back to top">&uarr;</a>
     
+<div id="notification-container"></div>
+    <script src="/static/js/notification.js"></script>
     {{ block "scripts" . }}{{ end }}
     <script src="/static/js/theme-toggle.js"></script>
-    <script src="/static/js/mobile-nav.js"></script>
-    <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-        document.getElementById('search-button').addEventListener('click', function(e) {
-            e.preventDefault();
-            document.getElementById('search-form').submit();
-        });
-const backToTopButton = document.getElementById('back-to-top');
-
-        window.onscroll = function() {
-            if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-                backToTopButton.style.display = "block";
-            } else {
-                backToTopButton.style.display = "none";
-            }
-        };
-
-        backToTopButton.onclick = function(e) {
-            e.preventDefault();
-            document.body.scrollTop = 0;
-            document.documentElement.scrollTop = 0;
-        };
-    </script>
 </body>
 </html>

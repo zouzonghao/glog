@@ -108,7 +108,7 @@ func main() {
 		admin.GET("/new", adminHandler.NewPost)
 		admin.GET("/editor", adminHandler.Editor)
 		admin.POST("/save", adminHandler.SavePost)
-		admin.GET("/delete/:id", adminHandler.DeletePost)
+		admin.POST("/delete/:id", adminHandler.DeletePost)
 	}
 
 	settings := r.Group("/settings")

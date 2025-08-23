@@ -5,8 +5,6 @@
     <h2 class="group-title">站点设置</h2>
 </div>
 
-<div id="alert-container"></div>
-
 <form id="settings-form" action="/settings" method="POST" class="editor-form">
     <div class="form-group">
         <label for="password">管理员密码</label>
@@ -39,7 +37,6 @@
     <div class="setting-header">
         <h2 class="group-title">AI 设置</h2>
     </div>
-    <div id="ai-test-alert-container"></div>
 
     <div class="form-group">
         <label for="openai_base_url">OpenAI 兼容 Base URL</label>
@@ -76,8 +73,6 @@ document.getElementById('save-settings-btn').addEventListener('click', function(
 
     const form = document.getElementById('settings-form');
     const formData = new FormData(form);
-    const alertContainer = document.getElementById('alert-container');
-    alertContainer.innerHTML = ''; // Clear previous messages
 
     fetch(form.action, {
         method: 'POST',
@@ -85,19 +80,16 @@ document.getElementById('save-settings-btn').addEventListener('click', function(
     })
     .then(response => response.json())
     .then(data => {
-        let alertClass = data.status === 'success' ? 'success' : 'error';
-        alertContainer.innerHTML = `<div class="alert ${alertClass}">${data.message}</div>`;
+        showNotification(data.message, data.status);
 
         if (data.status === 'success') {
             document.getElementById('password').value = '';
             document.getElementById('openai_token').value = '';
         }
-        
-        setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
     })
     .catch(error => {
         console.error('表单提交错误：', error);
-        alertContainer.innerHTML = `<div class="alert error">保存时发生错误，请检查网络连接。</div>`;
+        showNotification('保存时发生错误，请检查网络连接！', 'error');
     });
 });
 
@@ -107,10 +99,9 @@ document.getElementById('test-ai-btn').addEventListener('click', function(event)
     const baseURL = document.getElementById('openai_base_url').value;
     const token = document.getElementById('openai_token').value;
     const model = document.getElementById('openai_model').value;
-    const alertContainer = document.getElementById('ai-test-alert-container');
     const testBtn = this;
 
-    alertContainer.innerHTML = `<div class="alert info">测试中...</div>`;
+    showNotification('测试中...', 'info');
     testBtn.style.pointerEvents = 'none'; // Disable link
     testBtn.style.opacity = '0.5';
 
@@ -125,17 +116,15 @@ document.getElementById('test-ai-btn').addEventListener('click', function(event)
     })
     .then(response => response.json())
     .then(data => {
-        let alertClass = data.status === 'success' ? 'success' : 'error';
-        alertContainer.innerHTML = `<div class="alert ${alertClass}">${data.message}</div>`;
+        showNotification(data.message, data.status);
     })
     .catch(error => {
         console.error('AI 测试错误：', error);
-        alertContainer.innerHTML = `<div class="alert error">测试请求失败，请检查网络或后台日志。</div>`;
+        showNotification('测试请求失败，请检查网络或后台日志！', 'error');
     })
     .finally(() => {
         testBtn.style.pointerEvents = 'auto'; // Re-enable link
         testBtn.style.opacity = '1';
-        setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
     });
 });
 </script>

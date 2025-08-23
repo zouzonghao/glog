@@ -17,14 +17,7 @@ func NewAuthHandler(settingService *services.SettingService) *AuthHandler {
 }
 
 func (h *AuthHandler) ShowLoginPage(c *gin.Context) {
-	// 从会话中获取并清除 flash 消息
-	session := sessions.Default(c)
-	flashes := session.Flashes("error")
-	session.Save() // 确保 flash 消息被清除
-
-	render(c, http.StatusOK, "login.html", gin.H{
-		"error": flashes,
-	})
+	render(c, http.StatusOK, "login.html", gin.H{})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -33,22 +26,26 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	adminPassword, err := h.settingService.GetSetting("password")
 	if err != nil {
-		session.AddFlash("服务器内部错误", "error")
-		session.Save()
-		c.Redirect(http.StatusFound, "/login")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "服务器内部错误",
+		})
 		return
 	}
 
 	if submittedPassword != adminPassword {
-		session.AddFlash("密码错误！请重新输入。", "error")
-		session.Save()
-		c.Redirect(http.StatusFound, "/login")
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "密码错误，请重新输入！",
+		})
 		return
 	}
 
 	session.Set("authenticated", true)
 	session.Save()
-	c.Redirect(http.StatusFound, "/admin/")
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+	})
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {

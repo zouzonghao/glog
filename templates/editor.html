@@ -1,21 +1,8 @@
 {{ define "title" }}{{ if .post }}编辑文章{{ else }}写新文章{{ end }}{{ end }}
 
-{{ define "head" }}
-    {{/* By default, we don't load the editor CSS anymore */}}
-{{ end }}
-
 {{ define "content" }}
     <h2 class="group-title">{{ if .post }}文章编辑{{ else }}文章新建{{ end }}</h2>
     <div class="editor-container">
-        <div id="editor-alert-container"></div>
-        {{ if .status }}
-            {{ if eq .status "locked" }}
-                <div class="alert info">正在生成AI摘要，文章已锁定，请稍候再试。</div>
-            {{ else if eq .status "saved" }}
-                <div class="alert success">文章已保存。</div>
-            {{ end }}
-        {{ end }}
-
         <form id="editor-form" action="/admin/save" method="POST" class="editor-form">
             <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
             
@@ -32,10 +19,6 @@
             
             <div class="editor-options">
                 <div class="form-group-inline">
-                    <input type="checkbox" id="load-editor">
-                    <label for="load-editor">加载富文本编辑器</label>
-                </div>
-                <div class="form-group-inline">
                     <input type="checkbox" id="ai_summary" name="ai_summary">
                     <label for="ai_summary">AI摘要</label>
                 </div>
@@ -51,11 +34,7 @@
 
             <div class="editor-actions">
                 <a href="#" id="save-btn">💾 保存文章</a>
-                {{ if .post }}
-                    {{ if .post.Published }}
-                        <a href="/post/{{ .post.Slug }}"  class="open-post-link">🔗 打开文章</a>
-                    {{ end }}
-                {{ end }}
+                <a href="{{ if .post }}/post/{{ .post.Slug }}{{ else }}#{{ end }}" class="open-post-link">🔗 打开文章</a>
             </div>
         </form>
     </div>
@@ -63,34 +42,11 @@
 
 {{ define "scripts" }}
     <script>
-        // Rich text editor loader
-        document.getElementById('load-editor').addEventListener('change', function() {
-            if (this.checked) {
-                this.disabled = true;
-                this.parentElement.querySelector('label').textContent = '正在加载编辑器...';
-                var cssLink = document.createElement('link');
-                cssLink.rel = 'stylesheet';
-                cssLink.href = '/static/css/simplemde.min.css';
-                document.head.appendChild(cssLink);
-                var script = document.createElement('script');
-                script.src = '/static/js/simplemde.min.js';
-                document.body.appendChild(script);
-                script.onload = function() {
-                    new SimpleMDE({
-                        element: document.getElementById("content"),
-                        spellChecker: false
-                    });
-                    document.getElementById('load-editor').parentElement.querySelector('label').textContent = '编辑器加载完毕';
-                };
-            }
-        });
-
         // AJAX form submission
         document.getElementById('save-btn').addEventListener('click', function(event) {
             event.preventDefault();
             const form = document.getElementById('editor-form');
             const formData = new FormData(form);
-            const alertContainer = document.getElementById('editor-alert-container');
             const postIdInput = document.getElementById('post-id');
 
             fetch(form.action, {
@@ -112,34 +68,31 @@
 
                     // Dynamically update "Open Post" link
                     const isPublished = document.getElementById('published').checked;
-                    const editorActions = document.querySelector('.editor-actions');
-                    let openLink = editorActions.querySelector('a.open-post-link');
-
+                    const openLink = document.querySelector('.editor-actions a.open-post-link');
                     if (isPublished && data.slug) {
-                        if (!openLink) {
-                            openLink = document.createElement('a');
-                            openLink.className = 'open-post-link';
-                            openLink.target = '_blank';
-                            editorActions.appendChild(openLink);
-                        }
                         openLink.href = `/post/${data.slug}`;
-                        openLink.textContent = '打开文章';
                     } else {
-                        if (openLink) {
-                            openLink.remove();
-                        }
+                        openLink.href = '#';
                     }
                 } else if (data.status === 'error' || data.status === 'locked') {
                     alertClass = 'error';
                 }
                 
-                alertContainer.innerHTML = `<div class="alert ${alertClass}">${data.message}</div>`;
-                setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
+                showNotification(data.message, alertClass);
             })
             .catch(error => {
                 console.error('保存错误：', error);
-                alertContainer.innerHTML = `<div class="alert error">保存时发生错误，请检查网络。</div>`;
+                showNotification('保存时发生错误，请检查网络！', 'error');
             });
+        });
+
+        // Handle click on "Open Post" link
+        document.querySelector('.open-post-link').addEventListener('click', function(event) {
+            const postId = document.getElementById('post-id').value;
+            if (postId === '0') {
+                event.preventDefault();
+                showNotification('文章尚未保存，无法打开！', 'info');
+            }
         });
     </script>
 {{ end }}
