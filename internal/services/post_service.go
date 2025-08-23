@@ -119,13 +119,23 @@ func (s *PostService) UpdatePost(id uint, title, content string, published bool,
 
 // asyncPostSaveOperations handles asynchronous post-save operations like FTS indexing and AI summary.
 func (s *PostService) asyncPostSaveOperations(post *models.Post, aiSummary bool) {
-	segmentedTitle := utils.SegmentTextForIndex(post.Title)
-	segmentedContent := utils.SegmentTextForIndex(post.Content)
-	if err := s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent); err != nil {
-		log.Printf("更新 FTS 索引失败，文章 ID %d: %v", post.ID, err)
+	// 首先，生成 AI 摘要，这会修改数据库中的文章
+	s.generateAndSaveAISummary(post, aiSummary)
+
+	// 摘要保存后，获取文章的最新版本以确保我们使用的是最终内容
+	latestPost, err := s.repo.FindByID(post.ID)
+	if err != nil {
+		log.Printf("获取最新文章以更新 FTS 索引失败，文章 ID %d: %v", post.ID, err)
+		return
 	}
 
-	s.generateAndSaveAISummary(post, aiSummary)
+	// 现在，使用最终的、完整的内容（可能包含 AI 摘要）来更新 FTS 索引
+	log.Printf("使用最终内容为文章 ID 更新 FTS 索引 %d", latestPost.ID)
+	segmentedTitle := utils.SegmentTextForIndex(latestPost.Title)
+	segmentedContent := utils.SegmentTextForIndex(latestPost.Content)
+	if err := s.repo.UpdateFtsIndex(latestPost.ID, segmentedTitle, segmentedContent); err != nil {
+		log.Printf("使用最终内容更新 FTS 索引失败，文章 ID %d: %v", latestPost.ID, err)
+	}
 }
 
 // generateAndSaveAISummary is the core async logic for AI summary generation.
@@ -338,6 +348,11 @@ func (s *PostService) SearchPublishedPostsPage(query string, page, pageSize int,
 	}
 
 	ftsQuery := utils.SegmentTextForQuery(query)
+	// If the query becomes empty after segmentation and filtering (e.g., only punctuation was entered),
+	// return no results to avoid a database error from an empty MATCH clause.
+	if ftsQuery == "" {
+		return []models.Post{}, 0, nil
+	}
 	posts, err := s.repo.SearchPage(ftsQuery, page, pageSize, isLoggedIn)
 	if err != nil {
 		return nil, 0, err

@@ -145,20 +145,26 @@ func (r *PostRepository) CountAll(query, status string) (int64, error) {
 	return count, err
 }
 
-// SearchPage searches published posts with pagination using FTS, respecting login status.
+// SearchPage searches published posts with pagination using FTS, ordering by relevance (rank).
 func (r *PostRepository) SearchPage(ftsQuery string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
 
-	subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", ftsQuery)
-
-	dbQuery := r.db.Where("id IN (?)", subQuery).Where("published = ?", true)
+	// Use JOIN for potentially better performance and to access the rank column.
+	// Order by FTS5's rank to ensure the most relevant results appear first.
+	dbQuery := r.db.Table("posts").
+		Select("posts.*, posts_fts.rank").
+		Joins("JOIN posts_fts ON posts.id = posts_fts.rowid").
+		Where("posts_fts MATCH ?", ftsQuery).
+		Where("posts.published = ?", true)
 
 	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ?", false)
+		dbQuery = dbQuery.Where("posts.is_private = ?", false)
 	}
 
 	offset := (page - 1) * pageSize
-	err := dbQuery.Order("published_at desc").Offset(offset).Limit(pageSize).Find(&posts).Error
+	// Ordering by rank is crucial for a good search experience.
+	// FTS5's rank is a negative number, so ascending order is correct.
+	err := dbQuery.Order("posts_fts.rank").Offset(offset).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 

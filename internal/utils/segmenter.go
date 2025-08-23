@@ -1,80 +1,74 @@
 package utils
 
 import (
-	"embed"
-	"io/fs"
+	_ "embed"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/yanyiwu/gojieba"
+	"github.com/go-ego/gse"
 )
 
-var x *gojieba.Jieba
+//go:embed dict/simplified.txt
+var simplifiedDict string
 
-//go:embed dict/*
-var dictFS embed.FS
+//go:embed dict/stop_word.txt
+var stopWords string
+
+var seg gse.Segmenter
 
 func init() {
-	// Create a temporary directory to write the embedded dictionaries
-	tmpDir, err := os.MkdirTemp("", "glog-jieba-dict")
+	log.Println("Loading embedded dictionary and stop words...")
+	var err error
+	// Use gse.NewEmbed to load the main dictionary from the embedded string,
+	// while also enabling the default English tokenizer.
+	seg, err = gse.NewEmbed("zh,"+simplifiedDict, "en")
 	if err != nil {
-		log.Fatalf("Failed to create temp dir for jieba dict: %v", err)
+		log.Fatalf("Failed to create segmenter with embedded dictionary: %v", err)
 	}
 
-	dictNames := []string{
-		"jieba.dict.utf8",
-		"hmm_model.utf8",
-		"user.dict.utf8",
-		"idf.utf8",
-		"stop_words.utf8",
+	// Load custom stop words from the embedded string.
+	err = seg.LoadStopEmbed(stopWords)
+	if err != nil {
+		log.Fatalf("Failed to load embedded stop words: %v", err)
 	}
-	dictPaths := make([]string, len(dictNames))
-
-	for i, name := range dictNames {
-		data, err := fs.ReadFile(dictFS, filepath.Join("dict", name))
-		if err != nil {
-			log.Fatalf("Failed to read embedded dict file %s: %v", name, err)
-		}
-		tmpPath := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(tmpPath, data, 0644); err != nil {
-			log.Fatalf("Failed to write temporary dict file %s: %v", name, err)
-		}
-		dictPaths[i] = tmpPath
-	}
-
-	x = gojieba.NewJieba(dictPaths...)
+	log.Println("Custom dictionary and stop words loaded successfully.")
 }
 
-// FreeJieba releases the C++ memory used by gojieba.
+// FreeJieba is no longer needed with gse as it's pure Go.
+// We keep the function to avoid breaking changes in other parts of the code,
+// but it will do nothing.
 func FreeJieba() {
-	x.Free()
+	// No-op
 }
 
-// SegmentTextForIndex segments text for indexing purposes (e.g., saving to database).
-// It uses full mode to get all possible words.
+// SegmentTextForIndex segments text for indexing purposes.
 func SegmentTextForIndex(text string) string {
-	words := x.Cut(text, true)
-	return strings.Join(filterStopWords(words), " ")
+	// 1. Cut text into words.
+	words := seg.Cut(text, true)
+
+	// 2. Trim stop words using the loaded list.
+	trimmedWords := seg.Trim(words)
+
+	// 3. Join words for the FTS index and add debug logging.
+	result := strings.Join(trimmedWords, " ")
+	log.Printf("[Debug Index] Original text snippet: \"%.100s...\" -> Segmented: \"%s\"", text, result)
+
+	return result
 }
 
 // SegmentTextForQuery segments text for search query purposes.
-// It uses search mode for better precision.
 func SegmentTextForQuery(query string) string {
-	words := x.CutForSearch(query, true)
-	return strings.Join(filterStopWords(words), " ")
-}
+	// 1. Cut query into words.
+	words := seg.Cut(query, true)
 
-// filterStopWords removes common stop words and single-character words.
-func filterStopWords(words []string) []string {
-	var result []string
-	for _, word := range words {
-		trimmedWord := strings.TrimSpace(word)
-		// Allow single-character words, but filter out empty strings.
-		if len(trimmedWord) > 0 {
-			result = append(result, trimmedWord)
-		}
-	}
+	// 2. Trim stop words using the loaded list.
+	trimmedWords := seg.Trim(words)
+
+	// 3. Join words for the FTS query and add debug logging.
+	result := strings.Join(trimmedWords, " ")
+	log.Printf("[Debug Query] Original: \"%s\" -> Segmented: \"%s\"", query, result)
+
 	return result
 }
+
+// filterStopWords is no longer needed as the stop word dictionary now handles punctuation.
