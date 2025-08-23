@@ -47,7 +47,7 @@ func createRenderer() multitemplate.Renderer {
 
 func main() {
 	// Defer the freeing of jieba resources
-	defer services.FreeJieba()
+	defer utils.FreeJieba()
 
 	// Asset loading is now handled automatically by build tags.
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")

@@ -111,8 +111,8 @@ func (s *PostService) UpdatePost(id uint, title, content string, published bool,
 // updateFtsAndAISummary handles asynchronous post-save operations.
 func (s *PostService) updateFtsAndAISummary(post *models.Post, aiSummary bool) {
 	// Update FTS index
-	segmentedTitle := SegmentTextForIndex(post.Title)
-	segmentedContent := SegmentTextForIndex(post.Content)
+	segmentedTitle := utils.SegmentTextForIndex(post.Title)
+	segmentedContent := utils.SegmentTextForIndex(post.Content)
 	if err := s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent); err != nil {
 		log.Printf("更新 FTS 索引失败，文章 ID %d: %v", post.ID, err)
 	}
@@ -320,7 +320,7 @@ func (s *PostService) SearchPublishedPostsPage(query string, page, pageSize int,
 		return []models.Post{}, 0, nil
 	}
 
-	ftsQuery := SegmentTextForQuery(query)
+	ftsQuery := utils.SegmentTextForQuery(query)
 	posts, err := s.repo.SearchPage(ftsQuery, page, pageSize, isLoggedIn)
 	if err != nil {
 		return nil, 0, err

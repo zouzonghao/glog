@@ -34,7 +34,7 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 
 	searchQuery := query
 	if searchQuery != "" {
-		searchQuery = services.SegmentTextForQuery(searchQuery)
+		searchQuery = utils.SegmentTextForQuery(searchQuery)
 	}
 	posts, total, err := h.postService.GetPostsPage(page, pageSize, searchQuery, status)
 	if err != nil {
