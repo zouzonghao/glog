@@ -1,9 +1,15 @@
 Astro-theme-Cactus
 .DS_Store
+**/.DS_Store
 glog
 blog.db
 *.db.*
 glog_server*
 glog*
-*/.DS_Store
 lib
+# Build artifacts
+glog
+glog-*
+# Build tools
+build_tool
+internal/.DS_Store

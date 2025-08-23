@@ -5,53 +5,47 @@
     <h2 class="group-title">站点设置</h2>
 </div>
 
-<form id="settings-form" action="/settings" method="POST" class="editor-form">
-    <div class="form-group">
+<form id="settings-form" action="/settings" method="POST" class="app-form">
+    <div class="settings-form-group" style="margin-top: 1.5rem;">
         <label for="password">管理员密码</label>
         <input type="password" id="password" name="password" placeholder="留空则不修改" autocomplete="new-password">
     </div>
 
-    <div class="form-group">
+    <div class="settings-form-group">
         <label for="site_logo">站点 Logo URL</label>
         <input type="text" id="site_logo" name="site_logo" value="{{ .site_logo }}">
     </div>
 
-    <div class="form-group">
+    <div class="settings-form-group">
         <label for="site_title">站点标题</label>
         <input type="text" id="site_title" name="site_title" value="{{ .site_title }}">
     </div>
 
-    <div class="form-group">
+    <div class="settings-form-group">
         <label for="site_description">站点描述</label>
         <input type="text" id="site_description" name="site_description" value="{{ .site_description }}">
     </div>
 
-    
-
-    <div class="setting-header">
-        <h2 class="group-title">AI 设置</h2>
-    </div>
-
-    <div class="form-group">
-        <label for="openai_base_url">OpenAI 兼容 Base URL</label>
+    <div class="settings-form-group">
+        <label for="openai_base_url">OpenAI Compatible Base URL</label>
         <input type="text" id="openai_base_url" name="openai_base_url" value="{{ .openai_base_url }}">
     </div>
 
-    <div class="form-group">
-        <label for="openai_token">密钥</label>
+    <div class="settings-form-group">
+        <label for="openai_token">OpenAI Compatible Token</label>
         <input type="password" id="openai_token" name="openai_token" placeholder="留空则不修改" autocomplete="new-password">
     </div>
 
-    <div class="form-group">
-        <label for="openai_model">模型</label>
+    <div class="settings-form-group">
+        <label for="openai_model">OpenAI Compatible 模型</label>
         <input type="text" id="openai_model" name="openai_model" value="{{ .openai_model }}">
     </div>
 
-    <div class="form-group">
+    <div class="settings-form-group">
         <a href="#" id="test-ai-btn">🚀 测试连接</a>
     </div>
 
-    <hr>
+ 
 
     <div class="editor-actions">
         <a href="#" id="save-settings-btn">💾 保存设置</a>

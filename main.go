@@ -18,6 +18,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// IsRelease is a build-time variable that will be true if the 'release' tag is used.
+var IsRelease bool
+
 // Global filesystems that will be populated by either assets_dev.go or assets_prod.go at startup.
 var templatesFS fs.FS
 var staticFS fs.FS
@@ -48,6 +51,11 @@ func createRenderer() multitemplate.Renderer {
 func main() {
 	// Defer the freeing of jieba resources
 	defer utils.FreeJieba()
+
+	// Set Gin mode based on build tag
+	if IsRelease {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	// Asset loading is now handled automatically by build tags.
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
@@ -90,7 +98,9 @@ func main() {
 	r.Use(handlers.SettingsMiddleware(settingService))
 
 	// 静态文件服务
-	r.StaticFS("/static", http.FS(staticFS))
+	staticGroup := r.Group("/static")
+	staticGroup.Use(handlers.CacheControlMiddleware())
+	staticGroup.StaticFS("/", http.FS(staticFS))
 
 	// 博客路由
 	r.GET("/", blogHandler.Index)

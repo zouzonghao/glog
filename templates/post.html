@@ -12,15 +12,14 @@
             <h1>
                 {{ .post.Title }}
                 {{ if .post.IsPrivate }}
-                    <img src="/static/pic/lock.svg" alt="Private" class="lock-light" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
-                    <img src="/static/pic/lock-w.svg" alt="Private" class="lock-dark" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                    <span class="private-icon"></span>
                 {{ end }}
             </h1>
             <div class="meta">
-                <span>编辑时间：{{ .post.PublishedAt.Format "2006-01-02" }}</span>
+                <span>{{ .post.PublishedAt.Format "2006-01-02" }}</span>
                 {{ if .IsLoggedIn }}
-                <span class="edit-link">
-                    |  <a href="/admin/editor?id={{ .post.ID }}">编辑此文章</a>
+                <span class="edit-link" style="margin-left: 10px; gap: 5px";>
+                |   <a href="/admin/editor?id={{ .post.ID }}" style="margin-left: 8px;">编辑此文章</a>
                 </span>
                 {{ end }}
             </div>

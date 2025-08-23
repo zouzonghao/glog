@@ -11,6 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// CacheControlMiddleware adds Cache-Control headers to static assets.
+func CacheControlMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/static/") {
+			c.Header("Cache-Control", "public, max-age=31536000") // Cache for 1 year
+		}
+		c.Next()
+	}
+}
+
 // APIAuthMiddleware checks for a valid Bearer token.
 func APIAuthMiddleware(settingService *services.SettingService) gin.HandlerFunc {
 	return func(c *gin.Context) {

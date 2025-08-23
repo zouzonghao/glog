@@ -3,15 +3,15 @@
 {{ define "content" }}
     <h2 class="group-title">{{ if .post }}文章编辑{{ else }}文章新建{{ end }}</h2>
     <div class="editor-container">
-        <form id="editor-form" action="/admin/save" method="POST" class="editor-form">
+        <form id="app-form" action="/admin/save" method="POST" class="app-form">
             <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
             
-            <div class="form-group">
+            <div class="editor-form-group">
                 <!-- <label for="title">标题</label> -->
                 <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名标题{{ end }}" required>
             </div>
             
-            <div class="form-group">
+            <div class="editor-form-group">
                 <!-- <label for="content">内容</label> -->
                 <textarea id="content" name="content" rows="20">{{ if .post }}{{ .post.Content }}{{ else }}
 <!--more-->{{ end }}</textarea>
@@ -45,7 +45,7 @@
         // AJAX form submission
         document.getElementById('save-btn').addEventListener('click', function(event) {
             event.preventDefault();
-            const form = document.getElementById('editor-form');
+            const form = document.getElementById('app-form');
             const formData = new FormData(form);
             const postIdInput = document.getElementById('post-id');
 

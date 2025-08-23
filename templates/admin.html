@@ -21,7 +21,7 @@
             <div class="post-list-item">
                 <div class="col-title" title="{{.Title}}">
                     {{if .Published}}
-                        <a href="/post/{{.Slug}}" target="_blank">{{.Title}}</a>
+                        <a href="/post/{{.Slug}}" >{{.Title}}</a>
                     {{else}}
                         <span>{{.Title}}</span>
                     {{end}}
@@ -38,10 +38,10 @@
                     {{if .Published}}{{.PublishedAt.Format "2006-01-02"}}{{else}}-{{end}}
                 </div>
                 <div class="col-actions">
-                    <a href="/admin/editor?id={{.ID}}">编辑</a>
+                    <a href="/admin/editor?id={{.ID}}">[编辑]</a>
                     <div class="delete-wrapper" tabindex="0">
-                        <span class="delete-init">删除</span>
-                        <span class="delete-confirm" data-id="{{.ID}}">确认</span>
+                        <span class="delete-init">[删除]</span>
+                        <span class="delete-confirm" data-id="{{.ID}}">[确认]</span>
                     </div>
                 </div>
             </div>
