@@ -13,3 +13,4 @@ glog-*
 # Build tools
 build_tool
 internal/.DS_Store
+static/pagefind
