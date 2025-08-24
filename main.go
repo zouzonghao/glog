@@ -2,15 +2,15 @@ package main
 
 import (
 	"flag"
-	"html/template"
-	"io/fs"
-	"log"
-	"net/http"
-
 	"glog/internal/handlers"
 	"glog/internal/repository"
 	"glog/internal/services"
 	"glog/internal/utils"
+	"glog/internal/utils/segmenter"
+	"html/template"
+	"io/fs"
+	"log"
+	"net/http"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
@@ -50,7 +50,7 @@ func createRenderer() multitemplate.Renderer {
 
 func main() {
 	// Defer the freeing of jieba resources
-	defer utils.FreeJieba()
+	defer segmenter.FreeJieba()
 
 	// Set Gin mode based on build tag
 	if IsRelease {

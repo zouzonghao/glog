@@ -4,6 +4,7 @@ import (
 	"glog/internal/models"
 	"glog/internal/services"
 	"glog/internal/utils"
+	"glog/internal/utils/segmenter"
 	"math"
 	"net/http"
 	"strconv"
@@ -34,7 +35,7 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 
 	searchQuery := query
 	if searchQuery != "" {
-		searchQuery = utils.SegmentTextForQuery(searchQuery)
+		searchQuery = segmenter.SegmentTextForQuery(searchQuery)
 	}
 	posts, total, err := h.postService.GetPostsPage(page, pageSize, searchQuery, status)
 	if err != nil {

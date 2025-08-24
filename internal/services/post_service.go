@@ -5,6 +5,7 @@ import (
 	"glog/internal/models"
 	"glog/internal/repository"
 	"glog/internal/utils"
+	"glog/internal/utils/segmenter"
 	"html/template"
 	"log"
 	"strings"
@@ -131,8 +132,8 @@ func (s *PostService) asyncPostSaveOperations(post *models.Post, aiSummary bool)
 
 	// 现在，使用最终的、完整的内容（可能包含 AI 摘要）来更新 FTS 索引
 	log.Printf("使用最终内容为文章 ID 更新 FTS 索引 %d", latestPost.ID)
-	segmentedTitle := utils.SegmentTextForIndex(latestPost.Title)
-	segmentedContent := utils.SegmentTextForIndex(latestPost.Content)
+	segmentedTitle := segmenter.SegmentTextForIndex(latestPost.Title)
+	segmentedContent := segmenter.SegmentTextForIndex(latestPost.Content)
 	if err := s.repo.UpdateFtsIndex(latestPost.ID, segmentedTitle, segmentedContent); err != nil {
 		log.Printf("使用最终内容更新 FTS 索引失败，文章 ID %d: %v", latestPost.ID, err)
 	}
@@ -347,7 +348,7 @@ func (s *PostService) SearchPublishedPostsPage(query string, page, pageSize int,
 		return []models.Post{}, 0, nil
 	}
 
-	ftsQuery := utils.SegmentTextForQuery(query)
+	ftsQuery := segmenter.SegmentTextForQuery(query)
 	// If the query becomes empty after segmentation and filtering (e.g., only punctuation was entered),
 	// return no results to avoid a database error from an empty MATCH clause.
 	if ftsQuery == "" {

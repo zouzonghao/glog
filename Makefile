@@ -69,7 +69,7 @@ prepare:
 
 build:
 	@echo "--> Building application for $(TARGET_GOOS)/$(TARGET_GOARCH)..."
-	@$(CGO_ARGS) GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -o $(BINARY_FILENAME) -tags release .
+	@$(CGO_ARGS) GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -ldflags="-s -w" -o $(BINARY_FILENAME) -tags release .
 
 cleanup:
 	@echo "--> Cleaning up temporary assets..."
