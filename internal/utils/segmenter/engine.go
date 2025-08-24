@@ -2,9 +2,7 @@ package segmenter
 
 import (
 	"bytes"
-	"log"
 	"math"
-	"regexp"
 	"sort"
 	"strings"
 	"unicode"
@@ -39,10 +37,6 @@ type Segmenter struct {
 	Alpha       bool
 	Num         bool
 	StopWordMap map[string]bool
-}
-type jumper struct {
-	minDistance float32
-	token       *Token
 }
 type route struct {
 	distance float32
@@ -102,81 +96,68 @@ func (dict *Dictionary) Find(word []byte) (*Token, bool) {
 }
 
 func (seg *Segmenter) Cut(str string, hmm ...bool) []string {
-	useHMM := true
-	if len(hmm) > 0 && !hmm[0] {
-		useHMM = false
-	}
-	if useHMM {
-		return seg.cutDAG(str)
-	}
-	return seg.cutDAGNoHMM(str)
-}
-
-func (seg *Segmenter) segmentWords(text []Text) []Segment {
-	jumpers := make([]jumper, len(text))
-	tokens := make([]*Token, seg.Dict.maxTokenLen)
-	for current := 0; current < len(text); current++ {
-		var baseDistance float32
-		if current > 0 {
-			baseDistance = jumpers[current-1].minDistance
-		}
-		tx := text[current:minInt(current+seg.Dict.maxTokenLen, len(text))]
-		numTokens := seg.Dict.LookupTokens(tx, tokens)
-		for iToken := 0; iToken < numTokens; iToken++ {
-			location := current + len(tokens[iToken].text) - 1
-			updateJumper(&jumpers[location], baseDistance, tokens[iToken])
-		}
-		if numTokens == 0 || len(tokens[0].text) > 1 {
-			updateJumper(&jumpers[current], baseDistance,
-				&Token{text: []Text{text[current]}, freq: 1, distance: 32, pos: "x"})
-		}
-	}
-	numSeg := 0
-	for index := len(text) - 1; index >= 0; {
-		location := index - len(jumpers[index].token.text) + 1
-		numSeg++
-		index = location - 1
-	}
-	outputSegments := make([]Segment, numSeg)
-	for index := len(text) - 1; index >= 0; {
-		location := index - len(jumpers[index].token.text) + 1
-		numSeg--
-		outputSegments[numSeg].token = jumpers[index].token
-		index = location - 1
-	}
-	bytePosition := 0
-	for iSeg := 0; iSeg < len(outputSegments); iSeg++ {
-		outputSegments[iSeg].start = bytePosition
-		bytePosition += textSliceByteLen(outputSegments[iSeg].token.text)
-		outputSegments[iSeg].end = bytePosition
-	}
-	return outputSegments
-}
-
-func updateJumper(jumper *jumper, baseDistance float32, token *Token) {
-	newDistance := baseDistance + token.distance
-	if jumper.minDistance == 0 || jumper.minDistance > newDistance {
-		jumper.minDistance = newDistance
-		jumper.token = token
-	}
+	// HMM logic removed, always use cutDAGNoHMM equivalent
+	return seg.cut(str)
 }
 
 // --- DAG ---
-var reEng = regexp.MustCompile(`[[:alnum:]]`)
 
-func (seg *Segmenter) cutDAG(text string) []string {
-	return seg.cut(text, true)
+func isAlphanum(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')
 }
 
-func (seg *Segmenter) cutDAGNoHMM(text string) []string {
-	return seg.cut(text, false)
+func (seg *Segmenter) cut(text string) []string {
+	if text == "" {
+		return []string{}
+	}
+
+	runes := []rune(text)
+	// Pre-allocate with a heuristic: average word length of 3
+	segments := make([]string, 0, len(runes)/3)
+
+	if len(runes) == 0 {
+		return []string{}
+	}
+
+	start := 0
+	inAlphanum := isAlphanum(runes[0])
+
+	for i := 1; i < len(runes); i++ {
+		currentIsAlphanum := isAlphanum(runes[i])
+		if currentIsAlphanum != inAlphanum {
+			// State changed, process the segment before this point
+			segmentRunes := runes[start:i]
+			if inAlphanum {
+				segments = append(segments, string(segmentRunes))
+			} else {
+				hanSegments := seg.cutDAG(segmentRunes)
+				segments = append(segments, hanSegments...)
+			}
+			// Update state for the new segment
+			start = i
+			inAlphanum = currentIsAlphanum
+		}
+	}
+
+	// Process the last segment
+	lastSegmentRunes := runes[start:]
+	if inAlphanum {
+		segments = append(segments, string(lastSegmentRunes))
+	} else {
+		hanSegments := seg.cutDAG(lastSegmentRunes)
+		segments = append(segments, hanSegments...)
+	}
+
+	return segments
 }
 
-func (seg *Segmenter) cut(text string, hmm bool) []string {
-	var (
-		segments []string
-		runes    = []rune(text)
-	)
+// cutDAG performs segmentation on a slice of runes, assuming it's non-alphanumeric text.
+func (seg *Segmenter) cutDAG(runes []rune) []string {
+	if len(runes) == 0 {
+		return []string{}
+	}
+	// Pre-allocate with a heuristic: average word length of 2
+	segments := make([]string, 0, len(runes)/2)
 
 	dag := seg.getDAG(runes)
 
@@ -199,6 +180,7 @@ func (seg *Segmenter) cut(text string, hmm bool) []string {
 			})
 			routeMap[idx] = routes[0]
 		} else {
+			// No word found in dictionary, treat as a single character
 			routeMap[idx] = route{distance: 10000.0 + routeMap[idx+1].distance, index: idx}
 		}
 	}
@@ -208,33 +190,6 @@ func (seg *Segmenter) cut(text string, hmm bool) []string {
 		ridx := routeMap[idx].index
 		word := string(runes[idx : ridx+1])
 
-		// Check if HMM should be used
-		if hmm && len(word) == 1 {
-			// Find the range of consecutive single-character words
-			end := idx + 1
-			for end < len(runes) {
-				nextRidx := routeMap[end].index
-				if nextRidx == end { // It's a single-character word
-					end++
-				} else {
-					break
-				}
-			}
-
-			// If there's a sequence of single-character words, run Viterbi on them
-			if end > idx+1 {
-				log.Printf("DAG found consecutive single characters. Invoking HMM for: '%s'", string(runes[idx:end]))
-				hmmSeg := viterbi(runes[idx:end])
-				if len(hmmSeg) > 0 {
-					log.Printf("HMM Result: %v", hmmSeg)
-					segments = append(segments, hmmSeg...)
-					idx = end
-					continue
-				}
-			}
-		}
-
-		log.Printf("DAG Result: '%s'", word)
 		segments = append(segments, word)
 		idx = ridx + 1
 	}
@@ -266,110 +221,6 @@ func (seg *Segmenter) getDAG(runes []rune) map[int][]int {
 		dag[k] = paths
 	}
 	return dag
-}
-
-// --- HMM ---
-var (
-	PrevStatus = map[rune][]rune{
-		'B': {'E', 'S'},
-		'M': {'M', 'B'},
-		'E': {'B', 'M'},
-		'S': {'S', 'E'},
-	}
-	startP = map[rune]float64{
-		'B': -0.262686603532,
-		'E': -3.14e+100,
-		'M': -3.14e+100,
-		'S': -1.46526333986,
-	}
-	transP = map[rune]map[rune]float64{
-		'B': {'E': -0.653333431965, 'M': -0.765455118334},
-		'E': {'B': -0.933489733133, 'S': -0.800739298181},
-		'M': {'E': -0.68013402119, 'M': -0.733423709737},
-		'S': {'B': -0.94485843981, 'S': -0.781857883616},
-	}
-)
-
-func viterbi(runes []rune) []string {
-	var (
-		V      = make([]map[rune]float64, len(runes))
-		path   = make(map[rune][]rune)
-		result []string
-	)
-
-	for _, y := range []rune{'B', 'M', 'E', 'S'} {
-		var (
-			prob float64
-			ok   bool
-		)
-		if prob, ok = ProbEmit[byte(y)][runes[0]]; !ok {
-			prob = -3.14e+100
-		}
-		V[0] = make(map[rune]float64)
-		V[0][y] = startP[y] + prob
-		path[y] = []rune{y}
-	}
-
-	for t := 1; t < len(runes); t++ {
-		newpath := make(map[rune][]rune)
-		V[t] = make(map[rune]float64)
-
-		for _, y := range []rune{'B', 'M', 'E', 'S'} {
-			var (
-				prob float64
-				ok   bool
-			)
-			if prob, ok = ProbEmit[byte(y)][runes[t]]; !ok {
-				prob = -3.14e+100
-			}
-
-			maxProb := -3.14e+100
-			var maxState rune
-			for _, y0 := range PrevStatus[y] {
-				p := V[t-1][y0] + transP[y0][y] + prob
-				if p > maxProb {
-					maxProb = p
-					maxState = y0
-				}
-			}
-			V[t][y] = maxProb
-			tmp := make([]rune, len(path[maxState]))
-			copy(tmp, path[maxState])
-			newpath[y] = append(tmp, y)
-		}
-		path = newpath
-	}
-
-	maxProb := -3.14e+100
-	var maxState rune
-	for _, y := range []rune{'E', 'S'} {
-		if V[len(runes)-1][y] > maxProb {
-			maxProb = V[len(runes)-1][y]
-			maxState = y
-		}
-	}
-
-	states := path[maxState]
-	var (
-		begin int
-		word  string
-	)
-	for i, char := range states {
-		switch char {
-		case 'B':
-			begin = i
-		case 'E':
-			word = string(runes[begin : i+1])
-			result = append(result, word)
-
-		case 'S':
-			word = string(runes[i : i+1])
-			result = append(result, word)
-
-		}
-	}
-
-	return result
 }
 
 // --- Utility Functions ---
@@ -449,13 +300,14 @@ func (seg *Segmenter) Trim(s []string) (r []string) {
 	return
 }
 
-func FilterSymbol(text string) (new string) {
+func FilterSymbol(text string) string {
+	var builder strings.Builder
+	builder.Grow(len(text)) // Pre-allocate memory for efficiency
 	for _, value := range text {
 		if !unicode.IsSymbol(value) &&
 			!unicode.IsSpace(value) && !unicode.IsPunct(value) {
-			new += string(value)
+			builder.WriteRune(value)
 		}
 	}
-
-	return
+	return builder.String()
 }

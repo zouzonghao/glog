@@ -6,7 +6,6 @@ import (
 	"glog/internal/repository"
 	"glog/internal/services"
 	"glog/internal/utils"
-	"glog/internal/utils/segmenter"
 	"html/template"
 	"io/fs"
 	"log"
@@ -50,7 +49,6 @@ func createRenderer() multitemplate.Renderer {
 
 func main() {
 	// Defer the freeing of jieba resources
-	defer segmenter.FreeJieba()
 
 	// Set Gin mode based on build tag
 	if IsRelease {

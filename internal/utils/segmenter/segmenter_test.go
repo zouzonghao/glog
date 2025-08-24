@@ -17,22 +17,10 @@ func TestDictionarySegmentation(t *testing.T) {
 	text := "北京天安门"
 	expected := []string{"北京", "天安门"}
 
-	result := seg.Cut(text, true)
+	result := seg.Cut(text)
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Dictionary segmentation failed for '%s'.\nExpected: %v\nGot: %v", text, expected, result)
-	}
-}
-
-// TestHMMSegmentation tests the HMM model's ability to handle out-of-vocabulary words.
-func TestHMMSegmentation(t *testing.T) {
-	text := "小明硕士毕业于中国科学院计算所，后在日本京都大学深造"
-	expected := []string{"小明", "硕士", "毕业", "于", "中国科学院", "计算所", "，", "后", "在", "日本", "京都大学", "深造"}
-
-	result := seg.Cut(text, true)
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("HMM segmentation failed for '%s'.\nExpected: %v\nGot: %v", text, expected, result)
 	}
 }
 
@@ -45,5 +33,47 @@ func TestSegmentTextForIndex(t *testing.T) {
 
 	if result != expected {
 		t.Errorf("SegmentTextForIndex failed.\nExpected: '%s'\nGot: '%s'", expected, result)
+	}
+}
+
+// TestEnglishSegmentation tests that English words are not split into letters.
+func TestEnglishSegmentation(t *testing.T) {
+	text := "this is a test"
+	expected := []string{"this", "is", "a", "test"}
+	result := seg.Trim(seg.Cut(text))
+	t.Logf("Input: '%s'", text)
+	t.Logf("Output: %v", result)
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("English segmentation failed for '%s'.\nExpected: %v\nGot: %v", text, expected, result)
+	}
+}
+
+// TestMixedSegmentation tests that English words and Chinese words are segmented correctly.
+func TestMixedSegmentation(t *testing.T) {
+	text := "Go语言是Google开发的"
+
+	result := seg.Trim(seg.Cut(text))
+	t.Logf("Input: '%s'", text)
+	t.Logf("Output: %v", result)
+
+	// Note: The segmentation of "开发的" might differ, so we check for the presence of key parts.
+	foundGo := false
+	foundGoogle := false
+	foundLang := false
+	for _, word := range result {
+		if word == "Go" {
+			foundGo = true
+		}
+		if word == "Google" {
+			foundGoogle = true
+		}
+		if word == "语言" {
+			foundLang = true
+		}
+	}
+
+	if !foundGo || !foundGoogle || !foundLang {
+		t.Errorf("Mixed segmentation failed for '%s'.\nExpected parts 'Go', 'Google', '语言' to be present.\nGot: %v", text, result)
 	}
 }

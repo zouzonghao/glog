@@ -2,76 +2,12 @@ package segmenter
 
 import (
 	"bufio"
-	_ "embed"
-	"log"
 	"math"
-	"regexp"
 	"strconv"
 	"strings"
 )
 
-//go:embed dict/simplified.txt
-var simplifiedDict []byte
-
-//go:embed dict/stop_word.txt
-var stopWords []byte
-
-//go:embed hmm/prob_emit.go
-var probEmit []byte
-
-var ProbEmit = make(map[byte]map[rune]float64)
 var seg Segmenter
-
-func init() {
-	log.Println("Loading embedded dictionary and stop words...")
-
-	loadHmmEmit()
-
-	seg = Segmenter{}
-	seg.Dict = NewDict()
-	seg.DictSep = " "
-
-	totalFreq := loadDictFromString(&seg, string(simplifiedDict))
-	recalculateTokenDistances(seg.Dict, totalFreq)
-	loadStopFromString(&seg, string(stopWords))
-
-	log.Println("Custom dictionary and stop words loaded successfully.")
-}
-
-func loadHmmEmit() {
-	log.Println("Loading and parsing HMM model...")
-
-	re := regexp.MustCompile(`'\\u([0-9a-fA-F]{4})':\s*(-[\d\.]+)`)
-	scanner := bufio.NewScanner(strings.NewReader(string(probEmit)))
-	var currentState byte
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "probEmit['B']") {
-			currentState = 'B'
-			ProbEmit[currentState] = make(map[rune]float64)
-		} else if strings.Contains(line, "probEmit['M']") {
-			currentState = 'M'
-			ProbEmit[currentState] = make(map[rune]float64)
-		} else if strings.Contains(line, "probEmit['E']") {
-			currentState = 'E'
-			ProbEmit[currentState] = make(map[rune]float64)
-		} else if strings.Contains(line, "probEmit['S']") {
-			currentState = 'S'
-			ProbEmit[currentState] = make(map[rune]float64)
-		}
-
-		if currentState != 0 {
-			pairs := re.FindAllStringSubmatch(line, -1)
-			for _, pair := range pairs {
-				runeHex, _ := strconv.ParseInt(pair[1], 16, 32)
-				prob, _ := strconv.ParseFloat(pair[2], 64)
-				ProbEmit[currentState][rune(runeHex)] = prob
-			}
-		}
-	}
-	log.Println("HMM model loaded successfully.")
-}
 
 func loadDictFromString(seg *Segmenter, dict string) float64 {
 	scanner := bufio.NewScanner(strings.NewReader(dict))
@@ -124,24 +60,14 @@ func loadStopFromString(seg *Segmenter, stopWords string) {
 	}
 }
 
-func FreeJieba() {
-	// No-op
-}
-
 func SegmentTextForIndex(text string) string {
-	log.Printf("Segmenting for index. Input: '%s'", text)
-	words := seg.Cut(text, true)
-	log.Printf("After seg.Cut: %v", words)
+	words := seg.Cut(text)
 	trimmedWords := seg.Trim(words)
-	log.Printf("After seg.Trim: %v", trimmedWords)
 	return strings.Join(trimmedWords, " ")
 }
 
 func SegmentTextForQuery(query string) string {
-	log.Printf("Segmenting for query. Input: '%s'", query)
-	words := seg.Cut(query, true)
-	log.Printf("After seg.Cut: %v", words)
+	words := seg.Cut(query)
 	trimmedWords := seg.Trim(words)
-	log.Printf("After seg.Trim: %v", trimmedWords)
 	return strings.Join(trimmedWords, " ")
 }
