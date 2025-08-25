@@ -58,62 +58,37 @@ main { flex-grow: 1; margin-top: 2.5rem; }
 h1 {
     font-weight: 400;
     margin-top: 2em;
-    margin-bottom: 0.8em;
-    color: var(--textColor);
+    margin-bottom: 0.25em;
+    color: var(--accentColor);
 }
 h2 {
-    font-weight: 550;
+    font-weight: 380;
     margin-top: 2em;
     margin-bottom: 0.8em;
     color: var(--accentColor);
 }
 h3 {
-    font-weight: 450;
-    margin-top: 0.5em;
+    font-weight: 350;
+    margin-top: 2em;
     margin-bottom: 0.5em;
     color: var(--accentColor);
 }
 h4 {
-    font-weight: 400;
+    font-weight: 300;
     margin-top: 0.5em;
     margin-bottom: 0.5em;
     color: var(--accentColor);
 }
-h1 { font-size: 1.5rem; margin-top: 0em; }
+h1 { font-size: 1.4rem; margin-top: 0em; }
 h2 { font-size: 1.4rem; }
-h3 { font-size: 1.25rem; }
-h4 { font-size: 1.15rem; }
-/* 初始化计数器 */
-body {
-    counter-reset: h2counter; /* 为 h2 级别标题设置计数器 */
-}
-h2 {
-    counter-reset: h3counter; /* 当 h2 出现时，重置 h3 计数器 */
-}
-h3 {
-    counter-reset: h4counter;
-}
-/* h2 的符号与编号 */
-h2:not(.group-title)::before {
-    counter-increment: h2counter; /* 每次 h2 出现时，h2counter 加 1 */
-    content: counter(h2counter) ". "; /* 显示计数器值，例如 "1." */
-    color: var(--accentColor);
-    font-weight: bold;
-    margin-right: 0.3em;
-}
-/* h3 的符号与编号 */
-h3::before {
-    counter-increment: h3counter;
-    content: counter(h2counter) "." counter(h3counter) " "; /* 例如 "1.1 " */
-    color: var(--accentColor);
-    margin-right: 0.3em;
-}
-/* h4 的符号与编号 */
-h4::before {
-    counter-increment: h4counter;
-    content: counter(h2counter) "." counter(h3counter) "." counter(h4counter) " "; /* 例如 "1.1.1 " */
-    color: var(--accentColor);
-    margin-right: 0.3em;
+h3 { font-size: 1.2rem; }
+h4 { font-size: 1.1rem; }
+
+/* 标题自动添加序号 */
+/* body{counter-reset:h2counter}h2{counter-reset:h3counter}h3{counter-reset:h4counter}h2:not(.group-title)::before{counter-increment:h2counter;content:counter(h2counter)". ";color:var(--accentColor);font-weight:bold;margin-right:.3em}h3::before{counter-increment:h3counter;content:counter(h2counter)"."counter(h3counter)" ";color:var(--accentColor);margin-right:.3em}h4::before{counter-increment:h4counter;content:counter(h2counter)"."counter(h3counter)"."counter(h4counter)" ";color:var(--accentColor);margin-right:.3em} */
+
+.post-header { 
+    margin-bottom: 2rem;
 }
 
 p { margin-bottom: 1.25em; }
@@ -899,7 +874,7 @@ html.dark .editor-container {
 /* 18. Post Content Styles
 ---------------------------------------------------------------------------------------------------- */
 .post-content {
-    line-height: 1.7;
+    line-height: 1.25;
 }
 
 .post-content img {

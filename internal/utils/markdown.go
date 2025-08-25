@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"html/template"
 	"regexp"
-	"strings"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -23,9 +22,8 @@ func RenderMarkdown(md string) (template.HTML, error) {
 	if err := mdRenderer.Convert([]byte(md), &buf); err != nil {
 		return "", err
 	}
-	// Also remove the <!--more--> tag from the final rendered content
-	htmlContent := strings.Replace(buf.String(), "<!--more-->", "", -1)
-	return template.HTML(htmlContent), nil
+	// Keep the <!--more--> tag in the final rendered content
+	return template.HTML(buf.String()), nil
 }
 
 // stripMarkdown removes markdown formatting for excerpt generation.
@@ -43,15 +41,18 @@ func stripMarkdown(md string) string {
 }
 
 func GenerateExcerpt(md string, length int) string {
-	separator := "<!--more-->"
+	// Use a regex to find the separator, allowing for optional whitespace.
+	// This makes the separator detection more robust.
+	separatorRegex := regexp.MustCompile(`<!--\s*more\s*-->`)
 	var excerpt string
 
-	if strings.Contains(md, separator) {
+	split := separatorRegex.Split(md, 2)
+	if len(split) > 1 {
 		// Use the content before the separator as the excerpt
-		excerpt = strings.Split(md, separator)[0]
+		excerpt = split[0]
 	} else {
-		// Fallback to the full content if separator is not found
-		excerpt = md
+		// If separator is not found, return an empty string.
+		return ""
 	}
 
 	plainText := stripMarkdown(excerpt)

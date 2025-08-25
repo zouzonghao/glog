@@ -52,6 +52,10 @@ func GeneratePagination(currentPage, totalPages int) map[string]interface{} {
 		if p.Number == currentPage {
 			p.IsLink = false
 		}
+		if p.Number == 0 {
+			finalPages = append(finalPages, p)
+			continue
+		}
 		if !seen[p.Number] {
 			finalPages = append(finalPages, p)
 			seen[p.Number] = true
