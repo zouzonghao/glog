@@ -620,11 +620,10 @@ html.dark .post-list-item:hover {
     background-color: #374151;
 }
 
-.col-title { width: 380px; flex-shrink: 0; padding-right: 0rem; }
-.col-status { width: 70px; flex-shrink: 0; text-align: center; }
-.col-private { width: 70px; flex-shrink: 0; text-align: center; }
-.col-date { width: 110px; flex-shrink: 0; text-align: center; }
-.col-actions { width: 100px; flex-shrink: 0; text-align: center; }
+.col-title { width: 400px; flex-shrink: 0; padding-right: 0rem; }
+.col-private { width: 80px; flex-shrink: 0; text-align: center; }
+.col-date { width: 130px; flex-shrink: 0; text-align: center; }
+.col-actions { width: 110px; flex-shrink: 0; text-align: center; }
 .col-actions a {
     border-bottom: none;
 }

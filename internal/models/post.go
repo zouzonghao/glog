@@ -31,3 +31,11 @@ type RenderedPost struct {
 	Excerpt     string        // Plain text excerpt for lists
 	IsPrivate   bool
 }
+
+// PostBackup is a simplified struct for backup and restore operations.
+type PostBackup struct {
+	Title       string    `json:"title"`
+	Content     string    `json:"content"`
+	IsPrivate   bool      `json:"is_private"`
+	PublishedAt time.Time `json:"published_at"`
+}

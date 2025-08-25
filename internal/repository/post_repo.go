@@ -168,3 +168,22 @@ func (r *PostRepository) CountByQuery(ftsQuery string, isLoggedIn bool) (int64, 
 	err := dbQuery.Count(&count).Error
 	return count, err
 }
+
+// FindAllForBackup retrieves all posts for backup, excluding the content_html field.
+func (r *PostRepository) FindAllForBackup() ([]models.Post, error) {
+	var posts []models.Post
+	err := r.db.Select("title, content, is_private, published_at").
+		Order("id asc").
+		Find(&posts).Error
+	return posts, err
+}
+
+// UpdateFields updates specific fields of a post.
+func (r *PostRepository) UpdateFields(id uint, fields map[string]interface{}) error {
+	return r.db.Model(&models.Post{}).Where("id = ?", id).Updates(fields).Error
+}
+
+// GetDB returns the underlying gorm.DB object.
+func (r *PostRepository) GetDB() *gorm.DB {
+	return r.db
+}

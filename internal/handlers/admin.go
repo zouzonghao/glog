@@ -1,13 +1,19 @@
 package handlers
 
 import (
+	"archive/zip"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"glog/internal/models"
 	"glog/internal/services"
 	"glog/internal/utils"
 	"glog/internal/utils/segmenter"
+	"io"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -220,17 +226,16 @@ func (h *AdminHandler) TestAISettings(c *gin.Context) {
 	token := c.PostForm("openai_token")
 	model := c.PostForm("openai_model")
 
-	if token == "" {
-		// If the token field is empty, try to get the existing token from settings
-		// This allows testing without re-entering the token
+	finalToken := token
+	if finalToken == "" {
 		settings, err := h.settingService.GetAllSettings()
 		if err == nil {
-			token = settings["openai_token"]
+			finalToken = settings["openai_token"]
 		}
 	}
 
 	testContent := "这是一个用于测试AI摘要功能的文本。"
-	_, err := h.aiService.GenerateSummaryAndTitle(testContent, false, baseURL, token, model)
+	_, err := h.aiService.GenerateSummaryAndTitle(testContent, false, baseURL, finalToken, model)
 
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "测试失败: " + err.Error()})
@@ -238,4 +243,94 @@ func (h *AdminHandler) TestAISettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "测试成功！连接和配置均有效。"})
+}
+
+func (h *AdminHandler) BackupPosts(c *gin.Context) {
+	posts, err := h.postService.GetAllPostsForBackup()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "获取文章失败: " + err.Error()})
+		return
+	}
+
+	jsonData, err := json.MarshalIndent(posts, "", "  ")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "JSON 序列化失败: " + err.Error()})
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
+	zipFile, err := zipWriter.Create("backup.json")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "创建 ZIP 文件失败: " + err.Error()})
+		return
+	}
+	_, err = zipFile.Write(jsonData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "写入 ZIP 文件失败: " + err.Error()})
+		return
+	}
+	zipWriter.Close()
+
+	c.Header("Content-Description", "File Transfer")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=glog_backup_%s.zip", time.Now().Format("20060102150405")))
+	c.Data(http.StatusOK, "application/zip", buf.Bytes())
+}
+
+func (h *AdminHandler) UploadPosts(c *gin.Context) {
+	file, err := c.FormFile("backup")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "获取上传文件失败: " + err.Error()})
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "打开上传文件失败: " + err.Error()})
+		return
+	}
+	defer src.Close()
+
+	var jsonReader io.Reader = src
+
+	// Handle ZIP file
+	if strings.HasSuffix(file.Filename, ".zip") {
+		fileBytes, err := io.ReadAll(src)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "读取上传文件失败: " + err.Error()})
+			return
+		}
+
+		zipReader, err := zip.NewReader(bytes.NewReader(fileBytes), int64(len(fileBytes)))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的 ZIP 文件: " + err.Error()})
+			return
+		}
+
+		if len(zipReader.File) == 0 || zipReader.File[0].Name != "backup.json" {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "ZIP 文件中未找到 backup.json"})
+			return
+		}
+
+		jsonFile, err := zipReader.File[0].Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "打开 backup.json 失败: " + err.Error()})
+			return
+		}
+		defer jsonFile.Close()
+		jsonReader = jsonFile
+	}
+
+	var posts []models.PostBackup
+	if err := json.NewDecoder(jsonReader).Decode(&posts); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "解析 JSON 数据失败: " + err.Error()})
+		return
+	}
+
+	if err := h.postService.CreatePostsFromBackup(posts); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "导入文章失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": fmt.Sprintf("成功导入 %d 篇文章！", len(posts))})
 }

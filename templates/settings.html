@@ -38,82 +38,32 @@
 
     <div class="settings-form-group">
         <label for="openai_model">OpenAI Compatible 模型</label>
-        <input type="text" id="openai_model" name="openai_model" value="{{ .openai_model }}">
+        <div style="display: flex; align-items: center;">
+            <input type="text" id="openai_model" name="openai_model" value="{{ .openai_model }}" style="width: 40%; margin-right: 1rem;">
+            <a href="#" id="test-ai-btn" class="button">🚀 测试连接</a>
+        </div>
     </div>
-
-    <div class="settings-form-group">
-        <a href="#" id="test-ai-btn">🚀 测试连接</a>
-    </div>
-
  
-
-    <div class="editor-actions">
+    <div class="editor-actions" style="margin-top: 1.5rem;">
         <a href="#" id="save-settings-btn">💾 保存设置</a>
     </div>
 </form>
+
+<div class="setting-header" style="margin-top: 3rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+    <h2 class="group-title">数据备份与恢复</h2>
+</div>
+
+<div class="backup-actions" style="margin-top: 1.5rem;">
+    <a href="/settings/backup" id="backup-btn" class="button">💾 下载备份</a>
+    <form id="upload-form" style="display: inline-block; margin-left: 1rem;">
+        <input type="file" id="backup-file" name="backup" accept=".zip,.json" style="display: none;">
+        <a href="#" id="upload-btn" class="button">📤 上传恢复</a>
+    </form>
+</div>
+
+
 {{end}}
 
 {{define "scripts"}}
-<script>
-// AJAX for saving settings
-document.getElementById('save-settings-btn').addEventListener('click', function(event) {
-    event.preventDefault();
-
-    const form = document.getElementById('settings-form');
-    const formData = new FormData(form);
-
-    fetch(form.action, {
-        method: 'POST',
-        body: new URLSearchParams(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        showNotification(data.message, data.status);
-
-        if (data.status === 'success') {
-            document.getElementById('password').value = '';
-            document.getElementById('openai_token').value = '';
-        }
-    })
-    .catch(error => {
-        console.error('表单提交错误：', error);
-        showNotification('保存时发生错误，请检查网络连接！', 'error');
-    });
-});
-
-// AJAX for testing AI connection
-document.getElementById('test-ai-btn').addEventListener('click', function(event) {
-    event.preventDefault();
-    const baseURL = document.getElementById('openai_base_url').value;
-    const token = document.getElementById('openai_token').value;
-    const model = document.getElementById('openai_model').value;
-    const testBtn = this;
-
-    showNotification('测试中...', 'info');
-    testBtn.style.pointerEvents = 'none'; // Disable link
-    testBtn.style.opacity = '0.5';
-
-    const formData = new URLSearchParams();
-    formData.append('openai_base_url', baseURL);
-    formData.append('openai_token', token);
-    formData.append('openai_model', model);
-
-    fetch('/settings/test-ai', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        showNotification(data.message, data.status);
-    })
-    .catch(error => {
-        console.error('AI 测试错误：', error);
-        showNotification('测试请求失败，请检查网络或后台日志！', 'error');
-    })
-    .finally(() => {
-        testBtn.style.pointerEvents = 'auto'; // Re-enable link
-        testBtn.style.opacity = '1';
-    });
-});
-</script>
+<script src="/static/js/settings.js"></script>
 {{end}}

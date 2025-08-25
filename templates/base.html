@@ -10,12 +10,21 @@
         (function() {
             const savedTheme = localStorage.getItem("theme");
             const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            let theme = "light"; // 默认主题
+            let theme;
+
             if (savedTheme) {
                 theme = savedTheme;
             } else if (prefersDark) {
                 theme = "dark";
+            } else {
+                theme = "light";
             }
+            
+            // 在首次访问且未明确设置主题时，将检测到的偏好存入 localStorage
+            if (!savedTheme) {
+                localStorage.setItem("theme", theme);
+            }
+
             document.documentElement.classList.add(theme);
         })();
     </script>

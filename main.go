@@ -127,6 +127,8 @@ func main() {
 		settings.GET("/", adminHandler.ShowSettingsPage)
 		settings.POST("/", adminHandler.UpdateSettings)
 		settings.POST("/test-ai", adminHandler.TestAISettings)
+		settings.GET("/backup", adminHandler.BackupPosts)
+		settings.POST("/upload", adminHandler.UploadPosts)
 	}
 	// API 路由
 	api := r.Group("/api/v1")

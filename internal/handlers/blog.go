@@ -46,7 +46,7 @@ func (h *BlogHandler) ShowPost(c *gin.Context) {
 	slug := c.Param("slug")
 	isLoggedIn, _ := c.Get("IsLoggedIn")
 
-	post, err := h.postService.GetRenderedPostBySlug(slug, isLoggedIn.(bool))
+	post, err := h.postService.GetPostBySlug(slug, isLoggedIn.(bool))
 	if err != nil {
 		// Render custom 404 page
 		render(c, http.StatusNotFound, "404.html", gin.H{})
