@@ -33,9 +33,9 @@ Authorization: Bearer your_site_password
     {
       "title": "文章标题",
       "content": "文章内容",
-      "published": true,
       "is_private": false,
-      "with_ai": false
+      "with_ai": false,
+      "published_at": "2025-08-25T16:00:00+08:00"
     }
     ```
 
@@ -44,16 +44,14 @@ Authorization: Bearer your_site_password
     ```json
     {
         "ID": 1,
-        "CreatedAt": "2023-10-27T10:00:00Z",
-        "UpdatedAt": "2023-10-27T10:00:00Z",
-        "DeletedAt": null,
+        "CreatedAt": "2025-08-25T08:00:00Z",
+        "UpdatedAt": "2025-08-25T08:00:00Z",
         "title": "文章标题",
         "slug": "article-title",
         "content": "文章内容",
         "excerpt": "文章摘要",
-        "published": true,
         "is_private": false,
-        "published_at": "2023-10-27T10:00:00Z"
+        "published_at": "2025-08-25T08:00:00Z"
     }
     ```
 
@@ -77,16 +75,14 @@ Authorization: Bearer your_site_password
         "posts": [
             {
                 "ID": 1,
-                "CreatedAt": "2023-10-27T10:00:00Z",
-                "UpdatedAt": "2023-10-27T10:00:00Z",
-                "DeletedAt": null,
+                "CreatedAt": "2025-08-25T08:00:00Z",
+                "UpdatedAt": "2025-08-25T08:00:00Z",
                 "title": "文章标题",
                 "slug": "article-title",
                 "content": "文章内容",
                 "excerpt": "文章摘要",
-                "published": true,
                 "is_private": false,
-                "published_at": "2023-10-27T10:00:00Z"
+                "published_at": "2025-08-25T08:00:00Z"
             }
         ],
         "total": 1

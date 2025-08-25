@@ -4,6 +4,7 @@ import (
 	"glog/internal/services"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,11 +18,11 @@ func NewAPIHandler(postService *services.PostService) *APIHandler {
 }
 
 type CreatePostRequest struct {
-	Title     string `json:"title" binding:"required"`
-	Content   string `json:"content" binding:"required"`
-	Published bool   `json:"published"`
-	WithAI    bool   `json:"with_ai"`
-	IsPrivate bool   `json:"is_private"`
+	Title       string     `json:"title" binding:"required"`
+	Content     string     `json:"content" binding:"required"`
+	WithAI      bool       `json:"with_ai"`
+	IsPrivate   bool       `json:"is_private"`
+	PublishedAt *time.Time `json:"published_at"`
 }
 
 func (h *APIHandler) CreatePost(c *gin.Context) {
@@ -31,8 +32,13 @@ func (h *APIHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
+	publishedAt := time.Now()
+	if req.PublishedAt != nil {
+		publishedAt = *req.PublishedAt
+	}
+
 	// For API creation, we don't need AI summary.
-	post, err := h.postService.CreatePost(req.Title, req.Content, req.Published, req.IsPrivate, req.WithAI)
+	post, err := h.postService.CreatePost(req.Title, req.Content, req.IsPrivate, req.WithAI, publishedAt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建文章失败"})
 		return
@@ -53,13 +59,13 @@ func (h *APIHandler) FindPosts(c *gin.Context) {
 	)
 
 	if query != "" {
-		posts, total, err = h.postService.SearchPublishedPostsPage(query, page, pageSize, true)
+		posts, total, err = h.postService.SearchPostsPage(query, page, pageSize, true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "搜索文章失败"})
 			return
 		}
 	} else {
-		posts, total, err = h.postService.GetPublishedPostsPage(page, pageSize, true)
+		posts, total, err = h.postService.GetPostsPage(page, pageSize, true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "获取文章失败"})
 			return

@@ -23,7 +23,7 @@ func (r *PostRepository) Update(post *models.Post) error {
 }
 
 func (r *PostRepository) Delete(id uint) error {
-	return r.db.Unscoped().Delete(&models.Post{}, id).Error
+	return r.db.Delete(&models.Post{}, id).Error
 }
 
 // UpdateFtsIndex 更新文章的 FTS 索引
@@ -47,7 +47,7 @@ func (r *PostRepository) FindByID(id uint) (*models.Post, error) {
 
 func (r *PostRepository) FindBySlug(slug string, isLoggedIn bool) (*models.Post, error) {
 	var post models.Post
-	query := r.db.Where("slug = ? AND published = ?", slug, true)
+	query := r.db.Where("slug = ?", slug)
 	if !isLoggedIn {
 		query = query.Where("is_private = ?", false)
 	}
@@ -57,7 +57,7 @@ func (r *PostRepository) FindBySlug(slug string, isLoggedIn bool) (*models.Post,
 
 func (r *PostRepository) CheckSlugExists(slug string) (bool, error) {
 	var count int64
-	err := r.db.Model(&models.Post{}).Unscoped().Where("slug = ?", slug).Count(&count).Error
+	err := r.db.Model(&models.Post{}).Where("slug = ?", slug).Count(&count).Error
 	if err != nil {
 		return false, err
 	}
@@ -66,16 +66,16 @@ func (r *PostRepository) CheckSlugExists(slug string) (bool, error) {
 
 func (r *PostRepository) CheckSlugExistsForOtherPost(slug string, id uint) (bool, error) {
 	var count int64
-	err := r.db.Model(&models.Post{}).Unscoped().Where("slug = ? AND id != ?", slug, id).Count(&count).Error
+	err := r.db.Model(&models.Post{}).Where("slug = ? AND id != ?", slug, id).Count(&count).Error
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func (r *PostRepository) FindAllPublished(isLoggedIn bool) ([]models.Post, error) {
+func (r *PostRepository) FindAll(isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
-	query := r.db.Where("published = ?", true)
+	query := r.db
 	if !isLoggedIn {
 		query = query.Where("is_private = ?", false)
 	}
@@ -83,9 +83,9 @@ func (r *PostRepository) FindAllPublished(isLoggedIn bool) ([]models.Post, error
 	return posts, err
 }
 
-func (r *PostRepository) FindPublishedPage(page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
+func (r *PostRepository) FindPage(page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
-	query := r.db.Where("published = ?", true)
+	query := r.db
 	if !isLoggedIn {
 		query = query.Where("is_private = ?", false)
 	}
@@ -94,9 +94,9 @@ func (r *PostRepository) FindPublishedPage(page, pageSize int, isLoggedIn bool) 
 	return posts, err
 }
 
-func (r *PostRepository) CountPublished(isLoggedIn bool) (int64, error) {
+func (r *PostRepository) Count(isLoggedIn bool) (int64, error) {
 	var count int64
-	query := r.db.Model(&models.Post{}).Where("published = ?", true)
+	query := r.db.Model(&models.Post{})
 	if !isLoggedIn {
 		query = query.Where("is_private = ?", false)
 	}
@@ -104,20 +104,13 @@ func (r *PostRepository) CountPublished(isLoggedIn bool) (int64, error) {
 	return count, err
 }
 
-func (r *PostRepository) FindAll(page, pageSize int, query, status string) ([]models.Post, error) {
+func (r *PostRepository) FindAllByAdmin(page, pageSize int, query, status string) ([]models.Post, error) {
 	var posts []models.Post
-	dbQuery := r.db.Order("created_at desc")
+	dbQuery := r.db.Order("published_at desc")
 
 	if query != "" {
 		subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", query)
 		dbQuery = dbQuery.Where("id IN (?)", subQuery)
-	}
-
-	switch status {
-	case "published":
-		dbQuery = dbQuery.Where("published = ?", true)
-	case "draft":
-		dbQuery = dbQuery.Where("published = ?", false)
 	}
 
 	offset := (page - 1) * pageSize
@@ -125,7 +118,7 @@ func (r *PostRepository) FindAll(page, pageSize int, query, status string) ([]mo
 	return posts, err
 }
 
-func (r *PostRepository) CountAll(query, status string) (int64, error) {
+func (r *PostRepository) CountAllByAdmin(query, status string) (int64, error) {
 	var count int64
 	dbQuery := r.db.Model(&models.Post{})
 
@@ -134,18 +127,11 @@ func (r *PostRepository) CountAll(query, status string) (int64, error) {
 		dbQuery = dbQuery.Where("id IN (?)", subQuery)
 	}
 
-	switch status {
-	case "published":
-		dbQuery = dbQuery.Where("published = ?", true)
-	case "draft":
-		dbQuery = dbQuery.Where("published = ?", false)
-	}
-
 	err := dbQuery.Count(&count).Error
 	return count, err
 }
 
-// SearchPage searches published posts with pagination using FTS, ordering by relevance (rank).
+// SearchPage searches posts with pagination using FTS, ordering by relevance (rank).
 func (r *PostRepository) SearchPage(ftsQuery string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
 
@@ -154,8 +140,7 @@ func (r *PostRepository) SearchPage(ftsQuery string, page, pageSize int, isLogge
 	dbQuery := r.db.Table("posts").
 		Select("posts.*, posts_fts.rank").
 		Joins("JOIN posts_fts ON posts.id = posts_fts.rowid").
-		Where("posts_fts MATCH ?", ftsQuery).
-		Where("posts.published = ?", true)
+		Where("posts_fts MATCH ?", ftsQuery)
 
 	if !isLoggedIn {
 		dbQuery = dbQuery.Where("posts.is_private = ?", false)
@@ -168,13 +153,13 @@ func (r *PostRepository) SearchPage(ftsQuery string, page, pageSize int, isLogge
 	return posts, err
 }
 
-// CountByQuery counts the total number of published posts matching an FTS query, respecting login status.
+// CountByQuery counts the total number of posts matching an FTS query, respecting login status.
 func (r *PostRepository) CountByQuery(ftsQuery string, isLoggedIn bool) (int64, error) {
 	var count int64
 
 	subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", ftsQuery)
 
-	dbQuery := r.db.Model(&models.Post{}).Where("id IN (?)", subQuery).Where("published = ?", true)
+	dbQuery := r.db.Model(&models.Post{}).Where("id IN (?)", subQuery)
 
 	if !isLoggedIn {
 		dbQuery = dbQuery.Where("is_private = ?", false)

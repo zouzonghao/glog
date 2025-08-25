@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,7 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	if searchQuery != "" {
 		searchQuery = segmenter.SegmentTextForQuery(searchQuery)
 	}
-	posts, total, err := h.postService.GetPostsPage(page, pageSize, searchQuery, status)
+	posts, total, err := h.postService.GetPostsPageByAdmin(page, pageSize, searchQuery, status)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "加载文章失败")
 		return
@@ -60,8 +61,11 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 }
 
 func (h *AdminHandler) NewPost(c *gin.Context) {
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	now := time.Now().In(loc).Format("2006-01-02 15:04")
 	render(c, http.StatusOK, "editor.html", gin.H{
 		"post": nil, // Pass a nil post to indicate a new post
+		"now":  now,
 	})
 }
 
@@ -96,9 +100,20 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	idStr := c.PostForm("id")
 	title := c.PostForm("title")
 	content := c.PostForm("content")
-	published := c.PostForm("published") == "on"
+	publishedAtStr := c.PostForm("published_at")
 	isPrivate := c.PostForm("is_private") == "on"
 	aiSummary := c.PostForm("ai_summary") == "on"
+
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "服务器时间配置错误"})
+		return
+	}
+	publishedAt, err := time.ParseInLocation("2006-01-02 15:04", publishedAtStr, loc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的发布时间格式"})
+		return
+	}
 
 	// Check for lock before proceeding
 	if idStr != "" && idStr != "0" {
@@ -113,13 +128,12 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	}
 
 	var post *models.Post
-	var err error
 
 	if idStr == "" || idStr == "0" {
-		post, err = h.postService.CreatePost(title, content, published, isPrivate, aiSummary)
+		post, err = h.postService.CreatePost(title, content, isPrivate, aiSummary, publishedAt)
 	} else {
 		id, _ := strconv.ParseUint(idStr, 10, 64)
-		post, err = h.postService.UpdatePost(uint(id), title, content, published, isPrivate, aiSummary)
+		post, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, aiSummary, publishedAt)
 	}
 
 	if err != nil {

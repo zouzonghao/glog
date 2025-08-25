@@ -30,7 +30,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 
 	isLoggedIn, _ := c.Get("IsLoggedIn")
 
-	posts, total, err := h.postService.SearchPublishedPostsPage(query, page, pageSize, isLoggedIn.(bool))
+	posts, total, err := h.postService.SearchPostsPage(query, page, pageSize, isLoggedIn.(bool))
 	if err != nil {
 		render(c, http.StatusInternalServerError, "404.html", gin.H{
 			"error": "Search failed",

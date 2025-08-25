@@ -1074,3 +1074,17 @@ html.dark .notification.info {
     background-color: rgba(23, 163, 184, 0.572);
     border: none;
 }
+
+.editor-title-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.editor-title-group #title {
+    flex-grow: 1;
+}
+
+.editor-title-group #published_at {
+    width: 180px; /* 固定宽度以容纳日期和时间 */
+}

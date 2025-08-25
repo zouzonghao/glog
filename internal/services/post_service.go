@@ -44,7 +44,7 @@ func (s *PostService) CheckPostLock(id uint) bool {
 	return locked
 }
 
-func (s *PostService) CreatePost(title, content string, published bool, isPrivate bool, aiSummary bool) (*models.Post, error) {
+func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummary bool, publishedAt time.Time) (*models.Post, error) {
 	baseSlug := slug.Make(title)
 	finalSlug, err := s.findAvailableSlug(baseSlug, 0)
 	if err != nil {
@@ -62,12 +62,8 @@ func (s *PostService) CreatePost(title, content string, published bool, isPrivat
 		Content:     content,
 		ContentHTML: string(renderedHTML),
 		Excerpt:     utils.GenerateExcerpt(content, maxExcerptLength),
-		Published:   published,
 		IsPrivate:   isPrivate,
-	}
-
-	if published {
-		post.PublishedAt = time.Now()
+		PublishedAt: publishedAt,
 	}
 
 	if err := s.repo.Create(post); err != nil {
@@ -79,7 +75,7 @@ func (s *PostService) CreatePost(title, content string, published bool, isPrivat
 	return post, nil
 }
 
-func (s *PostService) UpdatePost(id uint, title, content string, published bool, isPrivate bool, aiSummary bool) (*models.Post, error) {
+func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool, aiSummary bool, publishedAt time.Time) (*models.Post, error) {
 	post, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -103,11 +99,7 @@ func (s *PostService) UpdatePost(id uint, title, content string, published bool,
 	post.ContentHTML = string(renderedHTML)
 	post.IsPrivate = isPrivate
 	post.Excerpt = utils.GenerateExcerpt(content, maxExcerptLength)
-
-	if !post.Published && published {
-		post.PublishedAt = time.Now()
-	}
-	post.Published = published
+	post.PublishedAt = publishedAt
 
 	if err := s.repo.Update(post); err != nil {
 		return nil, err
@@ -301,49 +293,50 @@ func (s *PostService) GetRenderedPostBySlug(slug string, isLoggedIn bool) (*mode
 	}
 
 	renderedPost := &models.RenderedPost{
-		Model:       post.Model,
+		ID:          post.ID,
+		CreatedAt:   post.CreatedAt,
+		UpdatedAt:   post.UpdatedAt,
+		PublishedAt: post.PublishedAt,
 		Title:       post.Title,
 		Slug:        post.Slug,
 		Summary:     summaryHTML,
 		Body:        bodyHTML,
 		Excerpt:     post.Excerpt,
-		Published:   post.Published,
 		IsPrivate:   post.IsPrivate,
-		PublishedAt: post.PublishedAt,
 	}
 
 	return renderedPost, nil
 }
 
-func (s *PostService) GetAllPublishedPosts(isLoggedIn bool) ([]models.Post, error) {
-	return s.repo.FindAllPublished(isLoggedIn)
+func (s *PostService) GetAllPosts(isLoggedIn bool) ([]models.Post, error) {
+	return s.repo.FindAll(isLoggedIn)
 }
 
-func (s *PostService) GetPublishedPostsPage(page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
-	posts, err := s.repo.FindPublishedPage(page, pageSize, isLoggedIn)
+func (s *PostService) GetPostsPage(page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
+	posts, err := s.repo.FindPage(page, pageSize, isLoggedIn)
 	if err != nil {
 		return nil, 0, err
 	}
-	total, err := s.repo.CountPublished(isLoggedIn)
+	total, err := s.repo.Count(isLoggedIn)
 	if err != nil {
 		return nil, 0, err
 	}
 	return posts, total, nil
 }
 
-func (s *PostService) GetPostsPage(page, pageSize int, query, status string) ([]models.Post, int64, error) {
-	posts, err := s.repo.FindAll(page, pageSize, query, status)
+func (s *PostService) GetPostsPageByAdmin(page, pageSize int, query, status string) ([]models.Post, int64, error) {
+	posts, err := s.repo.FindAllByAdmin(page, pageSize, query, status)
 	if err != nil {
 		return nil, 0, err
 	}
-	total, err := s.repo.CountAll(query, status)
+	total, err := s.repo.CountAllByAdmin(query, status)
 	if err != nil {
 		return nil, 0, err
 	}
 	return posts, total, nil
 }
 
-func (s *PostService) SearchPublishedPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
+func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, int64, error) {
 	if query == "" {
 		return []models.Post{}, 0, nil
 	}
