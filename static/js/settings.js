@@ -41,7 +41,7 @@ document.getElementById('test-ai-btn').addEventListener('click', function(event)
     formData.append('openai_token', token);
     formData.append('openai_model', model);
 
-    fetch('/settings/test-ai', {
+    fetch('/admin/setting/test-ai', {
         method: 'POST',
         body: formData
     })
@@ -77,7 +77,7 @@ document.getElementById('backup-file').addEventListener('change', function(event
 
         showNotification('正在上传并恢复...', 'info');
 
-        fetch('/settings/upload', {
+        fetch('/admin/setting/upload', {
             method: 'POST',
             body: formData
         })

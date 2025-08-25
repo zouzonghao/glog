@@ -121,7 +121,7 @@ func main() {
 		admin.POST("/delete/:id", adminHandler.DeletePost)
 	}
 
-	settings := r.Group("/settings")
+	settings := r.Group("/admin/setting")
 	settings.Use(handlers.AuthMiddleware())
 	{
 		settings.GET("/", adminHandler.ShowSettingsPage)

@@ -5,7 +5,7 @@
     <h2 class="group-title">站点设置</h2>
 </div>
 
-<form id="settings-form" action="/settings" method="POST" class="app-form">
+<form id="settings-form" action="/admin/setting" method="POST" class="app-form">
     <div class="settings-form-group" style="margin-top: 1.5rem;">
         <label for="password">管理员密码</label>
         <input type="password" id="password" name="password" placeholder="留空则不修改" autocomplete="new-password">
@@ -54,7 +54,7 @@
 </div>
 
 <div class="backup-actions" style="margin-top: 1.5rem;">
-    <a href="/settings/backup" id="backup-btn" class="button">💾 下载备份</a>
+    <a href="/admin/setting/backup" id="backup-btn" class="button">💾 下载备份</a>
     <form id="upload-form" style="display: inline-block; margin-left: 1rem;">
         <input type="file" id="backup-file" name="backup" accept=".zip,.json" style="display: none;">
         <a href="#" id="upload-btn" class="button">📤 上传恢复</a>
