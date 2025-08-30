@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"glog/internal/constants"
 	"glog/internal/services"
 	"net/http"
 
@@ -22,9 +23,9 @@ func (h *AuthHandler) ShowLoginPage(c *gin.Context) {
 
 func (h *AuthHandler) Login(c *gin.Context) {
 	session := sessions.Default(c)
-	submittedPassword := c.PostForm("password")
+	submittedPassword := c.PostForm(constants.SettingPassword)
 
-	adminPassword, err := h.settingService.GetSetting("password")
+	adminPassword, err := h.settingService.GetSetting(constants.SettingPassword)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "error",
@@ -41,7 +42,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	session.Set("authenticated", true)
+	session.Set(constants.SessionKeyAuthenticated, true)
 	session.Save()
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",

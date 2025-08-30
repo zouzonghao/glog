@@ -183,6 +183,16 @@ func (r *PostRepository) UpdateFields(id uint, fields map[string]interface{}) er
 	return r.db.Model(&models.Post{}).Where("id = ?", id).Updates(fields).Error
 }
 
+// DeleteByIDs deletes multiple posts by their IDs.
+func (r *PostRepository) DeleteByIDs(ids []uint) error {
+	return r.db.Where("id IN ?", ids).Delete(&models.Post{}).Error
+}
+
+// UpdatePrivacyByIDs updates the is_private field for multiple posts.
+func (r *PostRepository) UpdatePrivacyByIDs(ids []uint, isPrivate bool) error {
+	return r.db.Model(&models.Post{}).Where("id IN ?", ids).Update("is_private", isPrivate).Error
+}
+
 // GetDB returns the underlying gorm.DB object.
 func (r *PostRepository) GetDB() *gorm.DB {
 	return r.db

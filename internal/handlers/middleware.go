@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"glog/internal/constants"
 	"glog/internal/services"
 
 	"github.com/gin-contrib/sessions"
@@ -59,7 +60,7 @@ func APIAuthMiddleware(settingService *services.SettingService) gin.HandlerFunc 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
-		authenticated := session.Get("authenticated")
+		authenticated := session.Get(constants.SessionKeyAuthenticated)
 
 		if authenticated == nil || !authenticated.(bool) {
 			// User is not logged in, redirect to login page.
@@ -83,13 +84,13 @@ func SettingsMiddleware(settingService *services.SettingService) gin.HandlerFunc
 			log.Printf("无法加载设置: %v", err)
 			c.Set("settings", make(map[string]string))
 		} else {
-			c.Set("settings", settings)
+			c.Set(constants.ContextKeySettings, settings)
 		}
 
 		// Also, add the login status to the context for the template.
 		session := sessions.Default(c)
-		isLoggedIn := session.Get("authenticated")
-		c.Set("IsLoggedIn", isLoggedIn != nil && isLoggedIn.(bool))
+		isLoggedIn := session.Get(constants.SessionKeyAuthenticated)
+		c.Set(constants.ContextKeyIsLoggedIn, isLoggedIn != nil && isLoggedIn.(bool))
 
 		c.Next()
 	}
@@ -98,7 +99,7 @@ func SettingsMiddleware(settingService *services.SettingService) gin.HandlerFunc
 // render is a helper function to render templates with common data.
 func render(c *gin.Context, status int, templateName string, data gin.H) {
 	// Get settings from context
-	settings, exists := c.Get("settings")
+	settings, exists := c.Get(constants.ContextKeySettings)
 	if exists {
 		// Merge settings into the data map
 		for key, value := range settings.(map[string]string) {
@@ -109,7 +110,7 @@ func render(c *gin.Context, status int, templateName string, data gin.H) {
 	}
 
 	// Get login status from context
-	isLoggedIn, exists := c.Get("IsLoggedIn")
+	isLoggedIn, exists := c.Get(constants.ContextKeyIsLoggedIn)
 	if exists {
 		data["IsLoggedIn"] = isLoggedIn
 	}

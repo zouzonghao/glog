@@ -29,7 +29,7 @@ func (h *APIHandler) CreatePost(c *gin.Context) {
 
 	// For API creation, we don't trigger AI summary by default.
 	// PublishedAt will be set by the service if not provided.
-	createdPost, err := h.postService.CreatePost(post.Title, post.Content, post.IsPrivate, false, post.PublishedAt)
+	createdPost, _, err := h.postService.CreatePost(post.Title, post.Content, post.IsPrivate, false, post.PublishedAt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

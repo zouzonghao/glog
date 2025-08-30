@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"glog/internal/constants"
 	"glog/internal/models"
 	"glog/internal/services"
 	"glog/internal/utils"
@@ -36,9 +37,12 @@ func NewAdminHandler(postService *services.PostService, settingService *services
 
 func (h *AdminHandler) ListPosts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+	if pageSize <= 0 {
+		pageSize = 10
+	}
 	query := c.Query("query")
 	status := c.DefaultQuery("status", "all")
-	pageSize := 10
 
 	searchQuery := query
 	if searchQuery != "" {
@@ -54,15 +58,17 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	pagination := utils.GeneratePagination(page, totalPages)
 
 	session := sessions.Default(c)
-	flashes := session.Flashes("success")
+	flashes := session.Flashes(constants.SessionKeySuccessFlash)
 	session.Save() // Clear flashes after reading
 
 	render(c, http.StatusOK, "admin.html", gin.H{
-		"posts":      posts,
-		"Pagination": pagination,
-		"Query":      query,
-		"Status":     status,
-		"Flashes":    flashes,
+		"posts":           posts,
+		"Pagination":      pagination,
+		"Query":           query,
+		"Status":          status,
+		"Flashes":         flashes,
+		"PageSize":        pageSize,
+		"PageSizeOptions": []int{10, 20, 50},
 	})
 }
 
@@ -134,12 +140,13 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	}
 
 	var post *models.Post
+	var aiTriggered bool
 
 	if idStr == "" || idStr == "0" {
-		post, err = h.postService.CreatePost(title, content, isPrivate, aiSummary, publishedAt)
+		post, aiTriggered, err = h.postService.CreatePost(title, content, isPrivate, aiSummary, publishedAt)
 	} else {
 		id, _ := strconv.ParseUint(idStr, 10, 64)
-		post, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, aiSummary, publishedAt)
+		post, aiTriggered, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, aiSummary, publishedAt)
 	}
 
 	if err != nil {
@@ -151,9 +158,9 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	}
 
 	message := "文章已保存！"
-	if aiSummary && title == "未命名标题" {
+	if aiTriggered && title == "未命名标题" {
 		message = "文章已保存，AI正在生成标题和摘要，请稍后刷新查看..."
-	} else if aiSummary {
+	} else if aiTriggered {
 		message = "文章已保存，AI摘要正在生成中..."
 	}
 
@@ -164,7 +171,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	}
 
 	// Only return slug if AI is not going to rename the post
-	if !(aiSummary && title == "未命名标题") {
+	if !(aiTriggered && title == "未命名标题") {
 		response["slug"] = post.Slug
 	}
 
@@ -205,7 +212,7 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 		if len(values) > 0 {
 			value := values[0]
 			// Special handling for password fields: only update if not empty
-			if (key == "password" || key == "openai_token") && value == "" {
+			if (key == constants.SettingPassword || key == constants.SettingOpenAIToken) && value == "" {
 				continue
 			}
 			settingsToUpdate[key] = value
@@ -222,15 +229,15 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 }
 
 func (h *AdminHandler) TestAISettings(c *gin.Context) {
-	baseURL := c.PostForm("openai_base_url")
-	token := c.PostForm("openai_token")
-	model := c.PostForm("openai_model")
+	baseURL := c.PostForm(constants.SettingOpenAIBaseURL)
+	token := c.PostForm(constants.SettingOpenAIToken)
+	model := c.PostForm(constants.SettingOpenAIModel)
 
 	finalToken := token
 	if finalToken == "" {
 		settings, err := h.settingService.GetAllSettings()
 		if err == nil {
-			finalToken = settings["openai_token"]
+			finalToken = settings[constants.SettingOpenAIToken]
 		}
 	}
 
@@ -333,4 +340,31 @@ func (h *AdminHandler) UploadPosts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": fmt.Sprintf("成功导入 %d 篇文章！", len(posts))})
+}
+
+type BatchUpdateRequest struct {
+	IDs       []uint `json:"ids"`
+	Action    string `json:"action"`
+	IsPrivate bool   `json:"is_private"`
+}
+
+func (h *AdminHandler) BatchUpdatePosts(c *gin.Context) {
+	var req BatchUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的请求数据: " + err.Error()})
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "请至少选择一篇文章"})
+		return
+	}
+
+	err := h.postService.BatchUpdatePosts(req.IDs, req.Action, req.IsPrivate)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "操作失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "操作成功！"})
 }

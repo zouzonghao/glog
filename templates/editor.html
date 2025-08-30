@@ -30,8 +30,8 @@
             </div>
 
             <div class="editor-actions">
-                <a href="#" id="save-btn">💾 保存文章</a>
-                <a href="{{ if .post }}/post/{{ .post.Slug }}{{ else }}#{{ end }}" class="open-post-link">🔗 打开文章</a>
+                <button type="button" id="save-btn" class="btn" style="font-size: 0.9rem";>💾 保存文章</button>
+                <a href="{{ if .post }}/post/{{ .post.Slug }}{{ else }}#{{ end }}" class="btn open-post-link" style="font-size: 0.9rem;">🔗 打开文章</a>
             </div>
         </form>
     </div>

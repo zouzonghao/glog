@@ -5,11 +5,17 @@
 {{ define "content" }}
     <div class="admin-header">
         <h2 class="group-title">文章管理</h2>
-        <a href="/admin/new">写新文章</a>
+        <form id="admin-search-form" action="/admin" method="get" class="search-form admin-search-form">
+            <input type="search" name="query" placeholder="搜索文章..." class="search-input" value="{{ .Query }}">
+            <button type="submit" class="search-button" aria-label="Search">
+                <img src="/static/pic/search.png" alt="Search" class="search-icon">
+            </button>
+        </form>
     </div>
 
     <div class="post-list-container">
         <div class="post-list-header">
+            <div class="col-checkbox"><input type="checkbox" id="select-all-posts"></div>
             <div class="col-title">标题</div>
             <div class="col-private">私密</div>
             <div class="col-date">发布日期</div>
@@ -18,6 +24,7 @@
         <div class="post-list-body">
             {{range .posts}}
             <div class="post-list-item">
+                <div class="col-checkbox"><input type="checkbox" class="post-checkbox" data-id="{{.ID}}"></div>
                 <div class="col-title" title="{{.Title}}">
                     <a href="/post/{{.Slug}}" >{{.Title}}</a>
                 </div>
@@ -45,6 +52,12 @@
             </div>
             {{end}}
         </div>
+    </div>
+
+    <div class="batch-actions-container">
+        <button id="batch-delete-btn" class="btn" disabled>批量删除</button>
+        <button id="batch-set-private-btn" class="btn" disabled>设为私密</button>
+        <button id="batch-set-public-btn" class="btn" disabled>设为公开</button>
     </div>
 
     {{ template "pagination" . }}

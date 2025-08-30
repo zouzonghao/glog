@@ -119,6 +119,7 @@ func main() {
 		admin.GET("/editor", adminHandler.Editor)
 		admin.POST("/save", adminHandler.SavePost)
 		admin.POST("/delete/:id", adminHandler.DeletePost)
+		admin.POST("/posts/batch-update", adminHandler.BatchUpdatePosts)
 	}
 
 	settings := r.Group("/admin/setting")

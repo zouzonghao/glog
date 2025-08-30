@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"glog/internal/constants"
 	"glog/internal/services"
 	"glog/internal/utils"
 	"math"
@@ -28,7 +29,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize := 10 // 与首页保持一致
 
-	isLoggedIn, _ := c.Get("IsLoggedIn")
+	isLoggedIn, _ := c.Get(constants.ContextKeyIsLoggedIn)
 
 	posts, total, err := h.postService.SearchPostsPage(query, page, pageSize, isLoggedIn.(bool))
 	if err != nil {
