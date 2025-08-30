@@ -107,12 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.status === 'success') {
                 showNotification(data.message, 'success');
-                if (currentAction === 'delete') {
-                    updateUIafterDelete(ids);
-                } else {
-                    // 为了确保数据一致性，在短暂显示通知后重新加载页面
-                    setTimeout(() => window.location.reload(), 1000);
-                }
+                // 为了确保数据一致性，在短暂显示通知后重新加载页面
+                setTimeout(() => window.location.reload(), 1000);
             } else {
                 showNotification(data.message, 'error');
             }
@@ -125,20 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 closeModal();
             }
         }
-    }
-
-    function updateUIafterDelete(ids) {
-        ids.forEach(id => {
-            const checkbox = document.querySelector(`.post-checkbox[data-id='${id}']`);
-            if (checkbox) {
-                const item = checkbox.closest('.post-list-item');
-                item.remove();
-            }
-        });
-        // Uncheck all after action
-        selectAllCheckbox.checked = false;
-        postCheckboxes.forEach(cb => cb.checked = false);
-        updateBatchButtons();
     }
 
     function showModal() {

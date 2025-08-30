@@ -647,9 +647,9 @@ html.dark .post-list-item:hover {
 }
 .editor-actions {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-end; /* 保持子元素垂直底部对齐 */
     gap: 0.5rem;
+    justify-content: flex-end; /* 靠右对齐的关键 */
 }
 .btn {
     padding: 0.25rem 0.5rem;
@@ -906,7 +906,7 @@ html.dark .notification.info {
     gap: 1rem;
 }
 .modal-btn {
-    padding: 0.6rem 1.2rem;
+    padding: 0.4rem 1.2rem;
     border: none;
     border-radius: 5px;
     cursor: pointer;
