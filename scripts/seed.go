@@ -55,11 +55,21 @@ Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac tu
 
 func main() {
 	log.Println("开始连接数据库...")
-	db, err := utils.InitDatabase()
+	db, err := utils.InitDatabase("")
 	if err != nil {
 		log.Fatalf("数据库初始化失败: %v", err)
 	}
 	log.Println("数据库连接成功。")
+
+	log.Println("清空旧的文章数据...")
+	if err := db.Exec("DELETE FROM posts").Error; err != nil {
+		log.Fatalf("清空 posts 表失败: %v", err)
+	}
+	// For SQLite, vacuuming can reclaim space and is good practice after large deletes.
+	if err := db.Exec("VACUUM").Error; err != nil {
+		log.Printf("VACUUM ailed: %v", err)
+	}
+	log.Println("旧数据已清空。")
 
 	log.Printf("准备生成 %d 篇文章...\n", TotalPosts)
 

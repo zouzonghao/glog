@@ -7,8 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitDatabase() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open("blog.db"), &gorm.Config{})
+func InitDatabase(dbPath string) (*gorm.DB, error) {
+	if dbPath == "" {
+		dbPath = "blog.db"
+	}
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}

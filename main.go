@@ -53,7 +53,7 @@ func main() {
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
 	flag.Parse()
 
-	db, err := utils.InitDatabase()
+	db, err := utils.InitDatabase("")
 	if err != nil {
 		log.Fatal("初始化数据库失败：", err)
 	}
