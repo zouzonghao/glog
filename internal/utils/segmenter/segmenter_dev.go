@@ -5,31 +5,37 @@ package segmenter
 import (
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 )
 
 func init() {
 	log.Println("Running in debug mode, loading dictionaries from filesystem...")
 
+	// --- Robust path finding ---
+	// Get the absolute path of the current file.
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatal("Failed to get current file path")
+	}
+	// The dict directory is in the same directory as this source file.
+	dictDir := filepath.Join(filepath.Dir(filename), "dict")
+	dictPath := filepath.Join(dictDir, "simplified.txt")
+	stopPath := filepath.Join(dictDir, "stop_word.txt")
+	// --- End of robust path finding ---
+
 	seg = Segmenter{}
 	seg.Dict = NewDict()
 	seg.DictSep = " "
 
-	// Try loading from project root (for go run)
-	dictBytes, err := os.ReadFile("internal/utils/segmenter/dict/simplified.txt")
+	dictBytes, err := os.ReadFile(dictPath)
 	if err != nil {
-		// If it fails, try loading from package directory (for go test)
-		dictBytes, err = os.ReadFile("dict/simplified.txt")
-		if err != nil {
-			log.Fatalf("Failed to read simplified.txt in dev mode from both project root and package dir: %v", err)
-		}
+		log.Fatalf("Failed to read simplified.txt in dev mode: %v", err)
 	}
 
-	stopBytes, err := os.ReadFile("internal/utils/segmenter/dict/stop_word.txt")
+	stopBytes, err := os.ReadFile(stopPath)
 	if err != nil {
-		stopBytes, err = os.ReadFile("dict/stop_word.txt")
-		if err != nil {
-			log.Fatalf("Failed to read stop_word.txt in dev mode from both project root and package dir: %v", err)
-		}
+		log.Fatalf("Failed to read stop_word.txt in dev mode: %v", err)
 	}
 
 	totalFreq := loadDictFromString(&seg, string(dictBytes))

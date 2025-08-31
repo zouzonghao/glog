@@ -5,46 +5,17 @@ import (
 	"glog/internal/repository"
 	"glog/internal/services"
 	"glog/internal/utils"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 )
 
-var testRouter *gin.Engine
-
-// TestMain is executed before any other test in this package.
-// It's used here to set up the global test environment, specifically
-// to change the working directory to the project root.
-func TestMain(m *testing.M) {
-	// Change working directory to project root
-	// This is crucial for the segmenter to find its dictionary files in dev mode.
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Failed to get current working directory: %v", err)
-	}
-	// We expect to be in internal/handlers, so we go up two levels.
-	projectRoot := filepath.Join(dir, "..", "..")
-	if err := os.Chdir(projectRoot); err != nil {
-		log.Fatalf("Failed to change directory to project root: %v", err)
-	}
-
-	// Now that the CWD is correct, setup the router
-	setupTestRouter()
-
-	// Run all tests
-	os.Exit(m.Run())
-}
-
 // setupTestRouter initializes a gin router with all the necessary dependencies for testing.
-// This function should only be called once by TestMain.
-func setupTestRouter() {
+func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
 	db, err := utils.InitDatabase()
@@ -67,11 +38,12 @@ func setupTestRouter() {
 	r.GET("/post/:slug", blogHandler.ShowPost)
 	r.GET("/search", searchHandler.Search)
 
-	testRouter = r
+	return r
 }
 
 // BenchmarkGetIndex performs a benchmark test on the Index handler.
 func BenchmarkGetIndex(b *testing.B) {
+	router := setupTestRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", nil)
 
@@ -79,12 +51,14 @@ func BenchmarkGetIndex(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		testRouter.ServeHTTP(w, req)
+		router.ServeHTTP(w, req)
 	}
 }
 
 // BenchmarkGetPost performs a benchmark test on the ShowPost handler with random posts.
 func BenchmarkGetPost(b *testing.B) {
+	router := setupTestRouter()
+
 	// Pre-fetch a list of valid post slugs to avoid 404s in benchmark
 	db, _ := utils.InitDatabase()
 	var slugs []string
@@ -101,12 +75,14 @@ func BenchmarkGetPost(b *testing.B) {
 		randomSlug := slugs[rand.Intn(len(slugs))]
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/post/"+randomSlug, nil)
-		testRouter.ServeHTTP(w, req)
+		router.ServeHTTP(w, req)
 	}
 }
 
 // BenchmarkSearch performs a benchmark test on the Search handler.
 func BenchmarkSearch(b *testing.B) {
+	router := setupTestRouter()
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
@@ -115,6 +91,6 @@ func BenchmarkSearch(b *testing.B) {
 		query := "性能测试文章 " + strconv.Itoa(rand.Intn(1000)+1)
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/search?q="+query, nil)
-		testRouter.ServeHTTP(w, req)
+		router.ServeHTTP(w, req)
 	}
 }
