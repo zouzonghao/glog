@@ -5,14 +5,47 @@ import (
 	"glog/internal/repository"
 	"glog/internal/services"
 	"glog/internal/utils"
+	"html/template"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 
+	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
 )
+
+// createTestRenderer creates a multitemplate renderer for testing.
+// It loads templates directly from the filesystem relative to the project root.
+func createTestRenderer() multitemplate.Renderer {
+	r := multitemplate.NewRenderer()
+
+	add := func(name string, files ...string) {
+		// Prepend the templates directory to all file paths
+		for i, f := range files {
+			files[i] = "templates/" + f
+		}
+		tpl, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatalf("Failed to parse template %s: %v", name, err)
+		}
+		r.Add(name, tpl)
+	}
+
+	add("index.html", "base.html", "index.html", "_pagination.html")
+	add("post.html", "base.html", "post.html")
+	add("search.html", "base.html", "search.html", "_pagination.html")
+	// Add other templates if they are needed by the benchmarked handlers
+	// add("admin.html", "base.html", "admin.html", "_pagination.html")
+	// add("editor.html", "base.html", "editor.html")
+	// add("settings.html", "base.html", "settings.html")
+	// add("login.html", "base.html", "login.html")
+	// add("404.html", "base.html", "404.html")
+
+	return r
+}
 
 // setupTestRouter initializes a gin router with all the necessary dependencies for testing.
 func setupTestRouter() *gin.Engine {
@@ -34,6 +67,9 @@ func setupTestRouter() *gin.Engine {
 	searchHandler := NewSearchHandler(postService)
 
 	r := gin.New()
+	// *** THIS IS THE FIX: Set up the HTML renderer ***
+	r.HTMLRender = createTestRenderer()
+
 	r.GET("/", blogHandler.Index)
 	r.GET("/post/:slug", blogHandler.ShowPost)
 	r.GET("/search", searchHandler.Search)
