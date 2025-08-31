@@ -6,15 +6,18 @@ GOBUILD=$(GOCMD) build
 GORUN=$(GOCMD) run
 
 # --- Platform Configuration ---
-HOST_GOOS := $(shell go env GOOS)
-HOST_GOARCH := $(shell go env GOARCH)
+# Determine the host OS and architecture. GOHOSTOS/GOHOSTARCH are not affected by GOOS/GOARCH env vars.
+NATIVE_GOOS := $(shell go env GOHOSTOS)
+NATIVE_GOARCH := $(shell go env GOHOSTARCH)
 
-TARGET_GOOS ?= $(HOST_GOOS)
-TARGET_GOARCH ?= $(HOST_GOARCH)
+# Set target OS and architecture. Use GOOS/GOARCH from the environment if provided,
+# otherwise default to the host's native platform.
+TARGET_GOOS := $(or $(GOOS),$(NATIVE_GOOS))
+TARGET_GOARCH := $(or $(GOARCH),$(NATIVE_GOARCH))
 
 # --- Binary Naming ---
 BINARY_NAME=glog
-ifeq ($(TARGET_GOOS)-$(TARGET_GOARCH), $(HOST_GOOS)-$(HOST_GOARCH))
+ifeq ($(TARGET_GOOS)-$(TARGET_GOARCH), $(NATIVE_GOOS)-$(NATIVE_GOARCH))
 	BINARY_FILENAME=$(BINARY_NAME)
 else
 	BINARY_FILENAME=$(BINARY_NAME)-$(TARGET_GOOS)-$(TARGET_GOARCH)
@@ -22,30 +25,6 @@ endif
 
 BUILD_SCRIPT=build.go
 BUILD_TOOL_NAME=build_tool
-
-# --- CGO Cross-Compilation Setup using Zig ---
-CGO_ARGS=
-ZIG_TARGET=
-# Check if we are cross-compiling.
-ifeq ($(TARGET_GOOS)-$(TARGET_GOARCH), $(HOST_GOOS)-$(HOST_GOARCH))
-	# Native build, no special CGO flags needed.
-else
-	# Cross-compilation, determine the correct Zig target triple.
-	# For linux/amd64, it's x86_64-linux-gnu.
-	# This can be expanded for other targets if needed.
-ifeq ($(TARGET_GOOS)-$(TARGET_GOARCH), linux-amd64)
-	ZIG_TARGET=x86_64-linux-gnu
-endif
-	# Add more targets here, e.g.:
-	# ifeq ($(TARGET_GOOS)-$(TARGET_GOARCH), windows-amd64)
-	# ZIG_TARGET=x86_64-windows-gnu
-	# endif
-
-	# Configure Go to use Zig as the C/C++ compiler.
-	CGO_ARGS=CGO_ENABLED=1 \
-	CC="zig cc -target $(ZIG_TARGET)" \
-	CXX="zig c++ -target $(ZIG_TARGET)"
-endif
 
 # --- Main Targets ---
 default: run
@@ -59,8 +38,8 @@ run:
 
 # --- Build Steps ---
 build-tool:
-	@echo "--> Building the build tool for $(HOST_GOOS)/$(HOST_GOARCH)..."
-	@GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) $(GOBUILD) -o $(BUILD_TOOL_NAME) $(BUILD_SCRIPT)
+	@echo "--> Building the build tool for $(NATIVE_GOOS)/$(NATIVE_GOARCH)..."
+	@GOOS=$(NATIVE_GOOS) GOARCH=$(NATIVE_GOARCH) $(GOBUILD) -o $(BUILD_TOOL_NAME) $(BUILD_SCRIPT)
 	@chmod +x $(BUILD_TOOL_NAME)
 
 prepare:
@@ -69,7 +48,7 @@ prepare:
 
 build:
 	@echo "--> Building application for $(TARGET_GOOS)/$(TARGET_GOARCH)..."
-	@$(CGO_ARGS) GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -ldflags="-s -w" -o $(BINARY_FILENAME) -tags release .
+	@GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -ldflags="-s -w" -o $(BINARY_FILENAME) -tags release .
 
 cleanup:
 	@echo "--> Cleaning up temporary assets..."
