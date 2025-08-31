@@ -10,6 +10,8 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"testing"
 
@@ -18,14 +20,24 @@ import (
 )
 
 // createTestRenderer creates a multitemplate renderer for testing.
-// It loads templates directly from the filesystem relative to the project root.
+// It robustly finds the project root and loads templates from the filesystem.
 func createTestRenderer() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
 
+	// --- Robust path finding for templates ---
+	_, b, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatalf("Failed to get current file path")
+	}
+	// internal/handlers/blog_benchmark_test.go -> project root
+	projectRoot := filepath.Join(filepath.Dir(b), "..", "..")
+	templatesDir := filepath.Join(projectRoot, "templates")
+	// --- End of robust path finding ---
+
 	add := func(name string, files ...string) {
-		// Prepend the templates directory to all file paths
+		// Prepend the absolute templates directory path to all file paths
 		for i, f := range files {
-			files[i] = "templates/" + f
+			files[i] = filepath.Join(templatesDir, f)
 		}
 		tpl, err := template.ParseFiles(files...)
 		if err != nil {
@@ -37,12 +49,6 @@ func createTestRenderer() multitemplate.Renderer {
 	add("index.html", "base.html", "index.html", "_pagination.html")
 	add("post.html", "base.html", "post.html")
 	add("search.html", "base.html", "search.html", "_pagination.html")
-	// Add other templates if they are needed by the benchmarked handlers
-	// add("admin.html", "base.html", "admin.html", "_pagination.html")
-	// add("editor.html", "base.html", "editor.html")
-	// add("settings.html", "base.html", "settings.html")
-	// add("login.html", "base.html", "login.html")
-	// add("404.html", "base.html", "404.html")
 
 	return r
 }
@@ -51,6 +57,9 @@ func createTestRenderer() multitemplate.Renderer {
 func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
+	// The CWD is not guaranteed to be the project root, so we must use robust pathing
+	// for any file access. The segmenter is already fixed. Now the templates are too.
+	// The database is just in-memory/a temp file so it's fine.
 	db, err := utils.InitDatabase()
 	if err != nil {
 		panic("Failed to initialize database for testing: " + err.Error())
@@ -67,7 +76,6 @@ func setupTestRouter() *gin.Engine {
 	searchHandler := NewSearchHandler(postService)
 
 	r := gin.New()
-	// *** THIS IS THE FIX: Set up the HTML renderer ***
 	r.HTMLRender = createTestRenderer()
 
 	r.GET("/", blogHandler.Index)
