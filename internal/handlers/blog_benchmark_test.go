@@ -8,37 +8,58 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	testRouter *gin.Engine
+	once       sync.Once
+)
+
 // setupTestRouter initializes a gin router with all the necessary dependencies for testing.
+// It also changes the working directory to the project root to ensure relative paths work correctly.
 func setupTestRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
+	once.Do(func() {
+		// --- Change working directory to project root ---
+		_, b, _, _ := runtime.Caller(0)
+		root := filepath.Join(filepath.Dir(b), "../../") // Move up two directories from internal/handlers
+		if err := os.Chdir(root); err != nil {
+			panic("Failed to change dir to project root: " + err.Error())
+		}
+		// --- End of directory change ---
 
-	db, err := utils.InitDatabase()
-	if err != nil {
-		panic("Failed to initialize database for testing: " + err.Error())
-	}
+		gin.SetMode(gin.TestMode)
 
-	postRepo := repository.NewPostRepository(db)
-	settingRepo := repository.NewSettingRepository(db)
+		db, err := utils.InitDatabase()
+		if err != nil {
+			panic("Failed to initialize database for testing: " + err.Error())
+		}
 
-	settingService := services.NewSettingService(settingRepo)
-	aiService := services.NewAIService()
-	postService := services.NewPostService(postRepo, settingService, aiService)
+		postRepo := repository.NewPostRepository(db)
+		settingRepo := repository.NewSettingRepository(db)
 
-	blogHandler := NewBlogHandler(postService)
-	searchHandler := NewSearchHandler(postService)
+		settingService := services.NewSettingService(settingRepo)
+		aiService := services.NewAIService()
+		postService := services.NewPostService(postRepo, settingService, aiService)
 
-	r := gin.New()
-	r.GET("/", blogHandler.Index)
-	r.GET("/post/:slug", blogHandler.ShowPost)
-	r.GET("/search", searchHandler.Search)
+		blogHandler := NewBlogHandler(postService)
+		searchHandler := NewSearchHandler(postService)
 
-	return r
+		r := gin.New()
+		r.GET("/", blogHandler.Index)
+		r.GET("/post/:slug", blogHandler.ShowPost)
+		r.GET("/search", searchHandler.Search)
+
+		testRouter = r
+	})
+	return testRouter
 }
 
 // BenchmarkGetIndex performs a benchmark test on the Index handler.
