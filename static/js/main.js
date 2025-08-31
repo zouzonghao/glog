@@ -28,6 +28,15 @@ function showNotification(message, type = 'info') {
 
 // DOM 加载完成后执行的脚本
 document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus search bar on home page
+    if (document.getElementById('home-page')) {
+        const searchInput = document.querySelector('.search-input');
+        if (searchInput) {
+            searchInput.focus();
+        }
+    }
+    
+
     // 主题切换逻辑
     const themeToggle = document.getElementById("theme-toggle");
     const htmlEl = document.documentElement;

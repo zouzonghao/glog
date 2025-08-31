@@ -14,10 +14,8 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
-	"gorm.io/gorm"
 )
 
-// PostLockManager manages locks on posts to prevent concurrent AI processing.
 var (
 	postLocks   = make(map[uint]bool)
 	postLocksMu sync.Mutex
@@ -37,8 +35,6 @@ func NewPostService(repo *repository.PostRepository, settingService *SettingServ
 	}
 }
 
-// processAndRenderContent handles the logic of splitting content by "<!--more-->"
-// and rendering it into the final HTML structure.
 func (s *PostService) processAndRenderContent(md string) (string, error) {
 	separatorRegex := regexp.MustCompile(`<!--\s*more\s*-->`)
 	parts := separatorRegex.Split(md, 2)
@@ -56,14 +52,10 @@ func (s *PostService) processAndRenderContent(md string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("正文渲染失败: %w", err)
 		}
-
-		// Combine summary (wrapped in blockquote) and body.
-		// The summaryHtml can contain its own <p> tags, which is valid inside a blockquote.
 		finalHtml := fmt.Sprintf("<blockquote class=\"post-summary\">%s</blockquote>%s", summaryHtml, bodyHtml)
 		return finalHtml, nil
 	}
 
-	// No separator, just render the whole content
 	fullHtml, err := utils.RenderMarkdown(md)
 	if err != nil {
 		return "", fmt.Errorf("全文渲染失败: %w", err)
@@ -71,21 +63,18 @@ func (s *PostService) processAndRenderContent(md string) (string, error) {
 	return string(fullHtml), nil
 }
 
-// LockPost locks a post for processing.
 func (s *PostService) LockPost(postID uint) {
 	postLocksMu.Lock()
 	defer postLocksMu.Unlock()
 	postLocks[postID] = true
 }
 
-// UnlockPost unlocks a post after processing.
 func (s *PostService) UnlockPost(postID uint) {
 	postLocksMu.Lock()
 	defer postLocksMu.Unlock()
 	delete(postLocks, postID)
 }
 
-// CheckPostLock checks if a post is currently locked.
 func (s *PostService) CheckPostLock(postID uint) bool {
 	postLocksMu.Lock()
 	defer postLocksMu.Unlock()
@@ -97,15 +86,14 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 		title = "未命名标题"
 	}
 
-	sanitizedContent := content
-	excerpt := utils.GenerateExcerpt(sanitizedContent, 150)
+	excerpt := utils.GenerateExcerpt(content, 150)
 
 	slugStr, err := s.generateUniqueSlug(title, 0)
 	if err != nil {
 		return nil, false, err
 	}
 
-	htmlContent, err := s.processAndRenderContent(sanitizedContent)
+	htmlContent, err := s.processAndRenderContent(content)
 	if err != nil {
 		return nil, false, err
 	}
@@ -113,7 +101,7 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 	post := &models.Post{
 		Title:       title,
 		Slug:        slugStr,
-		Content:     sanitizedContent,
+		Content:     content,
 		ContentHTML: htmlContent,
 		Excerpt:     excerpt,
 		IsPrivate:   isPrivate,
@@ -125,7 +113,6 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 		return nil, false, err
 	}
 
-	// Update FTS index
 	segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
 	segmentedContent := segmenter.SegmentTextForIndex(post.Content)
 	err = s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
@@ -135,7 +122,6 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 
 	aiTriggered := false
 	if aiSummary {
-		// 只有在没有手动摘要时才触发AI
 		separator := "<!--more-->"
 		if !strings.Contains(content, separator) || len(strings.TrimSpace(strings.SplitN(content, separator, 2)[0])) == 0 {
 			aiTriggered = true
@@ -162,20 +148,15 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 
 				if aiResp.Summary != "" {
 					updateMap["excerpt"] = aiResp.Summary
-
-					originalContent := post.Content
-					summary := aiResp.Summary
 					var newContent string
-
-					if strings.Contains(originalContent, separator) {
-						parts := strings.SplitN(originalContent, separator, 2)
-						before := strings.TrimSpace(parts[0])
-						if len(before) == 0 {
-							newContent = fmt.Sprintf("%s\n\n%s%s", summary, separator, parts[1])
+					if strings.Contains(post.Content, separator) {
+						parts := strings.SplitN(post.Content, separator, 2)
+						if len(strings.TrimSpace(parts[0])) == 0 {
+							newContent = fmt.Sprintf("%s\n\n%s%s", aiResp.Summary, separator, parts[1])
 							contentChanged = true
 						}
 					} else {
-						newContent = fmt.Sprintf("%s\n\n%s\n\n%s", summary, separator, originalContent)
+						newContent = fmt.Sprintf("%s\n\n%s\n\n%s", aiResp.Summary, separator, post.Content)
 						contentChanged = true
 					}
 
@@ -184,8 +165,6 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 						newHtmlContent, err := s.processAndRenderContent(newContent)
 						if err == nil {
 							updateMap["content_html"] = newHtmlContent
-						} else {
-							fmt.Printf("为 AI 生成的内容重新渲染 HTML 失败 for post ID %d: %v\n", post.ID, err)
 						}
 					}
 				}
@@ -194,35 +173,15 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 					newSlug, slugErr := s.generateUniqueSlug(aiResp.Title, post.ID)
 					if slugErr == nil {
 						updateMap["slug"] = newSlug
-					} else {
-						fmt.Printf("为 AI 生成的标题更新 slug 失败 for post ID %d: %v\n", post.ID, slugErr)
 					}
 				}
-
-				logMessage := fmt.Sprintf("AI 日志 (Post ID: %d): ", post.ID)
-				if aiResp.Title != "" && aiResp.Summary != "" {
-					logMessage += fmt.Sprintf("生成了标题 '%s' 和摘要 '%.50s...'", aiResp.Title, aiResp.Summary)
-				} else if aiResp.Summary != "" {
-					logMessage += fmt.Sprintf("生成了摘要 '%.50s...'", aiResp.Summary)
-				} else {
-					logMessage += "AI 未返回有效内容。"
-				}
-
-				if contentChanged {
-					logMessage += " -> 已更新正文。"
-				} else if strings.Contains(post.Content, "<!--more-->") {
-					logMessage += " -> 正文未更新 (用户已填写摘要)。"
-				}
-				fmt.Println(logMessage)
 
 				if len(updateMap) > 0 {
 					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
 						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					} else {
-						if aiResp.Title != "" {
-							segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
-							s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
-						}
+					} else if aiResp.Title != "" {
+						segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
+						s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
 					}
 				}
 			}()
@@ -233,6 +192,9 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 }
 
 func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool, aiSummary bool, publishedAt time.Time) (*models.Post, bool, error) {
+	if strings.TrimSpace(content) == "" {
+		return nil, false, s.DeletePost(id)
+	}
 	post, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, false, err
@@ -242,8 +204,7 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 		title = "未命名标题"
 	}
 
-	sanitizedContent := content
-	htmlContent, err := s.processAndRenderContent(sanitizedContent)
+	htmlContent, err := s.processAndRenderContent(content)
 	if err != nil {
 		return nil, false, err
 	}
@@ -257,9 +218,9 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	}
 
 	post.Title = title
-	post.Content = sanitizedContent
+	post.Content = content
 	post.ContentHTML = htmlContent
-	post.Excerpt = utils.GenerateExcerpt(sanitizedContent, 150)
+	post.Excerpt = utils.GenerateExcerpt(content, 150)
 	post.IsPrivate = isPrivate
 	post.PublishedAt = publishedAt
 
@@ -268,7 +229,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 		return nil, false, err
 	}
 
-	// Update FTS index
 	segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
 	segmentedContent := segmenter.SegmentTextForIndex(post.Content)
 	err = s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
@@ -278,7 +238,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 
 	aiTriggered := false
 	if aiSummary {
-		// 只有在没有手动摘要时才触发AI
 		separator := "<!--more-->"
 		if !strings.Contains(content, separator) || len(strings.TrimSpace(strings.SplitN(content, separator, 2)[0])) == 0 {
 			aiTriggered = true
@@ -287,7 +246,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 				defer s.UnlockPost(post.ID)
 				settings, err := s.settingService.GetAllSettings()
 				if err != nil {
-					fmt.Printf("获取 AI 设置失败 for post ID %d: %v\n", post.ID, err)
 					return
 				}
 				baseURL := settings[constants.SettingOpenAIBaseURL]
@@ -296,7 +254,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 
 				aiResp, err := s.aiService.GenerateSummaryAndTitle(post.Content, title == "未命名标题", baseURL, token, model)
 				if err != nil {
-					fmt.Printf("AI 摘要生成失败 for post ID %d: %v\n", post.ID, err)
 					return
 				}
 
@@ -305,20 +262,15 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 
 				if aiResp.Summary != "" {
 					updateMap["excerpt"] = aiResp.Summary
-
-					originalContent := post.Content
-					summary := aiResp.Summary
 					var newContent string
-
-					if strings.Contains(originalContent, separator) {
-						parts := strings.SplitN(originalContent, separator, 2)
-						before := strings.TrimSpace(parts[0])
-						if len(before) == 0 {
-							newContent = fmt.Sprintf("%s\n\n%s%s", summary, separator, parts[1])
+					if strings.Contains(post.Content, separator) {
+						parts := strings.SplitN(post.Content, separator, 2)
+						if len(strings.TrimSpace(parts[0])) == 0 {
+							newContent = fmt.Sprintf("%s\n\n%s%s", aiResp.Summary, separator, parts[1])
 							contentChanged = true
 						}
 					} else {
-						newContent = fmt.Sprintf("%s\n\n%s\n\n%s", summary, separator, originalContent)
+						newContent = fmt.Sprintf("%s\n\n%s\n\n%s", aiResp.Summary, separator, post.Content)
 						contentChanged = true
 					}
 
@@ -327,8 +279,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 						newHtmlContent, err := s.processAndRenderContent(newContent)
 						if err == nil {
 							updateMap["content_html"] = newHtmlContent
-						} else {
-							fmt.Printf("为 AI 生成的内容重新渲染 HTML 失败 for post ID %d: %v\n", post.ID, err)
 						}
 					}
 				}
@@ -337,35 +287,15 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 					newSlug, slugErr := s.generateUniqueSlug(aiResp.Title, post.ID)
 					if slugErr == nil {
 						updateMap["slug"] = newSlug
-					} else {
-						fmt.Printf("为 AI 生成的标题更新 slug 失败 for post ID %d: %v\n", post.ID, slugErr)
 					}
 				}
-
-				logMessage := fmt.Sprintf("AI 日志 (Post ID: %d): ", post.ID)
-				if aiResp.Title != "" && aiResp.Summary != "" {
-					logMessage += fmt.Sprintf("生成了标题 '%s' 和摘要 '%.50s...'", aiResp.Title, aiResp.Summary)
-				} else if aiResp.Summary != "" {
-					logMessage += fmt.Sprintf("生成了摘要 '%.50s...'", aiResp.Summary)
-				} else {
-					logMessage += "AI 未返回有效内容。"
-				}
-
-				if contentChanged {
-					logMessage += " -> 已更新正文。"
-				} else if strings.Contains(post.Content, "<!--more-->") {
-					logMessage += " -> 正文未更新 (用户已填写摘要)。"
-				}
-				fmt.Println(logMessage)
 
 				if len(updateMap) > 0 {
 					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
 						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					} else {
-						if aiResp.Title != "" {
-							segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
-							s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
-						}
+					} else if aiResp.Title != "" {
+						segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
+						s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
 					}
 				}
 			}()
@@ -453,6 +383,24 @@ func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLogged
 }
 
 func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error) {
+	// On-demand rendering for content_html
+	if post.ContentHTML == "" && post.Content != "" {
+		html, err := s.processAndRenderContent(post.Content)
+		if err != nil {
+			// Log the error but don't fail the request, return the raw content instead
+			fmt.Printf("按需渲染 Markdown 失败 for post ID %d: %v\n", post.ID, err)
+		} else {
+			post.ContentHTML = html
+			// Asynchronously update the database in the background
+			go func() {
+				err := s.repo.UpdateFields(post.ID, map[string]interface{}{"content_html": html})
+				if err != nil {
+					fmt.Printf("异步更新 content_html 失败 for post ID %d: %v\n", post.ID, err)
+				}
+			}()
+		}
+	}
+
 	renderedPost := &models.RenderedPost{
 		ID:          post.ID,
 		CreatedAt:   post.CreatedAt,
@@ -460,7 +408,6 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		PublishedAt: post.PublishedAt,
 		Title:       post.Title,
 		Slug:        post.Slug,
-		Summary:     "", // Summary is now part of the Body
 		Body:        template.HTML(post.ContentHTML),
 		Excerpt:     post.Excerpt,
 		IsPrivate:   post.IsPrivate,
@@ -468,7 +415,6 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 	return renderedPost, nil
 }
 
-// generateUniqueSlug checks for slug uniqueness and appends a counter if needed.
 func (s *PostService) generateUniqueSlug(title string, postID uint) (string, error) {
 	baseSlug := slug.Make(title)
 	if baseSlug == "" {
@@ -497,7 +443,6 @@ func (s *PostService) generateUniqueSlug(title string, postID uint) (string, err
 	return finalSlug, nil
 }
 
-// GetAllPostsForBackup retrieves all posts for backup.
 func (s *PostService) GetAllPostsForBackup() ([]models.PostBackup, error) {
 	posts, err := s.repo.FindAllForBackup()
 	if err != nil {
@@ -516,30 +461,42 @@ func (s *PostService) GetAllPostsForBackup() ([]models.PostBackup, error) {
 	return backupPosts, nil
 }
 
-// CreatePostsFromBackup creates posts from a backup file, ensuring business logic is applied.
 func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
-	return s.repo.GetDB().Transaction(func(tx *gorm.DB) error {
-		txRepo := repository.NewPostRepository(tx)
-
-		for _, p := range posts {
-			txService := NewPostService(txRepo, s.settingService, s.aiService)
-			_, _, err := txService.CreatePost(p.Title, p.Content, p.IsPrivate, false, p.PublishedAt)
-			if err != nil {
-				return fmt.Errorf("导入文章 '%s' 失败: %w", p.Title, err)
-			}
+	newPosts := make([]models.Post, 0, len(posts))
+	for _, p := range posts {
+		slugStr, err := s.generateUniqueSlug(p.Title, 0)
+		if err != nil {
+			return fmt.Errorf("为导入的文章 '%s' 生成 slug 失败: %w", p.Title, err)
 		}
-		return nil
-	})
+		newPosts = append(newPosts, models.Post{
+			Title:       p.Title,
+			Slug:        slugStr,
+			Content:     p.Content,
+			IsPrivate:   p.IsPrivate,
+			PublishedAt: p.PublishedAt,
+			Excerpt:     utils.GenerateExcerpt(p.Content, 150),
+		})
+	}
+
+	if err := s.repo.CreateBatchFromBackup(newPosts); err != nil {
+		return fmt.Errorf("批量导入文章失败: %w", err)
+	}
+
+	fmt.Println("文章导入成功，开始重建全文搜索索引...")
+	if err := s.repo.RebuildFtsIndex(); err != nil {
+		fmt.Printf("警告：重建全文搜索索引失败: %v\n", err)
+	} else {
+		fmt.Println("全文搜索索引重建成功！")
+	}
+
+	return nil
 }
 
-// BatchUpdatePosts performs a batch operation on multiple posts.
 func (s *PostService) BatchUpdatePosts(ids []uint, action string, isPrivate bool) error {
 	switch action {
 	case "delete":
-		// Also delete from FTS index
 		for _, id := range ids {
 			if err := s.repo.DeleteFtsIndex(id); err != nil {
-				// Log the error but continue trying to delete other posts
 				fmt.Printf("删除 FTS 索引失败 for post ID %d: %v\n", id, err)
 			}
 		}

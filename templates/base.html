@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{{ .site_description }}">
-    <title>{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}</title>
+    {{ block "description" . }}<meta name="description" content="{{ .site_description }}">{{ end }}
+    <title>{{ block "title" . }}{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}{{ end }}</title>
     
 <script>
         (function() {
@@ -20,7 +20,6 @@
                 theme = "light";
             }
             
-            // 在首次访问且未明确设置主题时，将检测到的偏好存入 localStorage
             if (!savedTheme) {
                 localStorage.setItem("theme", theme);
             }
@@ -56,7 +55,6 @@
                     <nav class="main-nav" id="main-nav">
                         <ul>
                             <li><a href="/">主页</a></li>
-                            <!-- Add more static links here, e.g., <li><a href="/about">关于</a></li> -->
                             {{ if .IsLoggedIn }}
                                 <li><a href="/admin/new">新建</a></li>
                                 <li><a href="/admin">管理</a></li>
@@ -94,15 +92,6 @@
 <a href="#top" id="back-to-top" class="back-to-top" title="Back to top">&uarr;</a>
     
 <div id="notification-container"></div>
-<div id="modal-container" class="modal-container" style="display: none;">
-    <div class="modal-content">
-        <p id="modal-text">确定要删除选中的文章吗？</p>
-        <div class="modal-actions">
-            <button id="modal-confirm-btn" class="modal-btn confirm">确认</button>
-            <button id="modal-cancel-btn" class="modal-btn cancel">取消</button>
-        </div>
-    </div>
-</div>
     {{ block "scripts" . }}{{ end }}
     <script src="/static/js/main.js"></script>
 </body>

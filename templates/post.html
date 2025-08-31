@@ -2,6 +2,7 @@
 
 {{ define "title" }}{{ .post.Title }} - {{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}{{ end }}
 
+{{ define "description" }}<meta name="description" content="{{ if .post.Excerpt }}{{ .post.Excerpt }}{{ else }}{{ .site_description }}{{ end }}">{{ end }}
 {{ define "head" }}
     <link rel="stylesheet" href="/static/css/prism.css">
 {{ end }}

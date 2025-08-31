@@ -5,6 +5,7 @@ import (
 	"glog/internal/handlers"
 	"glog/internal/repository"
 	"glog/internal/services"
+	"glog/internal/tasks"
 	"glog/internal/utils"
 	"html/template"
 	"io/fs"
@@ -17,10 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// IsRelease is a build-time variable that will be true if the 'release' tag is used.
 var IsRelease bool
-
-// Global filesystems that will be populated by either assets_dev.go or assets_prod.go at startup.
 var templatesFS fs.FS
 var staticFS fs.FS
 
@@ -48,42 +46,36 @@ func createRenderer() multitemplate.Renderer {
 }
 
 func main() {
-	// Defer the freeing of jieba resources
-
-	// Set Gin mode based on build tag
 	if IsRelease {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// Asset loading is now handled automatically by build tags.
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
 	flag.Parse()
 
-	// 初始化数据库
 	db, err := utils.InitDatabase()
 	if err != nil {
 		log.Fatal("初始化数据库失败：", err)
 	}
 
-	// 初始化依赖
 	postRepo := repository.NewPostRepository(db)
 	settingRepo := repository.NewSettingRepository(db)
 
 	settingService := services.NewSettingService(settingRepo)
 	aiService := services.NewAIService()
 	postService := services.NewPostService(postRepo, settingService, aiService)
+	backupService := services.NewBackupService(postService, settingService)
+	scheduler := tasks.NewScheduler(settingService, backupService)
 
 	blogHandler := handlers.NewBlogHandler(postService)
-	adminHandler := handlers.NewAdminHandler(postService, settingService, aiService)
+	adminHandler := handlers.NewAdminHandler(postService, settingService, aiService, backupService, scheduler)
 	searchHandler := handlers.NewSearchHandler(postService)
 	authHandler := handlers.NewAuthHandler(settingService)
 	apiHandler := handlers.NewAPIHandler(postService)
 
-	// 设置Gin路由
 	r := gin.Default()
 	r.HTMLRender = createRenderer()
 
-	// 设置会话中间件
 	store := cookie.NewStore([]byte("secret-key-should-be-changed"))
 	store.Options(sessions.Options{
 		HttpOnly: true,
@@ -92,25 +84,20 @@ func main() {
 	})
 	r.Use(sessions.Sessions("glog_session", store))
 
-	// 加载设置的中间件
 	r.Use(handlers.SettingsMiddleware(settingService))
 
-	// 静态文件服务
 	staticGroup := r.Group("/static")
 	staticGroup.Use(handlers.CacheControlMiddleware())
 	staticGroup.StaticFS("/", http.FS(staticFS))
 
-	// 博客路由
 	r.GET("/", blogHandler.Index)
 	r.GET("/post/:slug", blogHandler.ShowPost)
 	r.GET("/search", searchHandler.Search)
 
-	// 认证路由
 	r.GET("/login", authHandler.ShowLoginPage)
 	r.POST("/login", authHandler.Login)
 	r.GET("/logout", authHandler.Logout)
 
-	// 后台路由
 	admin := r.Group("/admin")
 	admin.Use(handlers.AuthMiddleware())
 	{
@@ -128,10 +115,13 @@ func main() {
 		settings.GET("/", adminHandler.ShowSettingsPage)
 		settings.POST("/", adminHandler.UpdateSettings)
 		settings.POST("/test-ai", adminHandler.TestAISettings)
-		settings.GET("/backup", adminHandler.BackupPosts)
-		settings.POST("/upload", adminHandler.UploadPosts)
+		settings.GET("/backup", adminHandler.BackupSite)
+		settings.POST("/upload", adminHandler.UploadBackup)
+		settings.POST("/test-github", adminHandler.TestGithubSettings)
+		settings.POST("/test-webdav", adminHandler.TestWebdavSettings)
+		settings.POST("/backup-github-now", adminHandler.BackupToGithubNow)
+		settings.POST("/backup-webdav-now", adminHandler.BackupToWebdavNow)
 	}
-	// API 路由
 	api := r.Group("/api/v1")
 	api.Use(handlers.APIAuthMiddleware(settingService))
 	{
@@ -139,10 +129,10 @@ func main() {
 		api.GET("/posts", apiHandler.FindPosts)
 	}
 
-	// 404处理
 	r.NoRoute(blogHandler.NotFound)
 
-	// 启动服务器
+	go scheduler.Start()
+
 	log.Println("服务器启动于 :37371")
 	r.Run(":37371")
 }

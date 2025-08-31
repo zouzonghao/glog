@@ -61,6 +61,15 @@
     </div>
 
     {{ template "pagination" . }}
+<div id="modal-container" class="modal-container" style="display: none;">
+    <div class="modal-content">
+        <p id="modal-text">确定要删除选中的文章吗？</p>
+        <div class="modal-actions">
+            <button id="modal-confirm-btn" class="modal-btn confirm">确认</button>
+            <button id="modal-cancel-btn" class="modal-btn cancel">取消</button>
+        </div>
+    </div>
+</div>
 {{ end }}
 
 {{ define "scripts" }}

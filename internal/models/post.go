@@ -39,3 +39,9 @@ type PostBackup struct {
 	IsPrivate   bool      `json:"is_private"`
 	PublishedAt time.Time `json:"published_at"`
 }
+
+// SiteBackup defines the structure for a full site backup, including posts and settings.
+type SiteBackup struct {
+	Posts    []PostBackup      `json:"posts"`
+	Settings map[string]string `json:"settings"`
+}

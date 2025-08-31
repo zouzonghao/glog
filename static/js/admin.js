@@ -1,45 +1,47 @@
 document.addEventListener('DOMContentLoaded', function() {
     const postListBody = document.querySelector('.post-list-body');
 
-    // --- 单个删除逻辑 ---
-    postListBody.addEventListener('focusin', function(event) {
-        if (event.target.classList.contains('delete-wrapper')) {
-            const wrapper = event.target;
-            const confirmButton = wrapper.querySelector('.delete-confirm');
-            
-            confirmButton.classList.add('disabled');
-            setTimeout(() => {
-                confirmButton.classList.remove('disabled');
-            }, 1000);
-        }
-    });
+    if (postListBody) {
+        // --- 单个删除逻辑 ---
+        postListBody.addEventListener('focusin', function(event) {
+            if (event.target.classList.contains('delete-wrapper')) {
+                const wrapper = event.target;
+                const confirmButton = wrapper.querySelector('.delete-confirm');
+                
+                confirmButton.classList.add('disabled');
+                setTimeout(() => {
+                    confirmButton.classList.remove('disabled');
+                }, 1000);
+            }
+        });
 
-    postListBody.addEventListener('click', function(event) {
-        const confirmButton = event.target;
-        if (confirmButton.classList.contains('delete-confirm') && !confirmButton.classList.contains('disabled')) {
-            const postId = confirmButton.dataset.id;
-            
-            fetch(`/admin/delete/${postId}`, {
-                method: 'POST',
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showNotification(data.message, 'success');
-                    const itemToRemove = confirmButton.closest('.post-list-item');
-                    if (itemToRemove) {
-                        itemToRemove.remove();
+        postListBody.addEventListener('click', function(event) {
+            const confirmButton = event.target;
+            if (confirmButton.classList.contains('delete-confirm') && !confirmButton.classList.contains('disabled')) {
+                const postId = confirmButton.dataset.id;
+                
+                fetch(`/admin/delete/${postId}`, {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showNotification(data.message, 'success');
+                        const itemToRemove = confirmButton.closest('.post-list-item');
+                        if (itemToRemove) {
+                            itemToRemove.remove();
+                        }
+                    } else {
+                        showNotification(data.message, 'error');
                     }
-                } else {
-                    showNotification(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('删除失败:', error);
-                showNotification('删除文章时出错！', 'error');
-            });
-        }
-    });
+                })
+                .catch(error => {
+                    console.error('删除失败:', error);
+                    showNotification('删除文章时出错！', 'error');
+                });
+            }
+        });
+    }
 
     // --- 批量操作逻辑 ---
     const selectAllCheckbox = document.getElementById('select-all-posts');
@@ -47,20 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const batchDeleteBtn = document.getElementById('batch-delete-btn');
     const batchSetPrivateBtn = document.getElementById('batch-set-private-btn');
     const batchSetPublicBtn = document.getElementById('batch-set-public-btn');
-    const modalContainer = document.getElementById('modal-container');
-    const modalConfirmBtn = document.getElementById('modal-confirm-btn');
-    const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
     let currentAction = null;
     let currentIsPrivate = false;
-
-    function updateBatchButtons() {
-        const selectedIds = getSelectedPostIds();
-        const hasSelection = selectedIds.length > 0;
-        batchDeleteBtn.disabled = !hasSelection;
-        batchSetPrivateBtn.disabled = !hasSelection;
-        batchSetPublicBtn.disabled = !hasSelection;
-    }
 
     function getSelectedPostIds() {
         return Array.from(postCheckboxes)
@@ -68,25 +59,34 @@ document.addEventListener('DOMContentLoaded', function() {
             .map(checkbox => parseInt(checkbox.dataset.id, 10));
     }
 
-    selectAllCheckbox.addEventListener('change', function() {
-        postCheckboxes.forEach(checkbox => {
-            checkbox.checked = selectAllCheckbox.checked;
-        });
-        updateBatchButtons();
-    });
+    function updateBatchButtons() {
+        const hasSelection = getSelectedPostIds().length > 0;
+        if (batchDeleteBtn) batchDeleteBtn.disabled = !hasSelection;
+        if (batchSetPrivateBtn) batchSetPrivateBtn.disabled = !hasSelection;
+        if (batchSetPublicBtn) batchSetPublicBtn.disabled = !hasSelection;
+    }
 
-    postCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (!this.checked) {
-                selectAllCheckbox.checked = false;
-            } else {
-                if (Array.from(postCheckboxes).every(cb => cb.checked)) {
-                    selectAllCheckbox.checked = true;
-                }
-            }
+    if (selectAllCheckbox && postCheckboxes.length > 0) {
+        selectAllCheckbox.addEventListener('change', function() {
+            postCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
             updateBatchButtons();
         });
-    });
+
+        postCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (!this.checked) {
+                    selectAllCheckbox.checked = false;
+                } else {
+                    if (Array.from(postCheckboxes).every(cb => cb.checked)) {
+                        selectAllCheckbox.checked = true;
+                    }
+                }
+                updateBatchButtons();
+            });
+        });
+    }
 
     async function handleBatchAction() {
         const ids = getSelectedPostIds();
@@ -98,16 +98,13 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch('/admin/posts/batch-update', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids, action: currentAction, is_private: currentIsPrivate }),
             });
             const data = await response.json();
 
             if (data.status === 'success') {
                 showNotification(data.message, 'success');
-                // 为了确保数据一致性，在短暂显示通知后重新加载页面
                 setTimeout(() => window.location.reload(), 1000);
             } else {
                 showNotification(data.message, 'error');
@@ -116,41 +113,67 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('批量操作失败:', error);
             showNotification('批量操作时出错！', 'error');
         } finally {
-            // 仅在删除操作时关闭模态框
             if (currentAction === 'delete') {
-                closeModal();
+                const modalContainer = document.getElementById('modal-container');
+                if (modalContainer) {
+                    modalContainer.style.display = 'none';
+                    modalContainer.style.opacity = '0';
+                    modalContainer.style.visibility = 'hidden';
+                }
             }
         }
     }
 
-    function showModal() {
-        modalContainer.style.display = 'flex';
+    if (batchDeleteBtn) {
+        batchDeleteBtn.addEventListener('click', () => {
+            const modalContainer = document.getElementById('modal-container');
+            if (!modalContainer) {
+                console.error('Modal container #modal-container not found!');
+                showNotification('页面组件加载失败，请刷新重试。', 'error');
+                return;
+            }
+
+            if (!modalContainer.dataset.listenersAttached) {
+                const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+                const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+                if (modalConfirmBtn && modalCancelBtn) {
+                    const closeModal = () => {
+                        modalContainer.style.display = 'none';
+                        modalContainer.style.opacity = '0';
+                        modalContainer.style.visibility = 'hidden';
+                    };
+                    modalConfirmBtn.addEventListener('click', handleBatchAction);
+                    modalCancelBtn.addEventListener('click', closeModal);
+                    modalContainer.addEventListener('click', (event) => {
+                        if (event.target === modalContainer) {
+                            closeModal();
+                        }
+                    });
+                    modalContainer.dataset.listenersAttached = 'true';
+                }
+            }
+            
+            currentAction = 'delete';
+            modalContainer.style.display = 'flex';
+            modalContainer.style.opacity = '1';
+            modalContainer.style.visibility = 'visible';
+        });
     }
 
-    function closeModal() {
-        modalContainer.style.display = 'none';
+    if (batchSetPrivateBtn) {
+        batchSetPrivateBtn.addEventListener('click', () => {
+            currentAction = 'set-private';
+            currentIsPrivate = true;
+            handleBatchAction();
+        });
     }
 
-    batchDeleteBtn.addEventListener('click', () => {
-        currentAction = 'delete';
-        showModal();
-    });
-    batchSetPrivateBtn.addEventListener('click', () => {
-        currentAction = 'set-private';
-        currentIsPrivate = true;
-        handleBatchAction();
-    });
-    batchSetPublicBtn.addEventListener('click', () => {
-        currentAction = 'set-private';
-        currentIsPrivate = false;
-        handleBatchAction();
-    });
-
-    modalConfirmBtn.addEventListener('click', handleBatchAction);
-    modalCancelBtn.addEventListener('click', closeModal);
-    modalContainer.addEventListener('click', function(event) {
-        if (event.target === modalContainer) {
-            closeModal();
-        }
-    });
+    if (batchSetPublicBtn) {
+        batchSetPublicBtn.addEventListener('click', () => {
+            currentAction = 'set-private';
+            currentIsPrivate = false;
+            handleBatchAction();
+        });
+    }
 });

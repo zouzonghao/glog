@@ -2,6 +2,7 @@ package repository
 
 import (
 	"glog/internal/models"
+	"glog/internal/utils/segmenter"
 
 	"gorm.io/gorm"
 )
@@ -26,17 +27,44 @@ func (r *PostRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Post{}, id).Error
 }
 
-// UpdateFtsIndex 更新文章的 FTS 索引
 func (r *PostRepository) UpdateFtsIndex(id uint, title, content string) error {
-	// 使用 INSERT OR REPLACE 来插入或更新索引
 	query := `INSERT OR REPLACE INTO posts_fts (rowid, title, content) VALUES (?, ?, ?)`
 	return r.db.Exec(query, id, title, content).Error
 }
 
-// DeleteFtsIndex 删除文章的 FTS 索引
 func (r *PostRepository) DeleteFtsIndex(id uint) error {
 	query := `DELETE FROM posts_fts WHERE rowid = ?`
 	return r.db.Exec(query, id).Error
+}
+
+func (r *PostRepository) RebuildFtsIndex() error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Clear the existing FTS index
+		if err := tx.Exec("DELETE FROM posts_fts").Error; err != nil {
+			return err
+		}
+
+		// 2. Fetch all posts
+		var posts []models.Post
+		if err := tx.Select("id, title, content").Find(&posts).Error; err != nil {
+			return err
+		}
+
+		// 3. Re-populate the FTS index
+		for _, post := range posts {
+			segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
+			segmentedContent := segmenter.SegmentTextForIndex(post.Content)
+			query := `INSERT OR REPLACE INTO posts_fts (rowid, title, content) VALUES (?, ?, ?)`
+			if err := tx.Exec(query, post.ID, segmentedTitle, segmentedContent).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (r *PostRepository) CreateBatchFromBackup(posts []models.Post) error {
+	return r.db.Create(&posts).Error
 }
 
 func (r *PostRepository) FindByID(id uint) (*models.Post, error) {
@@ -131,12 +159,8 @@ func (r *PostRepository) CountAllByAdmin(query, status string) (int64, error) {
 	return count, err
 }
 
-// SearchPage searches posts with pagination using FTS, ordering by relevance (rank).
 func (r *PostRepository) SearchPage(ftsQuery string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
-
-	// Use JOIN for potentially better performance and to access the rank column.
-	// Order by FTS5's rank to ensure the most relevant results appear first.
 	dbQuery := r.db.Table("posts").
 		Select("posts.*, posts_fts.rank").
 		Joins("JOIN posts_fts ON posts.id = posts_fts.rowid").
@@ -147,18 +171,13 @@ func (r *PostRepository) SearchPage(ftsQuery string, page, pageSize int, isLogge
 	}
 
 	offset := (page - 1) * pageSize
-	// Ordering by rank is crucial for a good search experience.
-	// FTS5's rank is a negative number, so ascending order is correct.
 	err := dbQuery.Order("posts_fts.rank").Offset(offset).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 
-// CountByQuery counts the total number of posts matching an FTS query, respecting login status.
 func (r *PostRepository) CountByQuery(ftsQuery string, isLoggedIn bool) (int64, error) {
 	var count int64
-
 	subQuery := r.db.Table("posts_fts").Select("rowid").Where("posts_fts MATCH ?", ftsQuery)
-
 	dbQuery := r.db.Model(&models.Post{}).Where("id IN (?)", subQuery)
 
 	if !isLoggedIn {
@@ -169,7 +188,6 @@ func (r *PostRepository) CountByQuery(ftsQuery string, isLoggedIn bool) (int64, 
 	return count, err
 }
 
-// FindAllForBackup retrieves all posts for backup, excluding the content_html field.
 func (r *PostRepository) FindAllForBackup() ([]models.Post, error) {
 	var posts []models.Post
 	err := r.db.Select("title, content, is_private, published_at").
@@ -178,22 +196,18 @@ func (r *PostRepository) FindAllForBackup() ([]models.Post, error) {
 	return posts, err
 }
 
-// UpdateFields updates specific fields of a post.
 func (r *PostRepository) UpdateFields(id uint, fields map[string]interface{}) error {
 	return r.db.Model(&models.Post{}).Where("id = ?", id).Updates(fields).Error
 }
 
-// DeleteByIDs deletes multiple posts by their IDs.
 func (r *PostRepository) DeleteByIDs(ids []uint) error {
 	return r.db.Where("id IN ?", ids).Delete(&models.Post{}).Error
 }
 
-// UpdatePrivacyByIDs updates the is_private field for multiple posts.
 func (r *PostRepository) UpdatePrivacyByIDs(ids []uint, isPrivate bool) error {
 	return r.db.Model(&models.Post{}).Where("id IN ?", ids).Update("is_private", isPrivate).Error
 }
 
-// GetDB returns the underlying gorm.DB object.
 func (r *PostRepository) GetDB() *gorm.DB {
 	return r.db
 }
