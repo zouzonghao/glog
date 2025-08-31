@@ -391,13 +391,9 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 			fmt.Printf("按需渲染 Markdown 失败 for post ID %d: %v\n", post.ID, err)
 		} else {
 			post.ContentHTML = html
-			// Asynchronously update the database in the background
-			go func() {
-				err := s.repo.UpdateFields(post.ID, map[string]interface{}{"content_html": html})
-				if err != nil {
-					fmt.Printf("异步更新 content_html 失败 for post ID %d: %v\n", post.ID, err)
-				}
-			}()
+			// [OPTIMIZATION] REMOVED: Asynchronous database update from a GET request.
+			// This was causing slow queries and unnecessary database writes.
+			// The content_html should only be generated and saved during CreatePost and UpdatePost.
 		}
 	}
 
