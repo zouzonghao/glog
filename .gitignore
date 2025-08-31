@@ -15,3 +15,5 @@ build_tool
 internal/.DS_Store
 static/pagefind
 *.json
+# Go test artifacts
+*.test
