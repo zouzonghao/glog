@@ -105,9 +105,9 @@ main {
 h1, h2, h3, h4 {
     color: var(--color-accent-primary);
 }
-h1 { font-size: 1.4rem; font-weight: 400; margin-top: 0; margin-bottom: 0.25em; }
-h2 { font-size: 1.4rem; font-weight: 380; margin-top: 2em; margin-bottom: 0.8em; }
-h3 { font-size: 1.2rem; font-weight: 350; margin-top: 2em; margin-bottom: 0.5em; }
+h1 { font-size: 1.5rem; font-weight: 500; margin-top: 0; margin-bottom: 0.25em; }
+h2 { font-size: 1.4rem; font-weight: 380; margin-top: 1.5em; margin-bottom: 1em; }
+h3 { font-size: 1.2rem; font-weight: 350; margin-top: 1.25em; margin-bottom: 0.5em; }
 h4 { font-size: 1.1rem; font-weight: 300; margin-top: 0.5em; margin-bottom: 0.5em; }
 
 .group-title {
@@ -119,7 +119,7 @@ h4 { font-size: 1.1rem; font-weight: 300; margin-top: 0.5em; margin-bottom: 0.5e
 }
 
 p {
-    margin-bottom: 1.25em;
+    margin-bottom: 1em;
 }
 a {
     color: var(--color-text-primary);
@@ -692,7 +692,7 @@ html.dark .post-list-item:hover {
     margin-bottom: 2rem;
 }
 .post-content {
-    line-height: 1.25;
+    line-height: 1.35;
 }
 .post-content img {
     max-width: 100%;
@@ -704,10 +704,11 @@ html.dark .post-list-item:hover {
 .post-content pre {
     background-color: #2d2d2d;
     color: #cccccc;
-    padding: 1em;
+    padding: 0.75em;
     margin: .5em 0;
     overflow-x: auto;
     border-radius: 0.3em;
+    font-size: 0.85em;
 }
 .post-content code {
     word-break: break-all;
