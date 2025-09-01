@@ -4,12 +4,12 @@
 
 ### 安装命令
 ```bash
-bash <(curl -sL https://cdn.jsdelivr.net/gh/zouzonghao/glog@install/glog.sh) install
+bash <(curl -sL https://zfff.de/glog) install
 ```
 
 ### 卸载命令
 ```bash
-bash <(curl -sL https://cdn.jsdelivr.net/gh/zouzonghao/glog@install/glog.sh) uninstall
+bash <(curl -sL https://zfff.de/glog) uninstall
 ```
 
 ## 默认路径
