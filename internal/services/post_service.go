@@ -337,11 +337,24 @@ func (s *PostService) GetPostsPageByAdmin(page, pageSize int, query, status stri
 }
 
 func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
-	posts, err := s.repo.SearchPageByLike(query, page, pageSize, isLoggedIn)
+	re := regexp.MustCompile(`[\s,，]+`)
+	keywords := re.Split(strings.TrimSpace(query), -1)
+	var cleanedKeywords []string
+	for _, keyword := range keywords {
+		if keyword != "" {
+			cleanedKeywords = append(cleanedKeywords, keyword)
+		}
+	}
+
+	if len(cleanedKeywords) == 0 {
+		return []models.RenderedPost{}, 0, nil
+	}
+
+	posts, err := s.repo.SearchPageByLike(cleanedKeywords, page, pageSize, isLoggedIn)
 	if err != nil {
 		return nil, 0, err
 	}
-	total, err := s.repo.CountByQueryByLike(query, isLoggedIn)
+	total, err := s.repo.CountByQueryByLike(cleanedKeywords, isLoggedIn)
 	if err != nil {
 		return nil, 0, err
 	}

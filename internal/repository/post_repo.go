@@ -143,10 +143,14 @@ func (r *PostRepository) UpdatePrivacyByIDs(ids []uint, isPrivate bool) error {
 
 // --- LIKE Search Methods ---
 
-func (r *PostRepository) SearchPageByLike(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
+func (r *PostRepository) SearchPageByLike(keywords []string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
-	likeQuery := "%" + query + "%"
-	dbQuery := r.db.Where("title LIKE ? OR content LIKE ?", likeQuery, likeQuery).Order("published_at desc")
+	dbQuery := r.db.Order("published_at desc")
+
+	for _, keyword := range keywords {
+		likeQuery := "%" + keyword + "%"
+		dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", likeQuery, likeQuery)
+	}
 
 	if !isLoggedIn {
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now())
@@ -156,10 +160,14 @@ func (r *PostRepository) SearchPageByLike(query string, page, pageSize int, isLo
 	return posts, err
 }
 
-func (r *PostRepository) CountByQueryByLike(query string, isLoggedIn bool) (int64, error) {
+func (r *PostRepository) CountByQueryByLike(keywords []string, isLoggedIn bool) (int64, error) {
 	var count int64
-	likeQuery := "%" + query + "%"
-	dbQuery := r.db.Model(&models.Post{}).Where("title LIKE ? OR content LIKE ?", likeQuery, likeQuery)
+	dbQuery := r.db.Model(&models.Post{})
+
+	for _, keyword := range keywords {
+		likeQuery := "%" + keyword + "%"
+		dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", likeQuery, likeQuery)
+	}
 
 	if !isLoggedIn {
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now())

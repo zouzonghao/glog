@@ -11,7 +11,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	_ "net/http/pprof"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
@@ -134,13 +133,6 @@ func main() {
 	r.NoRoute(blogHandler.NotFound)
 
 	go scheduler.Start()
-
-	go func() {
-		log.Println("启动 pprof 服务器于 :6060")
-		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-			log.Printf("pprof 服务器启动失败: %v", err)
-		}
-	}()
 
 	log.Println("服务器启动于 :37371")
 	r.Run(":37371")
