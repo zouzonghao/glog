@@ -2,7 +2,6 @@ package repository
 
 import (
 	"glog/internal/models"
-	"glog/internal/utils/segmenter"
 	"time"
 
 	"gorm.io/gorm"
@@ -140,73 +139,6 @@ func (r *PostRepository) DeleteByIDs(ids []uint) error {
 
 func (r *PostRepository) UpdatePrivacyByIDs(ids []uint, isPrivate bool) error {
 	return r.db.Model(&models.Post{}).Where("id IN ?", ids).Update("is_private", isPrivate).Error
-}
-
-// --- FTS Specific Methods ---
-
-func (r *PostRepository) SearchPage(query string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
-	var posts []models.Post
-	dbQuery := r.db.Table("posts").
-		Joins("JOIN posts_fts ON posts.rowid = posts_fts.rowid").
-		Where("posts_fts MATCH ?", query).
-		Order("bm25(posts_fts, 2, 1)")
-
-	if !isLoggedIn {
-		dbQuery = dbQuery.Where("posts.is_private = ? AND posts.published_at <= ?", false, time.Now())
-	}
-
-	err := dbQuery.Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
-	return posts, err
-}
-
-func (r *PostRepository) CountByQuery(query string, isLoggedIn bool) (int64, error) {
-	var count int64
-	dbQuery := r.db.Model(&models.Post{}).
-		Joins("JOIN posts_fts ON posts.rowid = posts_fts.rowid").
-		Where("posts_fts MATCH ?", query)
-
-	if !isLoggedIn {
-		dbQuery = dbQuery.Where("posts.is_private = ? AND posts.published_at <= ?", false, time.Now())
-	}
-
-	err := dbQuery.Count(&count).Error
-	return count, err
-}
-
-func (r *PostRepository) UpdateFtsIndex(postID uint, title, content string) error {
-	return r.db.Exec("INSERT OR REPLACE INTO posts_fts (rowid, title, content) VALUES (?, ?, ?)", postID, title, content).Error
-}
-
-func (r *PostRepository) DeleteFtsIndex(postID uint) error {
-	return r.db.Exec("DELETE FROM posts_fts WHERE rowid = ?", postID).Error
-}
-
-func (r *PostRepository) RebuildFtsIndex() error {
-	var posts []models.Post
-	if err := r.db.Find(&posts).Error; err != nil {
-		return err
-	}
-
-	tx := r.db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	if err := tx.Exec("DELETE FROM posts_fts").Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	for _, post := range posts {
-		segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
-		segmentedContent := segmenter.SegmentTextForIndex(post.Content)
-		if err := tx.Exec("INSERT INTO posts_fts (rowid, title, content) VALUES (?, ?, ?)", post.ID, segmentedTitle, segmentedContent).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-
-	return tx.Commit().Error
 }
 
 // --- LIKE Search Methods ---

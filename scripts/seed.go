@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"glog/internal/constants"
 	"glog/internal/models"
 	"glog/internal/utils"
 	"log"
@@ -88,12 +87,6 @@ func main() {
 		log.Fatalf("数据库初始化失败: %v", err)
 	}
 	log.Println("数据库连接成功。")
-
-	log.Println("将搜索引擎设置为 'like' 模式...")
-	if err := db.Model(&models.Setting{}).Where("key = ?", constants.SettingSearchEngine).Update("value", "like").Error; err != nil {
-		log.Fatalf("更新搜索引擎设置失败: %v", err)
-	}
-	log.Println("设置成功。")
 
 	log.Println("清空旧的文章数据...")
 	if err := db.Exec("DELETE FROM posts").Error; err != nil {

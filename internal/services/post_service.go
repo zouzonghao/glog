@@ -7,7 +7,6 @@ import (
 	"glog/internal/models"
 	"glog/internal/repository"
 	"glog/internal/utils"
-	"glog/internal/utils/segmenter"
 	"html/template"
 	"io"
 	"regexp"
@@ -115,16 +114,6 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 		return nil, false, err
 	}
 
-	searchEngine, _ := s.settingService.GetSetting(constants.SettingSearchEngine)
-	if searchEngine == "fts5" {
-		segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
-		segmentedContent := segmenter.SegmentTextForIndex(post.Content)
-		err = s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
-		if err != nil {
-			fmt.Printf("更新 FTS 索引失败 for post ID %d: %v\n", post.ID, err)
-		}
-	}
-
 	aiTriggered := false
 	if aiSummary {
 		separator := "<!--more-->"
@@ -184,10 +173,6 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 				if len(updateMap) > 0 {
 					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
 						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					} else if aiResp.Title != "" && searchEngine == "fts5" {
-						segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
-						segmentedContent := segmenter.SegmentTextForIndex(updateMap["content"].(string))
-						s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
 					}
 				}
 			}()
@@ -233,16 +218,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	err = s.repo.Update(post)
 	if err != nil {
 		return nil, false, err
-	}
-
-	searchEngine, _ := s.settingService.GetSetting(constants.SettingSearchEngine)
-	if searchEngine == "fts5" {
-		segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
-		segmentedContent := segmenter.SegmentTextForIndex(post.Content)
-		err = s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
-		if err != nil {
-			fmt.Printf("更新 FTS 索引失败 for post ID %d: %v\n", post.ID, err)
-		}
 	}
 
 	aiTriggered := false
@@ -302,10 +277,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 				if len(updateMap) > 0 {
 					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
 						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					} else if aiResp.Title != "" && searchEngine == "fts5" {
-						segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
-						segmentedContent := segmenter.SegmentTextForIndex(updateMap["content"].(string))
-						s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
 					}
 				}
 			}()
@@ -316,13 +287,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 }
 
 func (s *PostService) DeletePost(id uint) error {
-	searchEngine, _ := s.settingService.GetSetting(constants.SettingSearchEngine)
-	if searchEngine == "fts5" {
-		err := s.repo.DeleteFtsIndex(id)
-		if err != nil {
-			fmt.Printf("删除 FTS 索引失败 for post ID %d: %v\n", id, err)
-		}
-	}
 	return s.repo.Delete(id)
 }
 
@@ -373,30 +337,13 @@ func (s *PostService) GetPostsPageByAdmin(page, pageSize int, query, status stri
 }
 
 func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
-	var posts []models.Post
-	var total int64
-	var err error
-
-	searchEngine, _ := s.settingService.GetSetting(constants.SettingSearchEngine)
-	if searchEngine == "fts5" {
-		segmentedQuery := segmenter.SegmentTextForQuery(query)
-		posts, err = s.repo.SearchPage(segmentedQuery, page, pageSize, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
-		total, err = s.repo.CountByQuery(segmentedQuery, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
-	} else {
-		posts, err = s.repo.SearchPageByLike(query, page, pageSize, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
-		total, err = s.repo.CountByQueryByLike(query, isLoggedIn)
-		if err != nil {
-			return nil, 0, err
-		}
+	posts, err := s.repo.SearchPageByLike(query, page, pageSize, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.repo.CountByQueryByLike(query, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	renderedPosts := make([]models.RenderedPost, len(posts))
@@ -507,16 +454,6 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 		return fmt.Errorf("批量导入文章失败: %w", err)
 	}
 
-	searchEngine, _ := s.settingService.GetSetting(constants.SettingSearchEngine)
-	if searchEngine == "fts5" {
-		fmt.Println("文章导入成功，开始重建全文搜索索引...")
-		if err := s.repo.RebuildFtsIndex(); err != nil {
-			fmt.Printf("警告：重建全文搜索索引失败: %v\n", err)
-		} else {
-			fmt.Println("全文搜索索引重建成功！")
-		}
-	}
-
 	return nil
 }
 
@@ -543,18 +480,6 @@ func (s *PostService) CreatePostsFromBackupStream(backupReader io.Reader) (int, 
 }
 
 func (s *PostService) BatchUpdatePosts(ids []uint, action string, isPrivate bool) error {
-	searchEngine, _ := s.settingService.GetSetting(constants.SettingSearchEngine)
-	if searchEngine == "fts5" {
-		switch action {
-		case "delete":
-			for _, id := range ids {
-				if err := s.repo.DeleteFtsIndex(id); err != nil {
-					fmt.Printf("删除 FTS 索引失败 for post ID %d: %v\n", id, err)
-				}
-			}
-		}
-	}
-
 	switch action {
 	case "delete":
 		return s.repo.DeleteByIDs(ids)

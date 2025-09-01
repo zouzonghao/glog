@@ -24,7 +24,6 @@ const (
 	SettingWebdavPassword       = "webdav_password"
 	SettingWebdavBackupCron     = "webdav_backup_cron"
 	SettingWebdavLastBackupHash = "webdav_last_backup_hash"
-	SettingSearchEngine         = "search_engine" // "like" or "fts5"
 
 	// DEPRECATED: These are for backward compatibility with old setting keys.
 	// They are now replaced by SettingGithubBackupCron and SettingWebdavBackupCron.
