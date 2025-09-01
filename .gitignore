@@ -1,21 +1,2 @@
-Astro-theme-Cactus
-.DS_Store
-**/.DS_Store
-glog
-blog.db
-*.db.*
-glog_server*
-glog*
-lib
-# Build artifacts
-glog
-glog-*
-# Build tools
-build_tool
-internal/.DS_Store
-static/pagefind
-*.json
-# Go test artifacts
-*.test
-cpu.prof*
-mem.prof*
+*
+!glog.sh
