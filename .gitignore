@@ -17,5 +17,5 @@ static/pagefind
 *.json
 # Go test artifacts
 *.test
-cpu.prof
-mem.prof
+cpu.prof*
+mem.prof*

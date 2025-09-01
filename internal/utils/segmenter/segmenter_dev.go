@@ -9,16 +9,15 @@ import (
 	"runtime"
 )
 
-func init() {
+// Load loads the dictionaries from the filesystem for development mode.
+func Load() {
 	log.Println("Running in debug mode, loading dictionaries from filesystem...")
 
 	// --- Robust path finding ---
-	// Get the absolute path of the current file.
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		log.Fatal("Failed to get current file path")
 	}
-	// The dict directory is in the same directory as this source file.
 	dictDir := filepath.Join(filepath.Dir(filename), "dict")
 	dictPath := filepath.Join(dictDir, "simplified.txt")
 	stopPath := filepath.Join(dictDir, "stop_word.txt")

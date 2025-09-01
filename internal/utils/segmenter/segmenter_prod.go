@@ -13,7 +13,8 @@ var simplifiedDict []byte
 //go:embed dict/stop_word.txt
 var stopWords []byte
 
-func init() {
+// Load loads the embedded dictionaries for release mode.
+func Load() {
 	log.Println("Running in release mode, loading embedded dictionaries...")
 
 	seg = Segmenter{}

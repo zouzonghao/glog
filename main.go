@@ -2,11 +2,13 @@ package main
 
 import (
 	"flag"
+	"glog/internal/constants"
 	"glog/internal/handlers"
 	"glog/internal/repository"
 	"glog/internal/services"
 	"glog/internal/tasks"
 	"glog/internal/utils"
+	"glog/internal/utils/segmenter"
 	"html/template"
 	"io/fs"
 	"log"
@@ -62,6 +64,19 @@ func main() {
 	settingRepo := repository.NewSettingRepository(db)
 
 	settingService := services.NewSettingService(settingRepo)
+
+	// Conditionally load the segmenter based on settings
+	searchEngine, err := settingService.GetSetting(constants.SettingSearchEngine)
+	if err != nil {
+		log.Printf("无法获取搜索引擎设置，默认使用 'like': %v", err)
+		searchEngine = "like"
+	}
+	if searchEngine == "fts5" {
+		segmenter.Load()
+	} else {
+		log.Println("搜索引擎设置为 'like'，跳过加载分词器。")
+	}
+
 	aiService := services.NewAIService()
 	postService := services.NewPostService(postRepo, settingService, aiService)
 	backupService := services.NewBackupService(postService, settingService)

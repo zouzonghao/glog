@@ -10,10 +10,10 @@ import (
 	"glog/internal/services"
 	"glog/internal/tasks"
 	"glog/internal/utils"
-	"glog/internal/utils/segmenter"
 	"io"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -79,11 +79,7 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	query := c.Query("query")
 	status := c.DefaultQuery("status", "all")
 
-	searchQuery := query
-	if searchQuery != "" {
-		searchQuery = segmenter.SegmentTextForQuery(searchQuery)
-	}
-	posts, total, err := h.postService.GetPostsPageByAdmin(page, pageSize, searchQuery, status)
+	posts, total, err := h.postService.GetPostsPageByAdmin(page, pageSize, query, status)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "加载文章失败")
 		return
@@ -327,22 +323,28 @@ func (h *AdminHandler) BackupSite(c *gin.Context) {
 func (h *AdminHandler) UploadBackup(c *gin.Context) {
 	contentType := c.GetHeader("Content-Type")
 	var backupData models.SiteBackup
+	var postCount int
 
 	if strings.Contains(contentType, "application/json") {
 		if err := c.ShouldBindJSON(&backupData); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "解析 JSON 数据失败: " + err.Error()})
 			return
 		}
-	} else {
-		file, err := c.FormFile("backup")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "获取上传文件失败: " + err.Error()})
+		if err := h.restoreFromBackupData(&backupData); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 			return
 		}
-
+		postCount = len(backupData.Posts)
+	} else {
 		password := c.PostForm("password")
 		if password == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "请输入备份文件密码。"})
+			return
+		}
+
+		file, err := c.FormFile("backup")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "获取上传文件失败: " + err.Error()})
 			return
 		}
 
@@ -353,17 +355,25 @@ func (h *AdminHandler) UploadBackup(c *gin.Context) {
 		}
 		defer src.Close()
 
-		fileBytes, err := io.ReadAll(src)
+		tempFile, err := os.CreateTemp("", "glog-backup-*.zip")
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "读取上传文件失败: " + err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "创建临时文件失败: " + err.Error()})
+			return
+		}
+		defer os.Remove(tempFile.Name())
+
+		_, err = io.Copy(tempFile, src)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "保存上传文件失败: " + err.Error()})
 			return
 		}
 
-		zipReader, err := zip.NewReader(bytes.NewReader(fileBytes), int64(len(fileBytes)))
+		zipReader, err := zip.OpenReader(tempFile.Name())
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的 ZIP 文件: " + err.Error()})
 			return
 		}
+		defer zipReader.Close()
 
 		if len(zipReader.File) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "空的 ZIP 文件。"})
@@ -380,18 +390,15 @@ func (h *AdminHandler) UploadBackup(c *gin.Context) {
 		}
 		defer jsonFile.Close()
 
-		if err := json.NewDecoder(jsonFile).Decode(&backupData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "解析 JSON 数据失败: " + err.Error()})
+		importedCount, err := h.postService.CreatePostsFromBackupStream(jsonFile)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 			return
 		}
+		postCount = importedCount
 	}
 
-	if err := h.restoreFromBackupData(&backupData); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": fmt.Sprintf("恢复成功！导入 %d 篇文章并更新了站点设置。", len(backupData.Posts))})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": fmt.Sprintf("恢复成功！导入 %d 篇文章并更新了站点设置。", postCount)})
 }
 
 func (h *AdminHandler) restoreFromBackupData(backupData *models.SiteBackup) error {
