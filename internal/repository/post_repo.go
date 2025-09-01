@@ -7,6 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	shanghaiLocation, _ = time.LoadLocation("Asia/Shanghai")
+)
+
 type PostRepository struct {
 	db *gorm.DB
 }
@@ -41,7 +45,7 @@ func (r *PostRepository) FindBySlug(slug string, isLoggedIn bool) (*models.Post,
 	var post models.Post
 	query := r.db
 	if !isLoggedIn {
-		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now())
+		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now().In(shanghaiLocation))
 	}
 	err := query.Where("slug = ?", slug).First(&post).Error
 	return &post, err
@@ -51,7 +55,7 @@ func (r *PostRepository) FindPage(page, pageSize int, isLoggedIn bool) ([]models
 	var posts []models.Post
 	query := r.db.Order("published_at desc")
 	if !isLoggedIn {
-		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now())
+		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now().In(shanghaiLocation))
 	}
 	err := query.Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
@@ -61,7 +65,7 @@ func (r *PostRepository) Count(isLoggedIn bool) (int64, error) {
 	var count int64
 	query := r.db.Model(&models.Post{})
 	if !isLoggedIn {
-		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now())
+		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now().In(shanghaiLocation))
 	}
 	err := query.Count(&count).Error
 	return count, err
@@ -75,7 +79,7 @@ func (r *PostRepository) FindAllByAdmin(page, pageSize int, query, status string
 		dbQuery = dbQuery.Where("title LIKE ?", "%"+query+"%")
 	}
 
-	now := time.Now()
+	now := time.Now().In(shanghaiLocation)
 	switch status {
 	case "published":
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, now)
@@ -97,7 +101,7 @@ func (r *PostRepository) CountAllByAdmin(query, status string) (int64, error) {
 		dbQuery = dbQuery.Where("title LIKE ?", "%"+query+"%")
 	}
 
-	now := time.Now()
+	now := time.Now().In(shanghaiLocation)
 	switch status {
 	case "published":
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, now)
@@ -153,7 +157,7 @@ func (r *PostRepository) SearchPageByLike(keywords []string, page, pageSize int,
 	}
 
 	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now())
+		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now().In(shanghaiLocation))
 	}
 
 	err := dbQuery.Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
@@ -170,7 +174,7 @@ func (r *PostRepository) CountByQueryByLike(keywords []string, isLoggedIn bool) 
 	}
 
 	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now())
+		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now().In(shanghaiLocation))
 	}
 
 	err := dbQuery.Count(&count).Error
