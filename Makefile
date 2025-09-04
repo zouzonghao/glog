@@ -35,10 +35,13 @@ release-all: build-tool prepare
 	@echo "All release builds complete."
 
 # Renamed 'release' to 'build-platform' to avoid confusion and handle single platform builds.
-build-platform: build-tool prepare
+build-platform:
+	@$(MAKE) build
+
+# Build platform with automatic cleanup
+build-platform-with-cleanup: build-tool prepare
 	@$(MAKE) build
 	@$(MAKE) cleanup
-
 run:
 	@echo "Running in development mode..."
 	@$(GORUN) .
@@ -75,4 +78,4 @@ clean:
 	@rm -f glog glog-*
 	@echo "Project cleaned."
 
-.PHONY: default release-all build-platform run build-tool prepare build cleanup clean
+.PHONY: default release-all build-platform build-platform-with-cleanup run build-tool prepare build cleanup clean
