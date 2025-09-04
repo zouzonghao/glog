@@ -36,7 +36,8 @@ Glog 采用经典的分层架构，清晰地分离了不同模块的职责。
 ├── templates/       # HTML 模板
 ├── main.go          # 程序入口
 ├── Dockerfile       # Docker 配置文件
-└── Makefile         # 项目构建脚本
+├── Makefile         # 项目构建脚本
+└── install.sh       # Debian/Ubuntu 安装脚本
 ```
 
 ## 部署
