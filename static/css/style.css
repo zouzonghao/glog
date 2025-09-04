@@ -471,6 +471,9 @@ html.dark .post-list-item:hover {
     gap: 0.5rem;
 }
 
+.menu-toggle {
+    display: none;
+}
 /* 12. 响应式设计
 ---------------------------------------------------------------------------------------------------- */
 @media (max-width: 768px) {
@@ -483,7 +486,7 @@ html.dark .post-list-item:hover {
     .site-title {
         display: none;
     }
-    .menu-toggle {
+    header .menu-toggle {
         display: block;
         z-index: 1100;
     }
@@ -514,7 +517,7 @@ html.dark .post-list-item:hover {
         content: "";
     }
     .search-input {
-        width: 100px;
+        width: 150px;
     }
     .header-right {
         padding-top: 0;
@@ -542,7 +545,6 @@ html.dark .post-list-item:hover {
     display: none;
 }
 .menu-toggle {
-    display: none;
     cursor: pointer;
     padding: 0;
     color: var(--color-text-primary);
@@ -1114,4 +1116,11 @@ html.dark .table-wrapper {
 .table-wrapper::-webkit-scrollbar-thumb:hover,
 .post-content pre::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-accent-primary); /* 鼠标悬浮时使用主要强调色 */
+}
+
+.backup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
 }
