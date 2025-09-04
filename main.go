@@ -53,7 +53,7 @@ func main() {
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
 	flag.Parse()
 
-	db, err := utils.InitDatabase()
+	db, err := utils.InitDatabase("")
 	if err != nil {
 		log.Fatal("初始化数据库失败：", err)
 	}
@@ -62,6 +62,7 @@ func main() {
 	settingRepo := repository.NewSettingRepository(db)
 
 	settingService := services.NewSettingService(settingRepo)
+
 	aiService := services.NewAIService()
 	postService := services.NewPostService(postRepo, settingService, aiService)
 	backupService := services.NewBackupService(postService, settingService)

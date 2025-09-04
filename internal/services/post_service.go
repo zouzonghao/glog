@@ -1,13 +1,14 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"glog/internal/constants"
 	"glog/internal/models"
 	"glog/internal/repository"
 	"glog/internal/utils"
-	"glog/internal/utils/segmenter"
 	"html/template"
+	"io"
 	"regexp"
 	"strings"
 	"sync"
@@ -113,13 +114,6 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 		return nil, false, err
 	}
 
-	segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
-	segmentedContent := segmenter.SegmentTextForIndex(post.Content)
-	err = s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
-	if err != nil {
-		fmt.Printf("更新 FTS 索引失败 for post ID %d: %v\n", post.ID, err)
-	}
-
 	aiTriggered := false
 	if aiSummary {
 		separator := "<!--more-->"
@@ -179,9 +173,6 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 				if len(updateMap) > 0 {
 					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
 						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					} else if aiResp.Title != "" {
-						segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
-						s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
 					}
 				}
 			}()
@@ -227,13 +218,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	err = s.repo.Update(post)
 	if err != nil {
 		return nil, false, err
-	}
-
-	segmentedTitle := segmenter.SegmentTextForIndex(post.Title)
-	segmentedContent := segmenter.SegmentTextForIndex(post.Content)
-	err = s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
-	if err != nil {
-		fmt.Printf("更新 FTS 索引失败 for post ID %d: %v\n", post.ID, err)
 	}
 
 	aiTriggered := false
@@ -293,9 +277,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 				if len(updateMap) > 0 {
 					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
 						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					} else if aiResp.Title != "" {
-						segmentedTitle := segmenter.SegmentTextForIndex(aiResp.Title)
-						s.repo.UpdateFtsIndex(post.ID, segmentedTitle, segmentedContent)
 					}
 				}
 			}()
@@ -306,10 +287,6 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 }
 
 func (s *PostService) DeletePost(id uint) error {
-	err := s.repo.DeleteFtsIndex(id)
-	if err != nil {
-		fmt.Printf("删除 FTS 索引失败 for post ID %d: %v\n", id, err)
-	}
 	return s.repo.Delete(id)
 }
 
@@ -360,12 +337,24 @@ func (s *PostService) GetPostsPageByAdmin(page, pageSize int, query, status stri
 }
 
 func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
-	segmentedQuery := segmenter.SegmentTextForQuery(query)
-	posts, err := s.repo.SearchPage(segmentedQuery, page, pageSize, isLoggedIn)
+	re := regexp.MustCompile(`[\s,，]+`)
+	keywords := re.Split(strings.TrimSpace(query), -1)
+	var cleanedKeywords []string
+	for _, keyword := range keywords {
+		if keyword != "" {
+			cleanedKeywords = append(cleanedKeywords, keyword)
+		}
+	}
+
+	if len(cleanedKeywords) == 0 {
+		return []models.RenderedPost{}, 0, nil
+	}
+
+	posts, err := s.repo.SearchPageByLike(cleanedKeywords, page, pageSize, isLoggedIn)
 	if err != nil {
 		return nil, 0, err
 	}
-	total, err := s.repo.CountByQuery(segmentedQuery, isLoggedIn)
+	total, err := s.repo.CountByQueryByLike(cleanedKeywords, isLoggedIn)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -383,21 +372,12 @@ func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLogged
 }
 
 func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error) {
-	// On-demand rendering for content_html
 	if post.ContentHTML == "" && post.Content != "" {
 		html, err := s.processAndRenderContent(post.Content)
 		if err != nil {
-			// Log the error but don't fail the request, return the raw content instead
 			fmt.Printf("按需渲染 Markdown 失败 for post ID %d: %v\n", post.ID, err)
 		} else {
 			post.ContentHTML = html
-			// Asynchronously update the database in the background
-			go func() {
-				err := s.repo.UpdateFields(post.ID, map[string]interface{}{"content_html": html})
-				if err != nil {
-					fmt.Printf("异步更新 content_html 失败 for post ID %d: %v\n", post.ID, err)
-				}
-			}()
 		}
 	}
 
@@ -468,10 +448,15 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 		if err != nil {
 			return fmt.Errorf("为导入的文章 '%s' 生成 slug 失败: %w", p.Title, err)
 		}
+		htmlContent, err := s.processAndRenderContent(p.Content)
+		if err != nil {
+			return fmt.Errorf("为导入的文章 '%s' 渲染 HTML 失败: %w", p.Title, err)
+		}
 		newPosts = append(newPosts, models.Post{
 			Title:       p.Title,
 			Slug:        slugStr,
 			Content:     p.Content,
+			ContentHTML: htmlContent,
 			IsPrivate:   p.IsPrivate,
 			PublishedAt: p.PublishedAt,
 			Excerpt:     utils.GenerateExcerpt(p.Content, 150),
@@ -482,24 +467,34 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 		return fmt.Errorf("批量导入文章失败: %w", err)
 	}
 
-	fmt.Println("文章导入成功，开始重建全文搜索索引...")
-	if err := s.repo.RebuildFtsIndex(); err != nil {
-		fmt.Printf("警告：重建全文搜索索引失败: %v\n", err)
-	} else {
-		fmt.Println("全文搜索索引重建成功！")
+	return nil
+}
+
+func (s *PostService) CreatePostsFromBackupStream(backupReader io.Reader) (int, error) {
+	var backupData models.SiteBackup
+	if err := json.NewDecoder(backupReader).Decode(&backupData); err != nil {
+		return 0, fmt.Errorf("解析备份 JSON 数据失败: %w", err)
 	}
 
-	return nil
+	if err := s.CreatePostsFromBackup(backupData.Posts); err != nil {
+		return 0, err
+	}
+
+	if len(backupData.Settings) > 0 {
+		if newPass, ok := backupData.Settings[constants.SettingPassword]; !ok || newPass == "" {
+			delete(backupData.Settings, constants.SettingPassword)
+		}
+		if err := s.settingService.UpdateSettings(backupData.Settings); err != nil {
+			return 0, fmt.Errorf("恢复设置失败: %w", err)
+		}
+	}
+
+	return len(backupData.Posts), nil
 }
 
 func (s *PostService) BatchUpdatePosts(ids []uint, action string, isPrivate bool) error {
 	switch action {
 	case "delete":
-		for _, id := range ids {
-			if err := s.repo.DeleteFtsIndex(id); err != nil {
-				fmt.Printf("删除 FTS 索引失败 for post ID %d: %v\n", id, err)
-			}
-		}
 		return s.repo.DeleteByIDs(ids)
 	case "set-private":
 		return s.repo.UpdatePrivacyByIDs(ids, isPrivate)

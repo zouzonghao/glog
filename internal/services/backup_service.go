@@ -24,24 +24,24 @@ import (
 var ErrBackupNoChange = errors.New("数据无变化，无需备份")
 
 type BackupService struct {
-	postService    *PostService
-	settingService *SettingService
+	PostService    *PostService
+	SettingService *SettingService
 }
 
 func NewBackupService(postService *PostService, settingService *SettingService) *BackupService {
 	return &BackupService{
-		postService:    postService,
-		settingService: settingService,
+		PostService:    postService,
+		SettingService: settingService,
 	}
 }
 
 func (s *BackupService) generateBackupDataAndHash() (*models.SiteBackup, string, error) {
-	posts, err := s.postService.GetAllPostsForBackup()
+	posts, err := s.PostService.GetAllPostsForBackup()
 	if err != nil {
 		return nil, "", fmt.Errorf("获取文章失败: %w", err)
 	}
 
-	settings, err := s.settingService.GetAllSettings()
+	settings, err := s.SettingService.GetAllSettings()
 	if err != nil {
 		return nil, "", fmt.Errorf("获取设置失败: %w", err)
 	}
@@ -81,7 +81,7 @@ func (s *BackupService) BackupToGithub(repoName, branch, token string) error {
 		return err
 	}
 
-	lastHash, _ := s.settingService.GetSetting(constants.SettingGithubLastBackupHash)
+	lastHash, _ := s.SettingService.GetSetting(constants.SettingGithubLastBackupHash)
 	if newHash == lastHash {
 		return ErrBackupNoChange
 	}
@@ -123,7 +123,7 @@ func (s *BackupService) BackupToGithub(repoName, branch, token string) error {
 		}
 	}
 
-	return s.settingService.UpdateSettings(map[string]string{
+	return s.SettingService.UpdateSettings(map[string]string{
 		constants.SettingGithubLastBackupHash: newHash,
 	})
 }
@@ -134,7 +134,7 @@ func (s *BackupService) BackupToWebdav(url, user, password string) error {
 		return err
 	}
 
-	lastHash, _ := s.settingService.GetSetting(constants.SettingWebdavLastBackupHash)
+	lastHash, _ := s.SettingService.GetSetting(constants.SettingWebdavLastBackupHash)
 	if newHash == lastHash {
 		return ErrBackupNoChange
 	}
@@ -172,13 +172,13 @@ func (s *BackupService) BackupToWebdav(url, user, password string) error {
 		return fmt.Errorf("WebDAV 服务器返回错误状态: %s, 响应: %s", resp.Status, string(body))
 	}
 
-	return s.settingService.UpdateSettings(map[string]string{
+	return s.SettingService.UpdateSettings(map[string]string{
 		constants.SettingWebdavLastBackupHash: newHash,
 	})
 }
 
 func (s *BackupService) createEncryptedBackup(backupData *models.SiteBackup) ([]byte, error) {
-	password, err := s.settingService.GetSetting(constants.SettingPassword)
+	password, err := s.SettingService.GetSetting(constants.SettingPassword)
 	if err != nil {
 		return nil, fmt.Errorf("获取站点密码失败: %w", err)
 	}
