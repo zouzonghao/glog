@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"glog/internal/models"
 	"glog/internal/services"
 	"net/http"
 	"strconv"
@@ -13,57 +14,61 @@ type APIHandler struct {
 }
 
 func NewAPIHandler(postService *services.PostService) *APIHandler {
-	return &APIHandler{postService: postService}
+	return &APIHandler{
+		postService: postService,
+	}
 }
 
-type CreatePostRequest struct {
-	Title     string `json:"title" binding:"required"`
-	Content   string `json:"content" binding:"required"`
-	Published bool   `json:"published"`
-	WithAI    bool   `json:"with_ai"`
-	IsPrivate bool   `json:"is_private"`
-}
-
+// CreatePost handles the API request to create a new post.
 func (h *APIHandler) CreatePost(c *gin.Context) {
-	var req CreatePostRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var post models.Post
+	if err := c.ShouldBindJSON(&post); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// For API creation, we don't need AI summary.
-	post, err := h.postService.CreatePost(req.Title, req.Content, req.Published, req.IsPrivate, req.WithAI)
+	// For API creation, we don't trigger AI summary by default.
+	// PublishedAt will be set by the service if not provided.
+	createdPost, _, err := h.postService.CreatePost(post.Title, post.Content, post.IsPrivate, false, post.PublishedAt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建文章失败"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, post)
+	c.JSON(http.StatusCreated, createdPost)
 }
 
+// FindPosts handles the API request to find posts.
 func (h *APIHandler) FindPosts(c *gin.Context) {
-	query := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "15"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	query := c.Query("query")
 
-	var (
-		posts interface{}
-		total int64
-		err   error
-	)
+	var posts []models.RenderedPost
+	var total int64
+	var err error
 
 	if query != "" {
-		posts, total, err = h.postService.SearchPublishedPostsPage(query, page, pageSize, true)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "搜索文章失败"})
-			return
+		renderedPosts, totalInt, searchErr := h.postService.SearchPostsPage(query, page, pageSize, true)
+		if searchErr != nil {
+			err = searchErr
+		} else {
+			posts = renderedPosts
+			total = int64(totalInt)
 		}
 	} else {
-		posts, total, err = h.postService.GetPublishedPostsPage(page, pageSize, true)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "获取文章失败"})
-			return
+		renderedPosts, totalInt, pageErr := h.postService.GetPostsPage(page, pageSize, true)
+		if pageErr != nil {
+			err = pageErr
+		} else {
+			posts = renderedPosts
+			total = int64(totalInt)
 		}
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

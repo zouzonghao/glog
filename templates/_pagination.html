@@ -4,26 +4,40 @@
             <nav class="pagination-new">
                 {{/* Previous Page Link */}}
                 {{ if .HasPrev }}
-                    <a href="?page={{ .PrevPage }}{{ with $.query }}&q={{ . }}{{ end }}" class="prev-next">上一页</a>
+                    <a href="?page={{ .PrevPage }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">上一页</a>
                 {{ else }}
                     <span class="prev-next disabled">上一页</span>
                 {{ end }}
 
-                <div class="page-numbers">
-                    {{ range .Pages }}
-                        {{ if .IsLink }}
-                            <a href="?page={{ .Number }}{{ with $.query }}&q={{ . }}{{ end }}" class="page-number">{{ .Number }}</a>
-                        {{ else if .Number }}
-                            <span class="page-number current">{{ .Number }}</span>
-                        {{ else }}
-                            <span class="ellipsis">…</span>
+                <div class="pagination-center">
+                    <div class="page-numbers">
+                        {{ range .Pages }}
+                            {{ if .IsLink }}
+                                <a href="?page={{ .Number }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="page-number">{{ .Number }}</a>
+                            {{ else if .Number }}
+                                <span class="page-number current">{{ .Number }}</span>
+                            {{ else }}
+                                <span class="ellipsis">…</span>
+                            {{ end }}
                         {{ end }}
+                    </div>
+
+                    {{ if $.PageSizeOptions }}
+                    <div class="page-size-selector">
+                        <select id="page-size-select" onchange="location = this.value;">
+                            {{ range $.PageSizeOptions }}
+                                <option value="?page=1{{ with $.Query }}&query={{ . }}{{ end }}&pageSize={{ . }}" {{ if eq . $.PageSize }}selected{{ end }}>
+                                    {{ . }} / 页
+                                </option>
+                            {{ end }}
+                        </select>
+                    </div>
                     {{ end }}
                 </div>
 
                 {{/* Next Page Link */}}
                 {{ if .HasNext }}
-                    <a href="?page={{ .NextPage }}{{ with $.query }}&q={{ . }}{{ end }}" class="prev-next">下一页</a>
+                    <a href="?page={{ .NextPage }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">下一页</a>
                 {{ else }}
                     <span class="prev-next disabled">下一页</span>
                 {{ end }}

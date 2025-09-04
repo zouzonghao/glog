@@ -6,14 +6,14 @@
         <form id="app-form" action="/admin/save" method="POST" class="app-form">
             <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
             
-            <div class="editor-form-group">
-                <!-- <label for="title">标题</label> -->
+            <div class="editor-form-group editor-title-group">
                 <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名标题{{ end }}" required>
+                <input type="text" id="published_at" name="published_at" value="{{ if .post }}{{ .post.PublishedAt.Format "2006-01-02 15:04" }}{{ else }}{{ .now }}{{ end }}">
             </div>
             
             <div class="editor-form-group">
-                <!-- <label for="content">内容</label> -->
                 <textarea id="content" name="content" rows="20">{{ if .post }}{{ .post.Content }}{{ else }}
+
 <!--more-->
 {{ end }}</textarea>
             </div>
@@ -24,76 +24,19 @@
                     <label for="ai_summary">AI摘要</label>
                 </div>
                 <div class="form-group-inline">
-                    <input type="checkbox" id="published" name="published" {{ if or (not .post) .post.Published }}checked{{ end }}>
-                    <label for="published">发布</label>
-                </div>
-                <div class="form-group-inline">
                     <input type="checkbox" id="is_private" name="is_private" {{ if .post }}{{ if .post.IsPrivate }}checked{{ end }}{{ end }}>
                     <label for="is_private">私密</label>
                 </div>
             </div>
 
             <div class="editor-actions">
-                <a href="#" id="save-btn">💾 保存文章</a>
-                <a href="{{ if .post }}/post/{{ .post.Slug }}{{ else }}#{{ end }}" class="open-post-link">🔗 打开文章</a>
+                <button type="button" id="save-btn" class="btn" style="font-size: 0.9rem";>💾 保存文章</button>
+                <a href="{{ if .post }}/post/{{ .post.Slug }}{{ else }}#{{ end }}" class="btn open-post-link" style="font-size: 0.9rem;">🔗 打开文章</a>
             </div>
         </form>
     </div>
 {{ end }}
 
 {{ define "scripts" }}
-    <script>
-        // AJAX form submission
-        document.getElementById('save-btn').addEventListener('click', function(event) {
-            event.preventDefault();
-            const form = document.getElementById('app-form');
-            const formData = new FormData(form);
-            const postIdInput = document.getElementById('post-id');
-
-            fetch(form.action, {
-                method: 'POST',
-                body: new URLSearchParams(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                let alertClass = 'info';
-                if (data.status === 'success') {
-                    alertClass = 'success';
-                    // Update post ID for new posts
-                    if (postIdInput.value === '0' && data.post_id) {
-                        postIdInput.value = data.post_id;
-                        // Update browser URL to reflect the new post ID for editing
-                        const newUrl = `/admin/editor?id=${data.post_id}`;
-                        history.pushState({path: newUrl}, '', newUrl);
-                    }
-
-                    // Dynamically update "Open Post" link
-                    const isPublished = document.getElementById('published').checked;
-                    const openLink = document.querySelector('.editor-actions a.open-post-link');
-                    if (isPublished && data.slug) {
-                        openLink.href = `/post/${data.slug}`;
-                    } else {
-                        openLink.href = '#';
-                    }
-                } else if (data.status === 'error' || data.status === 'locked') {
-                    alertClass = 'error';
-                }
-                
-                showNotification(data.message, alertClass);
-            })
-            .catch(error => {
-                console.error('保存错误：', error);
-                showNotification('保存时发生错误，请检查网络！', 'error');
-            });
-        });
-
-        // Handle click on "Open Post" link
-        document.querySelector('.open-post-link').addEventListener('click', function(event) {
-            const postId = document.getElementById('post-id').value;
-            if (postId === '0') {
-                event.preventDefault();
-                showNotification('文章尚未保存，无法打开！', 'info');
-            }
-        });
-    </script>
+    <script src="/static/js/editor.js"></script>
 {{ end }}

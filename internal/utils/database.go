@@ -49,7 +49,7 @@ func seedSettings(db *gorm.DB) error {
 		"site_description": "由 Glog 驱动的博客",
 		"openai_base_url":  "",
 		"openai_token":     "",
-		"openai_model":     "gpt-3.5-turbo",
+		"openai_model":     "gemini-2.5-flash",
 		"search_engine":    "like", // "like" or "fts5"
 	}
 

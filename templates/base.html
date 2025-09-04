@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{{ .site_description }}">
-    <title>{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}</title>
+    {{ block "description" . }}<meta name="description" content="{{ .site_description }}">{{ end }}
+    <title>{{ block "title" . }}{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}{{ end }}</title>
     
 <script>
         (function() {
             const savedTheme = localStorage.getItem("theme");
             const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            let theme = "light"; // 默认主题
+            let theme;
+
             if (savedTheme) {
                 theme = savedTheme;
             } else if (prefersDark) {
                 theme = "dark";
+            } else {
+                theme = "light";
             }
+            
+            if (!savedTheme) {
+                localStorage.setItem("theme", theme);
+            }
+
             document.documentElement.classList.add(theme);
         })();
     </script>
@@ -47,11 +55,10 @@
                     <nav class="main-nav" id="main-nav">
                         <ul>
                             <li><a href="/">主页</a></li>
-                            <!-- Add more static links here, e.g., <li><a href="/about">关于</a></li> -->
                             {{ if .IsLoggedIn }}
                                 <li><a href="/admin/new">新建</a></li>
                                 <li><a href="/admin">管理</a></li>
-                                <li><a href="/settings">设置</a></li>
+                                <li><a href="/admin/setting">设置</a></li>
                                 <li><a href="/logout">登出</a></li>
                             {{ else }}
                                 <li><a href="/login">登录</a></li>

@@ -2,10 +2,10 @@
 
 {{define "content"}}
 <div class="setting-header">
-    <h2 class="group-title">站点设置</h2>
+    <h2 class="group-title">站点信息</h2>
 </div>
 
-<form id="settings-form" action="/settings" method="POST" class="app-form">
+<form id="settings-form" action="/admin/setting" method="POST" class="app-form" autocomplete="off">
     <div class="settings-form-group" style="margin-top: 1.5rem;">
         <label for="password">管理员密码</label>
         <input type="password" id="password" name="password" placeholder="留空则不修改" autocomplete="new-password">
@@ -13,107 +13,151 @@
 
     <div class="settings-form-group">
         <label for="site_logo">站点 Logo URL</label>
-        <input type="text" id="site_logo" name="site_logo" value="{{ .site_logo }}">
+        <input type="text" id="site_logo" name="site_logo" value="{{ .site_logo }}" autocomplete="no">
     </div>
 
     <div class="settings-form-group">
         <label for="site_title">站点标题</label>
-        <input type="text" id="site_title" name="site_title" value="{{ .site_title }}">
+        <input type="text" id="site_title" name="site_title" value="{{ .site_title }}" autocomplete="no">
     </div>
 
     <div class="settings-form-group">
         <label for="site_description">站点描述</label>
-        <input type="text" id="site_description" name="site_description" value="{{ .site_description }}">
+        <input type="text" id="site_description" name="site_description" value="{{ .site_description }}" autocomplete="no">
     </div>
-
-    <div class="settings-form-group">
-        <label for="openai_base_url">OpenAI Compatible Base URL</label>
-        <input type="text" id="openai_base_url" name="openai_base_url" value="{{ .openai_base_url }}">
-    </div>
-
-    <div class="settings-form-group">
-        <label for="openai_token">OpenAI Compatible Token</label>
-        <input type="password" id="openai_token" name="openai_token" placeholder="留空则不修改" autocomplete="new-password">
-    </div>
-
-    <div class="settings-form-group">
-        <label for="openai_model">OpenAI Compatible 模型</label>
-        <input type="text" id="openai_model" name="openai_model" value="{{ .openai_model }}">
-    </div>
-
-    <div class="settings-form-group">
-        <a href="#" id="test-ai-btn">🚀 测试连接</a>
-    </div>
-
  
-
-    <div class="editor-actions">
-        <a href="#" id="save-settings-btn">💾 保存设置</a>
+    <div class="settings-actions" style="margin-top: 1.5rem;">
+        <button type="button" id="save-settings-btn" class="btn">💾 保存站点信息</button>
     </div>
 </form>
+<div class="setting-header" style="margin-top: 3rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+    <h2 class="group-title">AI 集成</h2>
+</div>
+<div class="backup-actions" style="margin-top: 1.5rem;">
+    <button type="button" id="ai-settings-btn" class="btn">🔧 设置 AI 功能</button>
+</div>
+
+<div class="setting-header" style="margin-top: 3rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+    <h2 class="group-title">备份与恢复</h2>
+</div>
+
+<div class="backup-actions" style="margin-top: 1.5rem;">
+    <button type="button" id="github-backup-btn" class="btn" >🔧 GitHub 备份</button>
+    <button type="button" id="webdav-backup-btn" class="btn" style="margin-left: 1rem;">🔧 WebDAV 备份</button>
+    <a href="/admin/setting/backup" id="backup-btn" class="btn" style="margin-left: 1rem;">💾 下载备份</a>
+    <form id="upload-form" style="display: inline-block; margin-left: 1rem;">
+        <input type="file" id="backup-file" name="backup" accept=".zip,.json" style="display: none;">
+        <button type="button" id="upload-btn" class="btn">📤 上传恢复</button>
+    </form>
+</div>
+
+
+<!-- AI Settings Modal -->
+<div id="ai-modal" class="modal-container">
+    <div class="modal-content">
+        <span class="modal-close-btn">&times;</span>
+        <h3>AI 功能设置</h3>
+        <form id="ai-settings-form" class="app-form" autocomplete="off">
+            <div class="settings-form-group">
+                <label for="openai_base_url">OpenAI Compatible Base URL</label>
+                <input type="text" id="openai_base_url" name="openai_base_url" value="{{ .openai_base_url }}" autocomplete="no">
+            </div>
+            <div class="settings-form-group">
+                <label for="openai_token">OpenAI Compatible Token</label>
+                <input type="password" id="openai_token" name="openai_token" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group">
+                <label for="openai_model">OpenAI Compatible 模型</label>
+                <input type="text" id="openai_model" name="openai_model" value="{{ .openai_model }}" autocomplete="no">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="test-ai-btn" class="btn">🚀 测试连接</button>
+                <button type="button" id="save-ai-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- GitHub Modal -->
+<div id="github-modal" class="modal-container">
+    <div class="modal-content">
+        <span class="modal-close-btn">&times;</span>
+        <h3>GitHub 备份设置</h3>
+        <form id="github-settings-form" class="app-form" autocomplete="off">
+            <div class="settings-form-group">
+                <label for="github_repo">仓库名 (格式: user/repo)</label>
+                <input type="text" id="github_repo" name="github_repo" value="{{ .github_repo }}" autocomplete="no">
+            </div>
+            <div class="settings-form-group">
+                <label for="github_branch">分支名</label>
+                <input type="text" id="github_branch" name="github_branch" value="{{ .github_branch }}" autocomplete="no">
+            </div>
+            <div class="settings-form-group">
+                <label for="github_token">Personal Access Token</label>
+                <input type="password" id="github_token" name="github_token" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group">
+                <label for="github_interval">备份间隔（小时），0 表示不启用</label>
+                <input type="number" id="github_interval" name="github_interval" value="{{ .github_interval }}" min="0" autocomplete="no">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="backup-github-now-btn" class="btn">⚡ 立即备份</button>
+                <button type="button" id="test-github-btn" class="btn">🚀 测试连接</button>
+                <button type="button" id="save-github-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- WebDAV Modal -->
+<div id="webdav-modal" class="modal-container">
+    <div class="modal-content">
+        <span class="modal-close-btn">&times;</span>
+        <h3>WebDAV 备份设置</h3>
+        <form id="webdav-settings-form" class="app-form" autocomplete="off">
+            <div class="settings-form-group">
+                <label for="webdav_url">服务器地址</label>
+                <input type="text" id="webdav_url" name="webdav_url" value="{{ .webdav_url }}" autocomplete="no">
+            </div>
+            <div class="settings-form-group">
+                <label for="webdav_user">账号</label>
+                <input type="text" id="webdav_user" name="webdav_user" value="{{ .webdav_user }}" autocomplete="no">
+            </div>
+            <div class="settings-form-group">
+                <label for="webdav_password">密码</label>
+                <input type="password" id="webdav_password" name="webdav_password" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group">
+                <label for="webdav_interval">备份间隔（小时），0 表示不启用</label>
+                <input type="number" id="webdav_interval" name="webdav_interval" value="{{ .webdav_interval }}" min="0" autocomplete="no">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="backup-webdav-now-btn" class="btn">⚡ 立即备份</button>
+                <button type="button" id="test-webdav-btn" class="btn">🚀 测试连接</button>
+                <button type="button" id="save-webdav-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Password Prompt Modal -->
+<div id="password-prompt-modal" class="modal-container">
+    <div class="modal-content">
+        <span class="modal-close-btn">&times;</span>
+        <form class="app-form" autocomplete="off">
+            <h3 id="password-prompt-title">请输入密码</h3>
+            <div class="settings-form-group">
+                <input type="password" id="password-prompt-input">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="password-prompt-cancel-btn" class="btn btn-secondary">取消</button>
+                <button type="button" id="password-prompt-confirm-btn" class="btn">确认</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {{end}}
 
 {{define "scripts"}}
-<script>
-// AJAX for saving settings
-document.getElementById('save-settings-btn').addEventListener('click', function(event) {
-    event.preventDefault();
-
-    const form = document.getElementById('settings-form');
-    const formData = new FormData(form);
-
-    fetch(form.action, {
-        method: 'POST',
-        body: new URLSearchParams(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        showNotification(data.message, data.status);
-
-        if (data.status === 'success') {
-            document.getElementById('password').value = '';
-            document.getElementById('openai_token').value = '';
-        }
-    })
-    .catch(error => {
-        console.error('表单提交错误：', error);
-        showNotification('保存时发生错误，请检查网络连接！', 'error');
-    });
-});
-
-// AJAX for testing AI connection
-document.getElementById('test-ai-btn').addEventListener('click', function(event) {
-    event.preventDefault();
-    const baseURL = document.getElementById('openai_base_url').value;
-    const token = document.getElementById('openai_token').value;
-    const model = document.getElementById('openai_model').value;
-    const testBtn = this;
-
-    showNotification('测试中...', 'info');
-    testBtn.style.pointerEvents = 'none'; // Disable link
-    testBtn.style.opacity = '0.5';
-
-    const formData = new URLSearchParams();
-    formData.append('openai_base_url', baseURL);
-    formData.append('openai_token', token);
-    formData.append('openai_model', model);
-
-    fetch('/settings/test-ai', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        showNotification(data.message, data.status);
-    })
-    .catch(error => {
-        console.error('AI 测试错误：', error);
-        showNotification('测试请求失败，请检查网络或后台日志！', 'error');
-    })
-    .finally(() => {
-        testBtn.style.pointerEvents = 'auto'; // Re-enable link
-        testBtn.style.opacity = '1';
-    });
-});
-</script>
+<script src="/static/js/settings.js"></script>
 {{end}}

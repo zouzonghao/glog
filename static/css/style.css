@@ -1,30 +1,74 @@
 /*
- * Glog 的 Cactus 主题移植 (修订版 2)
- * 基于用户提供的视觉目标。
+ * Glog 的主题 (修订版 3)
+ * ----------------------------------------------------------------------------------------------------
+ * 目录：
+ * 1.  设计变量 (Design Variables)
+ * 2.  基础与全局样式 (Base & Global Styles)
+ * 3.  布局 (Layout)
+ * 4.  排版 (Typography)
+ * 5.  头部与导航 (Header & Navigation)
+ * 6.  页脚 (Footer)
+ * 7.  文章列表 (Post Lists)
+ * 8.  主题切换 (Theme Toggle)
+ * 9.  搜索表单 (Search Form)
+ * 10. 分页 (Pagination)
+ * 11. 后台管理页面 (Admin & Settings Pages)
+ * 12. 响应式设计 (Responsive Design)
+ * 13. 汉堡菜单动画 (Hamburger Menu Animation)
+ * 14. 表单与组件 (Forms & Components)
+ * 15. 文章内容样式 (Post Content Styles)
+ * 16. 特殊组件 (Special Components - Private Icon, Delete Wrapper, etc.)
+ * 17. 通知系统 (Notification System)
+ * 18. 模态框 (Modal)
+ * ----------------------------------------------------------------------------------------------------
  */
 
-/* 1. 设计变量
+/* 1. 设计变量 (Design Variables)
 ---------------------------------------------------------------------------------------------------- */
 :root {
-    --bgColor: #fafafa;
-    --textColor: #22272a;
-    --linkColor: #7a8288; /* 一个柔和的灰色链接 */
-    --accentColor: #cb2a42;
-    --accent2Color: #bfc1c2bb; /* A lighter gray for borders */
-    --quoteColor: #848a8f; /* 用于元信息的浅灰色 */
-    --bgColor-transparent: rgba(250, 250, 250, 0.8);
-    --inputBgColor: #ffffff;
+    /* --- 亮色主题 --- */
+    /* 背景色 */
+    --color-background: #fafafa; /* 主背景色 */
+    --color-background-transparent: rgba(250, 250, 250, 0.8); /* 带透明度的背景色，用于导航栏等 */
+    --color-background-input: #ffffff; /* 输入框背景色 */
 
+    /* 文本颜色 */
+    --color-text-primary: #22272a; /* 主要文本颜色 */
+    --color-text-secondary: #848a8f; /* 次要文本，用于元信息、引用等 */
+    --color-text-link: #7a8288; /* 链接文本颜色 */
+
+    /* 强调色 */
+    --color-accent-primary: #cb2a42; /* 主要强调色，用于标题、关键链接等 */
+    --color-border-primary: #bfc1c2bb; /* 主要边框颜色 */
+
+    /* --- 字体 --- */
     --font-sans: ui-sans-serif, system-ui, sans-serif;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* --- 暗色主题 --- */
+html.dark {
+    /* 背景色 */
+    --color-background: #1d1f20;
+    --color-background-transparent: rgba(29, 31, 32, 0.8);
+    --color-background-input: #000000;
+
+    /* 文本颜色 */
+    --color-text-primary: #bebdbd;
+    --color-text-secondary: #8c8d8f;
+    --color-text-link: #cbcaca;
+
+    /* 强调色 */
+    --color-accent-primary: #29bc89;
+    --color-border-primary: #444;
 }
 
 /* 2. 基础与全局样式
 ---------------------------------------------------------------------------------------------------- */
 *, *::before, *::after {
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent; /* 移除移动端点击蓝色背景 */
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
 }
 html {
     font-family: var(--font-sans);
@@ -32,10 +76,10 @@ html {
     scroll-behavior: smooth;
 }
 body {
-    background-color: var(--bgColor);
-    color: var(--textColor);
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
     font-family: var(--font-sans);
-    font-size: 16px; /* 根据图像确定的基础字号 */
+    font-size: 16px;
     line-height: 1.6;
     margin: 0;
     padding: 0;
@@ -51,83 +95,45 @@ body {
     margin: 0 auto;
     max-width: 48rem;
 }
-main { flex-grow: 1; margin-top: 2.5rem; }
+main {
+    flex-grow: 1;
+    margin-top: 2.5rem;
+}
 
 /* 4. 排版
 ---------------------------------------------------------------------------------------------------- */
-h1 {
-    font-weight: 400;
-    margin-top: 2em;
-    margin-bottom: 0.8em;
-    color: var(--textColor);
+h1, h2, h3, h4 {
+    color: var(--color-accent-primary);
 }
-h2 {
-    font-weight: 550;
-    margin-top: 2em;
-    margin-bottom: 0.8em;
-    color: var(--accentColor);
-}
-h3 {
-    font-weight: 450;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-    color: var(--accentColor);
-}
-h4 {
-    font-weight: 400;
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-    color: var(--accentColor);
-}
-h1 { font-size: 1.5rem; margin-top: 0em; }
-h2 { font-size: 1.4rem; }
-h3 { font-size: 1.25rem; }
-h4 { font-size: 1.15rem; }
-/* 初始化计数器 */
-body {
-    counter-reset: h2counter; /* 为 h2 级别标题设置计数器 */
-}
-h2 {
-    counter-reset: h3counter; /* 当 h2 出现时，重置 h3 计数器 */
-}
-h3 {
-    counter-reset: h4counter;
-}
-/* h2 的符号与编号 */
-h2:not(.group-title)::before {
-    counter-increment: h2counter; /* 每次 h2 出现时，h2counter 加 1 */
-    content: counter(h2counter) ". "; /* 显示计数器值，例如 "1." */
-    color: var(--accentColor);
-    font-weight: bold;
-    margin-right: 0.3em;
-}
-/* h3 的符号与编号 */
-h3::before {
-    counter-increment: h3counter;
-    content: counter(h2counter) "." counter(h3counter) " "; /* 例如 "1.1 " */
-    color: var(--accentColor);
-    margin-right: 0.3em;
-}
-/* h4 的符号与编号 */
-h4::before {
-    counter-increment: h4counter;
-    content: counter(h2counter) "." counter(h3counter) "." counter(h4counter) " "; /* 例如 "1.1.1 " */
-    color: var(--accentColor);
-    margin-right: 0.3em;
+h1 { font-size: 1.5rem; font-weight: 500; margin-top: 0; margin-bottom: 0.25em; }
+h2 { font-size: 1.4rem; font-weight: 380; margin-top: 1.5em; margin-bottom: 1em; }
+h3 { font-size: 1.2rem; font-weight: 350; margin-top: 1.25em; margin-bottom: 0.5em; }
+h4 { font-size: 1.1rem; font-weight: 300; margin-top: 0.5em; margin-bottom: 0.5em; }
+
+.group-title {
+    font-size: 1.2rem;
+    color: var(--color-accent-primary);
+    margin-bottom: 2rem;
+    margin-top: 0;
+    font-weight: 500;
 }
 
-p { margin-bottom: 1.25em; }
+p {
+    margin-bottom: 1em;
+}
 a {
-    color: var(--textColor);
+    color: var(--color-text-primary);
     text-decoration: none;
-    border-bottom: 1px solid var(--textColor);
-    padding-bottom: 0; /* 减小边框与文字的距离 */
+    border-bottom: 1px solid var(--color-text-primary);
+    padding-bottom: 0;
 }
 a:hover {
-    color: var(--accentColor);
-    border-bottom-color: var(--accentColor);
+    color: var(--color-accent-primary);
+    border-bottom-color: var(--color-accent-primary);
 }
-strong { font-weight: 600; }
+strong {
+    font-weight: 600;
+}
 
 /* 5. 头部与导航
 ---------------------------------------------------------------------------------------------------- */
@@ -135,9 +141,8 @@ header.main-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: relative; /* 为绝对定位的导航菜单提供上下文 */
+    position: relative;
     padding-bottom: 2rem;
-    
 }
 header.main-header::after {
     content: '';
@@ -146,41 +151,34 @@ header.main-header::after {
     left: 50%;
     transform: translateX(-50%);
     width: 100vw;
-    border-bottom: 1px solid var(--accent2Color);
+    border-bottom: 1px solid var(--color-border-primary);
 }
-
 .header-left {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
-
 .site-logo {
     width: 50px;
     height: 50px;
     border-radius: 50%;
 }
-
 .site-info {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
 }
-
-
 .site-title {
     font-size: 1.8rem;
     font-weight: 300;
     margin-bottom: 0.25rem;
     border-bottom: none;
-    color: var(--accentColor);
+    color: var(--color-accent-primary);
     transition: text-shadow 0.3s ease;
 }
-
 .site-title:hover {
-    text-shadow: 0 0 10px var(--accentColor);
+    text-shadow: 0 0 10px var(--color-accent-primary);
 }
-
 nav.main-nav ul {
     list-style: none;
     padding: 0;
@@ -191,30 +189,18 @@ nav.main-nav ul {
     font-size: 1rem;
 }
 nav.main-nav a {
-    letter-spacing: 1px; /* 或者 1px, 2px 等，根据需要调整 */
+    letter-spacing: 1px;
 }
-
-
 nav.main-nav li:not(:last-child)::after {
     content: "|";
     margin-left: 0.5rem;
-    color: var(--quoteColor);
+    color: var(--color-text-secondary);
 }
-
 .header-right {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding-top: 0.5rem; /* 与标题对齐 */
-}
-
-.search-icon {
-    width: 24px;
-    height: 24px;
-    opacity: 0.7;
-}
-.search-icon:hover {
-    opacity: 1;
+    padding-top: 0.5rem;
 }
 
 /* 6. 页脚
@@ -223,50 +209,96 @@ footer.main-footer {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 0; /* 进一步减小间隙 */
+    margin-top: 0;
     padding-top: 2rem;
     opacity: 0.5;
-    color: var(--quoteColor);
+    color: var(--color-text-secondary);
     font-size: 0.875rem;
 }
 
-/* 7. 简约文章列表 (用于首页)
+/* 7. 文章列表
 ---------------------------------------------------------------------------------------------------- */
-.posts-group {
-    margin-top: 0;
-}
-
-.group-title {
-    font-size: 1.2rem;
-    color: var(--accentColor);
-    margin-bottom: 2rem;
-    margin-top: 0;
-    font-weight: 500;
-}
-
+/* 首页简约列表 */
 .post-list-minimal {
     list-style: none;
     padding: 0;
     margin: 0;
 }
-
 .post-list-minimal li {
     display: flex;
     align-items: baseline;
     margin-bottom: 1rem;
     gap: 1rem;
 }
-
 .post-list-minimal .date {
-    color: var(--quoteColor);
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
-    width: 120px; /* 固定宽度以便对齐 */
-    flex-shrink: 0; /* 防止收缩 */
+    width: 120px;
+    flex-shrink: 0;
 }
-
 .post-list-minimal .title {
     font-weight: normal;
 }
+
+/* 后台管理列表 */
+.post-list-container {
+    border: none;
+}
+.post-list-header, .post-list-item {
+    display: flex;
+    align-items: center;
+    padding: 0.3rem 0rem;
+}
+.post-list-header {
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--color-border-primary);
+    background-color: #d4d6d848;
+}
+html.dark .post-list-header {
+    background-color: #374151;
+}
+.post-list-item {
+    border-bottom: 1px solid var(--color-border-primary);
+    font-size: 0.9rem;
+}
+.post-list-body .post-list-item:last-child {
+    border-bottom: none;
+}
+.post-list-item:hover {
+    background-color: #d4d6d848;
+}
+html.dark .post-list-item:hover {
+    background-color: #374151;
+}
+.col-checkbox { display: flex; justify-content: center; width: 40px; flex-shrink: 0; text-align: center; }
+.col-title { width: 400px; flex-shrink: 0; padding-right: 0rem; }
+.col-private { width: 80px; flex-shrink: 0; text-align: center; }
+.col-date { width: 130px; flex-shrink: 0; text-align: center; }
+.col-actions { width: 110px; flex-shrink: 0; text-align: center; }
+.col-actions a {
+    border-bottom: none;
+}
+.col-title span, .col-title a {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.col-title a {
+    font-weight: normal;
+    border-bottom: none;
+}
+.col-title a:hover {
+    border-bottom: none;
+}
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--color-text-secondary);
+    border-top: 1px solid var(--color-border-primary);
+}
+
 /* 8. 主题切换
 ---------------------------------------------------------------------------------------------------- */
 .theme-toggle {
@@ -276,7 +308,7 @@ footer.main-footer {
     padding: 0;
     display: flex;
     align-items: center;
-    color: var(--textColor);
+    color: var(--color-text-primary);
 }
 .theme-toggle:hover {
     opacity: 0.7;
@@ -290,51 +322,34 @@ footer.main-footer {
 .light .sun-icon { display: none; }
 .light .moon-icon { display: block; }
 
-
-/* 暗色模式变量
----------------------------------------------------------------------------------------------------- */
-html.dark {
-    --bgColor: #1d1f20; /* 深色模式下的背景颜色 */
-    --textColor: #bebdbd; /* 深色模式下的主要文字颜色 */
-    --linkColor: #cbcaca; /* 深色模式下的链接颜色 */
-    --accentColor: #29bc89; /* 深色模式下的强调色，如标题和链接悬停 */
-    --accent2Color: #444; /* 深色模式下的边框颜色 */
-    --quoteColor: #8c8d8f; /* 深色模式下的引用和元信息颜色 */
-    --bgColor-transparent: rgba(29, 31, 32, 0.8); /* 深色模式下的半透明背景颜色 */
-    --inputBgColor: #000000;
-}
 /* 9. 搜索表单
 ---------------------------------------------------------------------------------------------------- */
 .search-form {
     display: flex;
     align-items: center;
-    background-color: var(--bgColor);
-    border: 1px solid var(--accent2Color);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border-primary);
     opacity: 0.8;
     border-radius: 0.3rem;
     padding: 0.2rem;
 }
-
 .search-form:focus-within {
-    border-color: var(--accentColor);
+    border-color: var(--color-accent-primary);
     opacity: 1;
 }
-
 .search-input {
     background: transparent;
     border: none;
     outline: none;
-    color: var(--textColor);
+    color: var(--color-text-primary);
     font-size: 0.9rem;
     padding: 0.2rem 0.75rem;
-    width: 150px; /* 根据需要调整 */
-transition: width 0.3s ease;
+    width: 150px;
+    transition: width 0.3s ease;
 }
-
 .search-input::placeholder {
-    color: var(--quoteColor);
+    color: var(--color-text-secondary);
 }
-
 .search-button {
     background: none;
     border: none;
@@ -345,15 +360,14 @@ transition: width 0.3s ease;
     justify-content: center;
     border-radius: 50%;
 }
-
-
-
-.search-button .search-icon {
+.search-icon {
     width: 24px;
     height: 24px;
     opacity: 0.7;
 }
-
+.search-icon:hover {
+    opacity: 1;
+}
 /* 自定义搜索输入框的清除按钮 (x) */
 .search-input::-webkit-search-cancel-button {
     -webkit-appearance: none;
@@ -361,18 +375,18 @@ transition: width 0.3s ease;
     height: 16px;
     width: 16px;
     cursor: pointer;
-    background-color: var(--quoteColor);
+    background-color: var(--color-text-secondary);
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
     -webkit-mask-size: contain;
     mask-size: contain;
     transition: background-color 0.2s;
 }
-
 .search-input::-webkit-search-cancel-button:hover {
-    background-color: var(--accentColor);
+    background-color: var(--color-accent-primary);
 }
-/* 11. New Pagination
+
+/* 10. 分页
 ---------------------------------------------------------------------------------------------------- */
 .pagination-new {
     display: flex;
@@ -381,454 +395,462 @@ transition: width 0.3s ease;
     margin-top: 4rem;
     font-size: 0.9rem;
 }
-
-.pagination-new .page-numbers {
+.pagination-center {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
+    flex-grow: 1;
 }
-
+.pagination-new .page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 0; /* 不拉伸 */
+}
 .pagination-new .page-number,
 .pagination-new .ellipsis {
     padding: 0;
     border-radius: 0;
 }
-
 .pagination-new a.page-number {
     padding-bottom: 0;
 }
-
 .pagination-new .current {
     background-color: transparent;
-    color: var(--quoteColor); /* 改为浅灰色 */
+    color: var(--color-text-secondary);
     border: none;
     font-weight: normal;
-    padding-bottom: 1px; /* 保持对齐 */
+    padding-bottom: 1px;
 }
-
 .pagination-new .prev-next {
     font-size: 0.9rem;
 }
-
 .pagination-new .prev-next.disabled {
-    color: var(--quoteColor);
+    color: var(--color-text-secondary);
     opacity: 0.6;
     pointer-events: none;
 }
-
 .pagination-new .ellipsis {
-    color: var(--quoteColor);
+    color: var(--color-text-secondary);
 }
-/* 12. Admin & Settings Pages
+.page-size-selector select {
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 4px;
+    background-color: var(--color-background-input);
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
+    height: auto;
+}
+
+/* 11. 后台管理页面
 ---------------------------------------------------------------------------------------------------- */
-.admin-header {
+.admin-header, .setting-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    margin-top: 0; /* Removed top margin, now handled by main element */
-}
-
-.admin-header h2 {
-    font-size: 1.2rem; /* Unify with .group-title */
     margin-top: 0;
-    margin-bottom: 0;
+}
+.admin-header {
+    margin-bottom: 2rem;
 }
 .setting-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 0rem;
-    margin-top: 0; /* Removed top margin, now handled by main element */
 }
-
+.admin-header h2, .setting-header h2 {
+    font-size: 1.2rem;
+    margin: 0;
+}
 .setting-header h2 {
-    font-size: 1.2rem; /* Unify with .group-title */
     margin-bottom: 0.2rem;
 }
+.batch-actions-container {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
 
-/* 13. 响应式设计
+/* 12. 响应式设计
 ---------------------------------------------------------------------------------------------------- */
-.nav-toggle-checkbox {
-    display: none; /* 隐藏 checkbox */
-}
-
-.menu-toggle {
-    display: none; /* 默认隐藏 */
-    cursor: pointer;
-    padding: 0;
-    color: var(--textColor);
-}
-
 @media (max-width: 768px) {
     .main-wrapper {
         padding: 1.5rem 1rem;
     }
-
     header.main-header {
-        align-items: center; /* 垂直居中对齐 */
+        align-items: center;
     }
-
     .site-title {
-        display: none; /* 在移动设备上隐藏站点标题 */
+        display: none;
     }
-
     .menu-toggle {
-        display: block; /* 在移动设备上显示菜单按钮 */
-        z-index: 1100; /* 确保在最上层 */
+        display: block;
+        z-index: 1100;
     }
-
     nav.main-nav {
-        display: none; /* 默认隐藏导航 */
+        display: none;
         position: absolute;
-        top: 100%; /* 定位在头部的正下方 */
+        top: 100%;
         left: 0;
         right: 0;
-        background-color: var(--bgColor-transparent);
+        background-color: var(--color-background-transparent);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
         z-index: 1000;
         border-radius: 10px;
-        margin-top: 10px; /* 与头部保持距离 */
+        margin-top: 10px;
     }
-
     .nav-toggle-checkbox:checked ~ .site-info > nav.main-nav {
-        display: block; /* 点击按钮时显示 */
+        display: block;
     }
-
     nav.main-nav ul {
         flex-direction: column;
-        align-items: flex-start; /* 靠左对齐 */
-        padding: 1rem; /* 增加内边距 */
-        gap: 1rem; /* 增加链接之间的间距 */
+        align-items: flex-start;
+        padding: 1rem;
+        gap: 1rem;
     }
-
-    nav.main-nav li {
-        margin-bottom: 0; /* 移除底边距，使用 gap */
-    }
-
     nav.main-nav li:not(:last-child)::after {
-        content: ""; /* 移除竖线 */
-        margin-left: 0;
+        content: "";
     }
-
     .search-input {
-        width: 100px; /* 缩短搜索框 */
+        width: 100px;
     }
-
     .header-right {
-        padding-top: 0; /* 移除顶内边距以实现对齐 */
+        padding-top: 0;
+    }
+    /* 后台列表响应式 */
+    .post-list-header .col-private,
+    .post-list-header .col-date {
+        display: none;
+    }
+    .post-list-header .col-title {
+        width: calc(100% - 150px); /* Checkbox + Actions */
+    }
+    .post-list-item .col-private,
+    .post-list-item .col-date {
+        display: none;
+    }
+    .post-list-item .col-title {
+        width: calc(100% - 150px);
     }
 }
 
-/* 14. 汉堡菜单动画
+/* 13. 汉堡菜单动画
 ---------------------------------------------------------------------------------------------------- */
+.nav-toggle-checkbox {
+    display: none;
+}
 .menu-toggle {
+    display: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--color-text-primary);
     width: 24px;
     height: 24px;
     position: relative;
 }
-
 .hamburger-box {
     position: relative;
     width: 24px;
     height: 24px;
 }
-
+.hamburger-inner, .hamburger-inner::before, .hamburger-inner::after {
+    width: 24px;
+    height: 2px;
+    background-color: var(--color-text-primary);
+    border-radius: 4px;
+    position: absolute;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
 .hamburger-inner {
     display: block;
     top: 50%;
     margin-top: -1px;
 }
-
-.hamburger-inner, .hamburger-inner::before, .hamburger-inner::after {
-    width: 24px;
-    height: 2px;
-    background-color: var(--textColor);
-    border-radius: 4px;
-    position: absolute;
-    transition: transform 0.3s ease, background-color 0.3s ease;
-}
-
 .hamburger-inner::before, .hamburger-inner::after {
     content: "";
     display: block;
 }
-
 .hamburger-inner::before {
     top: -8px;
 }
-
 .hamburger-inner::after {
     bottom: -8px;
 }
-
 .nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner {
-    transform: translate3d(0, 0, 0) rotate(45deg);
-    background-color: var(--accentColor);
+    transform: rotate(45deg);
+    background-color: var(--color-accent-primary);
 }
-
 .nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner::before {
     transform: translate3d(0, 8px, 0) rotate(-90deg);
-    background-color: var(--accentColor);
+    background-color: var(--color-accent-primary);
 }
-
 .nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner::after {
     transform: translate3d(0, -8px, 0) rotate(-90deg);
-    background-color: var(--accentColor);
+    background-color: var(--color-accent-primary);
 }
-/* 15. Admin High-Contrast List View
+
+/* 14. 表单与组件
 ---------------------------------------------------------------------------------------------------- */
-
-
-.post-list-container {
-    border: none;
-}
-
-.post-list-header, .post-list-item {
-    display: flex;
-    align-items: center;
-    padding: 0.4rem 1rem;
-}
-
-.post-list-header {
-    font-weight: 600;
-    color: var(--textColor);
-    font-size: 0.9rem;
-    border-bottom: 1px solid var(--accent2Color);
-    background-color: #d4d6d848;
-}
-html.dark .post-list-header {
-    background-color: #374151;
-}
-
-
-.post-list-item {
-    border-bottom: 1px solid var(--accent2Color);
-    color: var(--textColor);
-    font-size: 0.9rem;
-}
-.post-list-body .post-list-item:last-child {
-    border-bottom: none;
-}
-.post-list-item:hover {
-    background-color: #d4d6d848;
-}
-html.dark .post-list-item:hover {
-    background-color: #374151;
-}
-
-.col-title { width: 380px; flex-shrink: 0; padding-right: 0rem; }
-.col-status { width: 70px; flex-shrink: 0; text-align: center; }
-.col-private { width: 70px; flex-shrink: 0; text-align: center; }
-.col-date { width: 110px; flex-shrink: 0; text-align: center; }
-.col-actions { width: 100px; flex-shrink: 0; text-align: center; }
-.col-actions a {
-    border-bottom: none;
-}
-.col-title span, .col-title a {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.col-title a {
-    font-weight: normal;
-    border-bottom: none; /* Admin links don't need underlines */
-}
-.col-title a:hover {
-    border-bottom: none;
-}
-
-.col-status {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.meta-item {
-    font-size: 0.9rem;
-    color: var(--textColor);
-}
-
-.col-private, .col-date {
-    font-size: 0.9rem;
-    color: var(--textColor);
-}
-
-.col-actions {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--quoteColor);
-    border-top: 1px solid var(--accent2Color);
-}
-
-@media (max-width: 768px) {
-    .post-list-header {
-        justify-content: space-between;
-    }
-
-    .post-list-header .col-status,
-    .post-list-header .col-private,
-    .post-list-header .col-date {
-        display: none;
-.post-list-header .col-title {
-        width: calc(100% - 110px);
-        text-align: left;
-        padding-right: 0;
-    }
-
-    .post-list-header .col-actions {
-        width: 90px;
-        text-align: center;
-        justify-content: center;
-    }
-    }
-
-    .post-list-item {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.75rem 1rem;
-    }
-
-    .post-list-item .col-status,
-    .post-list-item .col-private,
-    .post-list-item .col-date {
-        display: none;
-    }
-
-    .col-title {
-        width: calc(100% - 110px); /* 减去操作列宽度和间距 */
-        flex-shrink: 1;
-        min-width: 0;
-        padding-right: 0;
-        text-align: left;
-        border-top: none;
-        padding-top: 0;
-    }
-
-    .col-actions {
-        width: 90px;
-        flex-shrink: 0;
-        text-align: center;
-        justify-content: center;
-        border-top: none;
-        padding-top: 0;
-    }
-
-    .col-title span, .col-title a {
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
-/* 16. Form and Component Styles
----------------------------------------------------------------------------------------------------- */
-.settings-form-group,
-.editor-form-group {
-    margin-top: 0.5rem;
-    background-color: var(--bgColor);
-}
-
 .app-form label {
     display: block;
-    margin-bottom: 0.25rem;
     font-weight: 450;
-    color: var(--textColor);
-    background-color: var(--bgColor);
 }
-
+.settings-form .app-form label{
+    margin-bottom: 0.25rem;
+}
 .app-form input[type="text"],
 .app-form input[type="password"],
+.app-form input[type="number"],
 .app-form textarea,
 .app-form select {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid var(--accent2Color);
+    border: 1px solid var(--color-border-primary);
     border-radius: 4px;
-    background-color: var(--inputBgColor);
-    color: var(--textColor);
-    font-size: 0.9rem;
+    background-color: var(--color-background-input);
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
     transition: border-color 0.2s;
 }
-
+.editor-container .app-form input[type="text"],
+.editor-container .app-form textarea {
+    font-size: 0.9rem;
+}
 .app-form input[type="text"]:focus,
 .app-form input[type="password"]:focus,
+.app-form input[type="number"]:focus,
 .app-form textarea:focus,
 .app-form select:focus {
     outline: none;
-    border-color: var(--accentColor);
+    border-color: var(--color-accent-primary);
 }
-
-/* Alert styles */
-#editor-alert-container, #alert-container, #ai-test-alert-container {
-    margin-bottom: 0.5rem;
+.settings-form-group,
+.editor-form-group {
     margin-top: 0.5rem;
 }
+.editor-title-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+.editor-title-group #title {
+    flex-grow: 1;
+}
+.editor-title-group #published_at {
+    width: 150px;
 
-.alert {
-    padding: 1rem;
+}
+.editor-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 0.2rem;
+}
+.editor-options .form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+.editor-options input[type="checkbox"] {
+    width: 1.2em;
+    height: 1.2em;
+}
+.editor-actions {
+    display: flex;
+    align-items: flex-end; /* 保持子元素垂直底部对齐 */
+    gap: 0.5rem;
+    justify-content: flex-end; /* 靠右对齐的关键 */
+}
+.btn {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--color-border-primary);
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
     border-radius: 4px;
-    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    font-size: 0.9rem; /* 统一字体大小 */
+    line-height: 1.4; /* 统一高度 */
+}
+.btn:hover:not(:disabled) {
+    color: var(--color-accent-primary);
+    border: 1px solid var(--color-accent-primary);
+}
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.alert.success {
-    background-color: #e6f9f0;
-    color: #006400;
-    border: 1px solid #b3e6c7;
+/* 15. 文章内容样式
+---------------------------------------------------------------------------------------------------- */
+.post-header {
+    margin-bottom: 2rem;
+}
+.post-content {
+    line-height: 1.35;
+}
+.post-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5rem auto;
+    border-radius: 8px;
+}
+.post-content pre {
+    background-color: #2d2d2d;
+    color: #cccccc;
+    padding: 0.75em;
+    margin: .5em 0;
+    overflow-x: auto;
+    border-radius: 0.3em;
+    font-size: 0.85em;
+}
+.post-content code {
+    word-break: break-all;
+}
+.post-content blockquote {
+    border-left: 3px solid var(--color-text-secondary);
+    padding-left: 1.5rem;
+    margin-left: 0;
+    font-style: italic;
+    color: var(--color-text-secondary);
+}
+.post-summary {
+    border-left: 3px solid var(--color-text-secondary);
+    padding-left: 1.5rem;
+    margin-left: 0;
+    margin-bottom: 2rem;
+    font-style: italic;
+    color: var(--color-text-secondary);
+}
+:not(pre) > code {
+    color: #28a0c1;
+    background-color: #edf8facf;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 90%;
+    font-family: var(--font-mono);
+}
+html.dark :not(pre) > code {
+    color: #ff7597;
+    background-color: #38232a;
 }
 
-html.dark .alert.success {
-    background-color: #1e4620;
-    color: #a7d7a7;
-    border-color: #2a6430;
+/* 表格样式 (最终修订版) */
+.post-content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9rem;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    overflow: hidden;
+    /* 阴影效果已移至 .table-wrapper */
 }
 
-.alert.error {
-    background-color: #fff0f0;
-    color: #d8000c;
-    border: 1px solid #ffbaba;
+/* 为暗色模式定制更深的阴影 */
+html.dark .post-content table {
+    border-color: #333; /* 暗模式下边框颜色稍作调整 */
 }
 
-html.dark .alert.error {
-    background-color: #5a1d1d;
-    color: #f8baba;
-    border-color: #8b2c2c;
+.post-content th,
+.post-content td {
+    padding: 0.75em 1em;
+    border-bottom: 1px solid var(--color-border-primary);
+    border-right: 1px solid var(--color-border-primary);
 }
 
-.alert.info {
-    background-color: #eef7ff;
-    color: #005a9e;
-    border: 1px solid #b3d9ff;
+html.dark .post-content th,
+html.dark .post-content td {
+    border-color: #333; /* 统一暗模式下的单元格边框颜色 */
 }
 
-html.dark .alert.info {
-    background-color: #1c3d5a;
-    color: #a8d4ff;
-    border-color: #2a5a8b;
+/* 移除表格主体最右侧多余的边框 */
+.post-content td:last-child,
+.post-content th:last-child {
+    border-right: none;
 }
 
+/* 移除最后一行多余的边框 */
+.post-content tr:last-child td {
+    border-bottom: none;
+}
+
+.post-content th {
+    font-weight: 600;
+    background-color: rgba(128, 128, 128, 0.08);
+    border-bottom-width: 2px;
+}
+
+html.dark .post-content th {
+    background-color: rgba(255, 255, 255, 0.05); /* 暗模式下表头背景色 */
+}
+
+/* 16. 特殊组件
+---------------------------------------------------------------------------------------------------- */
+/* 私密文章图标 */
+.private-icon {
+    display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
+    vertical-align: -0.05em;
+    margin-left: 5px;
+}
+html.light .private-icon {
+    content: url(/static/pic/lock.svg);
+}
+html.dark .private-icon {
+    content: url(/static/pic/lock-w.svg);
+}
+
+/* 两步删除确认 */
+.delete-wrapper {
+    position: relative;
+    display: inline-block;
+    outline: none;
+}
+.delete-init:hover {
+    color: var(--color-accent-primary);
+    border-bottom-color: var(--color-accent-primary);
+}
+.delete-init,
+.delete-confirm {
+    cursor: pointer;
+    transition: opacity 0.2s ease-in-out;
+}
+.delete-confirm {
+    display: none;
+}
+.delete-wrapper:focus-within .delete-init {
+    display: none;
+}
+.delete-wrapper:focus-within .delete-confirm {
+    display: inline-block;
+}
+.delete-confirm {
+    color: var(--color-accent-primary);
+    transition: opacity 0.3s ease;
+}
+.delete-confirm.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* 返回顶部按钮 */
 .back-to-top {
     position: fixed;
     bottom: 30px;
     right: 30px;
     width: 45px;
     height: 45px;
-    background-color: var(--accentColor);
-    color: var(--bgColor);
+    background-color: var(--color-accent-primary);
+    color: var(--color-background);
     text-align: center;
     line-height: 45px;
     font-size: 20px;
@@ -842,235 +864,254 @@ html.dark .alert.info {
     visibility: hidden;
     pointer-events: none;
 }
-
 .back-to-top.show {
     opacity: 0.7;
     visibility: visible;
     pointer-events: auto;
 }
-
 .back-to-top:hover {
-    background-color: var(--textColor);
-    color: var(--bgColor);
+    background-color: var(--color-text-primary);
+    color: var(--color-background);
     border: none;
     opacity: 1;
 }
 
-/* 17. Editor Styles
+/* 17. 通知系统
 ---------------------------------------------------------------------------------------------------- */
-.editor-container {
-    max-width: 800px;
-    margin: 0rem auto;
-    background-color: var(--bgColor);
-    /* border: 1px solid var(--accent2Color); */
-    border-radius: 8px;
-}
-
-html.dark .editor-container {
-    background-color: var(--bgColor); /* A slightly lighter dark shade for the container */
-}
-
-.editor-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    margin-top: 0.2rem;
-
-}
-
-.editor-options .form-group-inline {
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-}
-
-.editor-options input[type="checkbox"] {
-    width: 1.2em;
-    height: 1.2em;
-}
-
-.editor-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.5rem; /* 调整链接之间的垂直间距 */
-}
-
-
-/* 18. Post Content Styles
----------------------------------------------------------------------------------------------------- */
-.post-content {
-    line-height: 1.7;
-}
-
-.post-content img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 1.5rem auto;
-    border-radius: 8px;
-}
-
-.post-content pre {    
-    background-color: #2d2d2d; /* A dark background for all code blocks 代码块 */
-    color: #cccccc;           /* A light text color */
-    padding: 1em;
-    margin: .5em 0;
-    overflow-x: auto;
-    border-radius: 0.3em;
-}
-
-.post-content code {
-    word-break: break-all;
-}
-
-.post-content blockquote {
-    border-left: 3px solid var(--quoteColor);
-    padding-left: 1.5rem;
-    margin-left: 0;
-    font-style: italic;
-    color: var(--quoteColor);
-}
-
-.post-summary {
-    border-left: 3px solid var(--quoteColor);
-    padding-left: 1.5rem;
-    margin-left: 0;
-    margin-bottom: 2rem;
-    font-style: italic;
-    color: var(--quoteColor);
-}
-
-/* 19. Inline Code Styles
----------------------------------------------------------------------------------------------------- */
-:not(pre) > code {
-    color: #28a0c1;
-    background-color: #edf8facf;
-    padding: 2px 4px;
-    border-radius: 4px;
-    font-size: 90%;
-    font-family: var(--font-mono);
-}
-
-html.dark :not(pre) > code {
-    color: #ff7597; /* A lighter pink for dark mode */
-    background-color: #38232a; /* A dark, reddish background */
-}
-
-.private-icon {
-    display: inline-block;
-    width: 0.8em;
-    height: 0.8em;
-    vertical-align: -0.05em;
-    margin-left: 5px;
-}
-
-html.light .private-icon {
-    content: url(/static/pic/lock.svg);
-}
-
-html.dark .private-icon {
-    content: url(/static/pic/lock-w.svg);
-}
-
-/* 20. Two-Step Delete Confirmation
----------------------------------------------------------------------------------------------------- */
-.delete-wrapper {
-    position: relative;
-    display: inline-block;
-    outline: none;
-}
-.delete-init:hover {
-    color: var(--accentColor);
-    border-bottom-color: var(--accentColor);
-}
-.delete-init,
-.delete-confirm {
-    cursor: pointer;
-    transition: opacity 0.2s ease-in-out;
-}
-
-.delete-confirm {
-    display: none;
-}
-
-.delete-wrapper:focus-within .delete-init {
-    display: none;
-}
-
-.delete-wrapper:focus-within .delete-confirm {
-    display: inline-block;
-}
-
-.delete-confirm {
-    color: var(--accentColor);
-    transition: opacity 0.3s ease; /* Add transition for smooth effect */
-}
-
-.delete-confirm.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none; /* Prevent clicks when disabled */
-}
-
-/* 21. Notification System */
 #notification-container {
     position: fixed;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000;
+    z-index: 3000;
     display: flex;
     flex-direction: column;
     gap: 8px;
     align-items: center;
 }
-
 .notification {
-    color: var(--textColor);
+    color: var(--color-text-primary);
     padding: 8px 16px;
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     opacity: 0;
     transform: translateY(-20px);
     transition: opacity 0.3s ease, transform 0.3s ease;
-    min-width: 240px; /* 固定宽度以保持一致 */
-    min-height: 40px; /* 设置最小高度 */
-    display: flex; /* 使用 Flexbox 进行对齐 */
-    align-items: center; /* 垂直居中 */
-    justify-content: center; /* 水平居中 */
+    min-width: 240px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     font-size: 0.9rem;
-    background-color: var(--bgColor-transparent);
+    background-color: var(--color-background-transparent);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(0, 0, 0, 0.05);
     margin-bottom: 10px;
 }
-
 html.dark .notification {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 .notification.show {
     opacity: 1;
     transform: translateY(0);
 }
-
 .notification.success,
 html.dark .notification.success {
     background-color: rgba(40, 167, 70, 0.458);
     border: none;
 }
-
 .notification.error,
 html.dark .notification.error {
     background-color: rgba(220, 53, 70, 0.475);
     border: none;
 }
-
 .notification.info,
 html.dark .notification.info {
     background-color: rgba(23, 163, 184, 0.572);
     border: none;
+}
+
+/* 18. 模态框 (Modal)
+---------------------------------------------------------------------------------------------------- */
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+.modal-container {
+    display: none; /* Default hidden */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-container.show {
+    display: flex;
+    opacity: 1;
+}
+.modal-content {
+    background-color: var(--color-background);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+.modal-content p {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+.modal-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+.modal-btn {
+    padding: 0.4rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+.modal-btn.confirm {
+    background-color: var(--color-accent-primary);
+    color: #fff;
+}
+.modal-btn.confirm:hover {
+    opacity: 0.8;
+}
+.modal-btn.cancel {
+    background-color: var(--color-border-primary);
+    color: var(--color-text-primary);
+}
+.modal-btn.cancel:hover {
+    opacity: 0.8;
+}
+
+
+.settings-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+
+.admin-search-form {
+    padding: 0rem;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: var(--color-accent-primary);
+}
+
+.modal-content .app-form {
+    text-align: left;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+    color: var(--color-text-primary);
+}
+
+.modal-content {
+    position: relative;
+}
+
+
+
+/* --- 表格对齐最终解决方案 --- */
+
+/* 1. 为所有单元格设置默认居中对齐 */
+.post-content td,
+.post-content th {
+    text-align: center;
+}
+
+/* 2. 使用属性选择器覆盖 Markdown 生成的特定对齐方式 */
+/* 使用 !important 确保这些规则的优先级最高，覆盖所有默认设置 */
+.post-content [align="left"] {
+    text-align: left !important;
+}
+
+.post-content [align="center"] {
+    text-align: center !important;
+}
+
+.post-content [align="right"] {
+    text-align: right !important;
+}
+
+/* --- 响应式表格包裹容器 --- */
+.table-wrapper {
+    overflow-x: auto; /* 核心：在容器上启用水平滚动 */
+    width: max-content; /* 关键：让容器宽度适应表格内容 */
+    max-width: 100%; /* 确保容器不会超过页面宽度 */
+    -webkit-overflow-scrolling: touch; /* 在 iOS 上启用平滑滚动 */
+    margin: 1.8em auto; /* 修改外边距，实现水平居中 */
+    border-radius: 8px; /* 匹配表格的圆角 */
+    /* 为亮色模式添加柔和的阴影 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease-in-out; /* 添加过渡效果 */
+}
+
+/* 为暗色模式定制更深的阴影 */
+html.dark .table-wrapper {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+.table-wrapper table {
+    margin: 0; /* 移除 table 自身的外边距 */
+}
+
+/* --- 自定义滚动条样式 (表格和代码块) --- */
+/* 适用于 Webkit 内核浏览器，如 Chrome, Safari, Edge */
+.table-wrapper::-webkit-scrollbar,
+.post-content pre::-webkit-scrollbar {
+    height: 8px; /* 水平滚动条高度 */
+    width: 8px;  /* 垂直滚动条宽度 */
+}
+
+.table-wrapper::-webkit-scrollbar-track,
+.post-content pre::-webkit-scrollbar-track {
+    background: transparent; /* 轨道背景透明 */
+}
+
+.table-wrapper::-webkit-scrollbar-thumb,
+.post-content pre::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-primary); /* 滑块颜色使用次要强调色 */
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover,
+.post-content pre::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-accent-primary); /* 鼠标悬浮时使用主要强调色 */
 }

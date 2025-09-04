@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"glog/internal/constants"
 	"glog/internal/services"
 	"glog/internal/utils"
 	"math"
@@ -22,9 +23,9 @@ func (h *BlogHandler) Index(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize := 10 // 每页显示15篇文章
 
-	isLoggedInValue, exists := c.Get("IsLoggedIn")
+	isLoggedInValue, exists := c.Get(constants.ContextKeyIsLoggedIn)
 	isLoggedIn := exists && isLoggedInValue.(bool)
-	posts, total, err := h.postService.GetPublishedPostsPage(page, pageSize, isLoggedIn)
+	posts, total, err := h.postService.GetPostsPage(page, pageSize, isLoggedIn)
 	if err != nil {
 		render(c, http.StatusInternalServerError, "404.html", gin.H{
 			"error": "加载文章失败",
@@ -44,9 +45,9 @@ func (h *BlogHandler) Index(c *gin.Context) {
 
 func (h *BlogHandler) ShowPost(c *gin.Context) {
 	slug := c.Param("slug")
-	isLoggedIn, _ := c.Get("IsLoggedIn")
+	isLoggedIn, _ := c.Get(constants.ContextKeyIsLoggedIn)
 
-	post, err := h.postService.GetRenderedPostBySlug(slug, isLoggedIn.(bool))
+	post, err := h.postService.GetPostBySlug(slug, isLoggedIn.(bool))
 	if err != nil {
 		// Render custom 404 page
 		render(c, http.StatusNotFound, "404.html", gin.H{})

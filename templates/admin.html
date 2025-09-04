@@ -5,13 +5,18 @@
 {{ define "content" }}
     <div class="admin-header">
         <h2 class="group-title">文章管理</h2>
-        <a href="/admin/new">写新文章</a>
+        <form id="admin-search-form" action="/admin" method="get" class="search-form admin-search-form">
+            <input type="search" name="query" placeholder="搜索文章..." class="search-input" value="{{ .Query }}">
+            <button type="submit" class="search-button" aria-label="Search">
+                <img src="/static/pic/search.png" alt="Search" class="search-icon">
+            </button>
+        </form>
     </div>
 
     <div class="post-list-container">
         <div class="post-list-header">
+            <div class="col-checkbox"><input type="checkbox" id="select-all-posts"></div>
             <div class="col-title">标题</div>
-            <div class="col-status">状态</div>
             <div class="col-private">私密</div>
             <div class="col-date">发布日期</div>
             <div class="col-actions">操作</div>
@@ -19,23 +24,15 @@
         <div class="post-list-body">
             {{range .posts}}
             <div class="post-list-item">
+                <div class="col-checkbox"><input type="checkbox" class="post-checkbox" data-id="{{.ID}}"></div>
                 <div class="col-title" title="{{.Title}}">
-                    {{if .Published}}
-                        <a href="/post/{{.Slug}}" >{{.Title}}</a>
-                    {{else}}
-                        <span>{{.Title}}</span>
-                    {{end}}
-                </div>
-                <div class="col-status">
-                    <span class="meta-item status-{{if .Published}}published{{else}}draft{{end}}">
-                        {{if .Published}}已发布{{else}}草稿{{end}}
-                    </span>
+                    <a href="/post/{{.Slug}}" >{{.Title}}</a>
                 </div>
                 <div class="col-private">
                     {{if .IsPrivate}}是{{else}}-{{end}}
                 </div>
                 <div class="col-date">
-                    {{if .Published}}{{.PublishedAt.Format "2006-01-02"}}{{else}}-{{end}}
+                    {{.PublishedAt.Format "2006-01-02"}}
                 </div>
                 <div class="col-actions">
                     <a href="/admin/editor?id={{.ID}}">[编辑]</a>
@@ -57,55 +54,24 @@
         </div>
     </div>
 
+    <div class="batch-actions-container">
+        <button id="batch-delete-btn" class="btn" disabled>批量删除</button>
+        <button id="batch-set-private-btn" class="btn" disabled>设为私密</button>
+        <button id="batch-set-public-btn" class="btn" disabled>设为公开</button>
+    </div>
+
     {{ template "pagination" . }}
+<div id="modal-container" class="modal-container" style="display: none;">
+    <div class="modal-content">
+        <p id="modal-text">确定要删除选中的文章吗？</p>
+        <div class="modal-actions">
+            <button id="modal-confirm-btn" class="modal-btn confirm">确认</button>
+            <button id="modal-cancel-btn" class="modal-btn cancel">取消</button>
+        </div>
+    </div>
+</div>
 {{ end }}
 
 {{ define "scripts" }}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const postListBody = document.querySelector('.post-list-body');
-
-    postListBody.addEventListener('focusin', function(event) {
-        if (event.target.classList.contains('delete-wrapper')) {
-            const wrapper = event.target;
-            const confirmButton = wrapper.querySelector('.delete-confirm');
-            
-            // Disable the button immediately
-            confirmButton.classList.add('disabled');
-            
-            // Enable it after 1 second
-            setTimeout(() => {
-                confirmButton.classList.remove('disabled');
-            }, 1000);
-        }
-    });
-
-    postListBody.addEventListener('click', function(event) {
-        const confirmButton = event.target;
-        if (confirmButton.classList.contains('delete-confirm') && !confirmButton.classList.contains('disabled')) {
-            const postId = confirmButton.dataset.id;
-            
-            fetch(`/admin/delete/${postId}`, {
-                method: 'POST',
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showNotification(data.message, 'success');
-                    const itemToRemove = confirmButton.closest('.post-list-item');
-                    if (itemToRemove) {
-                        itemToRemove.remove();
-                    }
-                } else {
-                    showNotification(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('删除失败:', error);
-                showNotification('删除文章时出错！', 'error');
-            });
-        }
-    });
-});
-</script>
+<script src="/static/js/admin.js"></script>
 {{ end }}
