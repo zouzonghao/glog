@@ -57,9 +57,10 @@ func setupTestRouterAndDB() {
 	_, b, _, _ := runtime.Caller(0)
 	projectRoot := filepath.Join(filepath.Dir(b), "..", "..")
 	dbPath := filepath.Join(projectRoot, "blog.db")
+	os.Setenv("DB_PATH", dbPath)
 	// --- End of path construction ---
 
-	db, err := utils.InitDatabase(dbPath) // Use absolute path
+	db, err := utils.InitDatabase() // Use absolute path
 	if err != nil {
 		panic("Failed to initialize database for testing: " + err.Error())
 	}

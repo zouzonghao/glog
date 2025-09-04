@@ -38,6 +38,12 @@ jobs:
         run: |
           make release GOOS=linux GOARCH=amd64
           make release GOOS=windows GOARCH=amd64
+      # 步骤 4.1: 压缩构建产物
+      - name: Compress artifacts
+        run: |
+          tar -czf glog-linux-amd64.tar.gz glog-linux-amd64
+          zip -j glog-windows-amd64.zip glog-windows-amd64.exe
+          tar -czf glog-darwin-arm64.tar.gz glog-darwin-arm64
           make release GOOS=darwin GOARCH=arm64
 
       # 步骤 5: 创建 Release 并上传构建产物
@@ -45,9 +51,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            glog-linux-amd64
-            glog-windows-amd64.exe
-            glog-darwin-arm64
+            glog-linux-amd64.tar.gz
+            glog-windows-amd64.zip
+            glog-darwin-arm64.tar.gz
 
       # 步骤 6: 为 Docker 构建重命名 Linux 可执行文件
       - name: Rename linux binary for Docker build

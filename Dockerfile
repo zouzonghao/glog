@@ -9,13 +9,13 @@ ENV TZ=Asia/Shanghai
 WORKDIR /app
 
 # 将 glog 可执行文件复制到镜像中
-COPY glog /app/glog
+COPY glog /usr/local/bin/glog
 
 # 授予执行权限
-RUN chmod +x /app/glog
+RUN chmod +x /usr/local/bin/glog
 
 # 暴露服务端口
 EXPOSE 37371
 
 # 设置容器启动时执行的命令
-CMD ["/app/glog"]
+CMD ["glog"]

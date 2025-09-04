@@ -2,14 +2,21 @@ package utils
 
 import (
 	"glog/internal/models"
+	"os"
+	"path/filepath"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
-func InitDatabase(dbPath string) (*gorm.DB, error) {
+func InitDatabase() (*gorm.DB, error) {
+	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
-		dbPath = "blog.db"
+		exePath, err := os.Executable()
+		if err != nil {
+			return nil, err
+		}
+		dbPath = filepath.Join(filepath.Dir(exePath), "blog.db")
 	}
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
