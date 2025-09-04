@@ -1,0 +1,11 @@
+{{ template "base.html" . }}
+
+{{ define "title" }}错误{{ end }}
+
+{{ define "content" }}
+    <div class="error-page">
+        <h2>出错了</h2>
+        <p>{{ if .error }}{{ .error }}{{ else }}发生未知错误。{{ end }}</p>
+        <a href="/">返回首页</a>
+    </div>
+{{ end }}

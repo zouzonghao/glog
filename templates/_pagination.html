@@ -1,0 +1,33 @@
+{{ define "pagination" }}
+    {{ with .Pagination }}
+        {{ if gt .TotalPages 1 }}
+            <nav class="pagination-new">
+                {{/* Previous Page Link */}}
+                {{ if .HasPrev }}
+                    <a href="?page={{ .PrevPage }}{{ with $.query }}&q={{ . }}{{ end }}" class="prev-next">上一页</a>
+                {{ else }}
+                    <span class="prev-next disabled">上一页</span>
+                {{ end }}
+
+                <div class="page-numbers">
+                    {{ range .Pages }}
+                        {{ if .IsLink }}
+                            <a href="?page={{ .Number }}{{ with $.query }}&q={{ . }}{{ end }}" class="page-number">{{ .Number }}</a>
+                        {{ else if .Number }}
+                            <span class="page-number current">{{ .Number }}</span>
+                        {{ else }}
+                            <span class="ellipsis">…</span>
+                        {{ end }}
+                    {{ end }}
+                </div>
+
+                {{/* Next Page Link */}}
+                {{ if .HasNext }}
+                    <a href="?page={{ .NextPage }}{{ with $.query }}&q={{ . }}{{ end }}" class="prev-next">下一页</a>
+                {{ else }}
+                    <span class="prev-next disabled">下一页</span>
+                {{ end }}
+            </nav>
+        {{ end }}
+    {{ end }}
+{{ end }}

@@ -1,0 +1,58 @@
+{{ template "base.html" . }}
+
+{{ define "title" }}后台管理{{ end }}
+
+{{ define "content" }}
+    <div class="admin-header">
+        <h2 class="group-title">文章管理</h2>
+        <a href="/admin/new">写新文章</a>
+    </div>
+
+    <div class="post-list-container">
+        <div class="post-list-header">
+            <div class="col-title">标题</div>
+            <div class="col-status">状态</div>
+            <div class="col-private">私密</div>
+            <div class="col-date">发布日期</div>
+            <div class="col-actions">操作</div>
+        </div>
+        <div class="post-list-body">
+            {{range .posts}}
+            <div class="post-list-item">
+                <div class="col-title" title="{{.Title}}">
+                    {{if .Published}}
+                        <a href="/post/{{.Slug}}" target="_blank">{{.Title}}</a>
+                    {{else}}
+                        <span>{{.Title}}</span>
+                    {{end}}
+                </div>
+                <div class="col-status">
+                    <span class="meta-item status-{{if .Published}}published{{else}}draft{{end}}">
+                        {{if .Published}}已发布{{else}}草稿{{end}}
+                    </span>
+                </div>
+                <div class="col-private">
+                    {{if .IsPrivate}}是{{else}}-{{end}}
+                </div>
+                <div class="col-date">
+                    {{if .Published}}{{.PublishedAt.Format "2006-01-02"}}{{else}}-{{end}}
+                </div>
+                <div class="col-actions">
+                    <a href="/admin/editor?id={{.ID}}">编辑</a>
+                    <a href="/admin/delete/{{.ID}}" onclick="return confirm('确定要删除这篇文章吗？')">删除</a>
+                </div>
+            </div>
+            {{else}}
+            <div class="empty-state">
+                {{if .Query}}
+                <p>没有找到与 "{{.Query}}" 相关的文章。</p>
+                {{else}}
+                <p>没有文章。</p>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    {{ template "pagination" . }}
+{{ end }}
