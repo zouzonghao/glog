@@ -179,13 +179,13 @@ bash <(curl -sL https://zfff.de/glogsh) uninstall
 
     ```bash
     # 构建 Linux 版本
-    GOOS=linux GOARCH=amd64 make build-platform
+    GOOS=linux GOARCH=amd64 make build-platform-with-cleanup
 
     # 构建 Windows 版本
-    GOOS=windows GOARCH=amd64 make build-platform
+    GOOS=windows GOARCH=amd64 make build-platform-with-cleanup
 
     # 构建 macOS (Apple Silicon) 版本
-    GOOS=darwin GOARCH=arm64 make build-platform
+    GOOS=darwin GOARCH=arm64 make build-platform-with-cleanup
     ```
 
     构建产物将出现在项目根目录。

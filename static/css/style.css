@@ -126,6 +126,8 @@ a {
     text-decoration: none;
     border-bottom: 1px solid var(--color-text-primary);
     padding-bottom: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 a:hover {
     color: var(--color-accent-primary);
