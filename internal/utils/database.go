@@ -16,7 +16,7 @@ func InitDatabase() (*gorm.DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		dbPath = filepath.Join(filepath.Dir(exePath), "blog.db")
+		dbPath = filepath.Join(filepath.Dir(exePath), "glog.db")
 	}
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {

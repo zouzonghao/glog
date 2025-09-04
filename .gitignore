@@ -1,6 +1,6 @@
 .DS_Store
 glog
-blog.db*
+glog.db*
 *.db.*
 glog_server*
 glog*
