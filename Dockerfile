@@ -9,7 +9,7 @@ ENV TZ=Asia/Shanghai
 WORKDIR /app
 
 # 将 glog 可执行文件复制到镜像中
-COPY glog /usr/local/bin/glog
+COPY glog-linux-amd64 /usr/local/bin/glog
 
 # 授予执行权限
 RUN chmod +x /usr/local/bin/glog

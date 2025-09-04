@@ -59,7 +59,7 @@ build:
 			BINARY_FILENAME=$${BINARY_FILENAME}.exe; \
 		fi; \
 		echo "--> Building application for $(TARGET_GOOS)/$(TARGET_GOARCH)..."; \
-		GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -ldflags="-s -w" -o $$BINARY_FILENAME -tags release .; \
+		CGO_ENABLED=0 GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -ldflags="-s -w" -o $$BINARY_FILENAME -tags release .; \
 	}
 
 cleanup:
