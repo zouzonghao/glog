@@ -33,20 +33,18 @@ jobs:
       - name: Download Go modules
         run: go mod download
 
-      # 步骤 4: 使用 Makefile 构建 Go 应用程序
-      - name: Build Go application with Makefile
-        run: |
-          make release GOOS=linux GOARCH=amd64
-          make release GOOS=windows GOARCH=amd64
-      # 步骤 4.1: 压缩构建产物
+      # 步骤 4: 使用 Makefile 构建所有平台的 Go 应用程序
+      - name: Build Go application for all platforms
+        run: make release-all
+
+      # 步骤 5: 压缩构建产物
       - name: Compress artifacts
         run: |
           tar -czf glog-linux-amd64.tar.gz glog-linux-amd64
           zip -j glog-windows-amd64.zip glog-windows-amd64.exe
           tar -czf glog-darwin-arm64.tar.gz glog-darwin-arm64
-          make release GOOS=darwin GOARCH=arm64
 
-      # 步骤 5: 创建 Release 并上传构建产物
+      # 步骤 6: 创建 Release 并上传构建产物
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
@@ -55,11 +53,11 @@ jobs:
             glog-windows-amd64.zip
             glog-darwin-arm64.tar.gz
 
-      # 步骤 6: 为 Docker 构建重命名 Linux 可执行文件
+      # 步骤 7: 为 Docker 构建重命名 Linux 可执行文件
       - name: Rename linux binary for Docker build
         run: mv glog-linux-amd64 glog
 
-      # 步骤 7: 登录到 Docker Hub
+      # 步骤 8: 登录到 Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -67,7 +65,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 步骤 8: 提取元数据（标签和注释）
+      # 步骤 9: 提取元数据（标签和注释）
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -90,11 +88,11 @@ jobs:
             # 规则 3: 为最新的测试版本创建一个 'beta' 标签
             type=raw,value=beta,enable=${{ startsWith(github.ref, 'refs/tags/b') }}
 
-      # 步骤 9: 设置 Docker Buildx
+      # 步骤 10: 设置 Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 步骤 10: 构建并推送到 Docker Hub
+      # 步骤 11: 构建并推送到 Docker Hub
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:

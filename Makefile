@@ -17,10 +17,8 @@ TARGET_GOARCH := $(or $(GOARCH),$(NATIVE_GOARCH))
 
 # --- Binary Naming ---
 BINARY_NAME=glog
-BINARY_FILENAME=$(BINARY_NAME)-$(TARGET_GOOS)-$(TARGET_GOARCH)
-ifeq ($(TARGET_GOOS), windows)
-	BINARY_FILENAME:=$(BINARY_FILENAME).exe
-endif
+# This is now a template for build-platform
+BINARY_FILENAME_TEMPLATE=$(BINARY_NAME)-$(1)-$(2)
 
 BUILD_SCRIPT=build.go
 BUILD_TOOL_NAME=build_tool
@@ -28,8 +26,17 @@ BUILD_TOOL_NAME=build_tool
 # --- Main Targets ---
 default: run
 
-release: build-tool prepare build cleanup
-	@echo "Release build complete. Binary is at ./$(BINARY_FILENAME)"
+# New target to build all release binaries
+release-all: build-tool prepare
+	@$(MAKE) build-platform GOOS=linux GOARCH=amd64
+	@$(MAKE) build-platform GOOS=windows GOARCH=amd64
+	@$(MAKE) build-platform GOOS=darwin GOARCH=arm64
+	@$(MAKE) cleanup
+	@echo "All release builds complete."
+
+# Renamed 'release' to 'build-platform' to avoid confusion and handle single platform builds.
+build-platform:
+	@$(MAKE) build
 
 run:
 	@echo "Running in development mode..."
@@ -46,8 +53,14 @@ prepare:
 	@./$(BUILD_TOOL_NAME) -release
 
 build:
-	@echo "--> Building application for $(TARGET_GOOS)/$(TARGET_GOARCH)..."
-	@GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -ldflags="-s -w" -o $(BINARY_FILENAME) -tags release .
+	@{ \
+		BINARY_FILENAME=$(BINARY_NAME)-$(TARGET_GOOS)-$(TARGET_GOARCH); \
+		if [ "$(TARGET_GOOS)" = "windows" ]; then \
+			BINARY_FILENAME=$${BINARY_FILENAME}.exe; \
+		fi; \
+		echo "--> Building application for $(TARGET_GOOS)/$(TARGET_GOARCH)..."; \
+		GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) $(GOBUILD) -ldflags="-s -w" -o $$BINARY_FILENAME -tags release .; \
+	}
 
 cleanup:
 	@echo "--> Cleaning up temporary assets..."
@@ -58,7 +71,7 @@ clean:
 	@echo "Cleaning up project..."
 	@if [ -f $(BUILD_TOOL_NAME) ]; then ./$(BUILD_TOOL_NAME) -clean; fi
 	@rm -f $(BUILD_TOOL_NAME)
-	@rm -f $(BINARY_NAME) $(BINARY_NAME)-*
+	@rm -f glog glog-*
 	@echo "Project cleaned."
 
-.PHONY: default release run build-tool prepare build cleanup clean
+.PHONY: default release-all build-platform run build-tool prepare build cleanup clean
