@@ -21,38 +21,16 @@ func InitDatabase() (*gorm.DB, error) {
 
 	// --- FTS5 Setup ---
 	// 1. Create FTS virtual table
+	// We are using a normal FTS table, not a contentless one,
+	// because we need to pass pre-segmented text from our Go application.
+	// Triggers are also removed as the application layer will handle synchronization.
 	ftsTableSQL := `
 	CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
 		title,
-		content,
-		content='posts',
-		content_rowid='id'
+		content
 	);`
 	if err := db.Exec(ftsTableSQL).Error; err != nil {
 		return nil, err
-	}
-
-	// 2. Create triggers to keep FTS table synchronized with posts table
-	triggers := []string{
-		`
-		CREATE TRIGGER IF NOT EXISTS posts_ai AFTER INSERT ON posts BEGIN
-			INSERT INTO posts_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
-		END;`,
-		`
-		CREATE TRIGGER IF NOT EXISTS posts_ad AFTER DELETE ON posts BEGIN
-			INSERT INTO posts_fts(posts_fts, rowid, title, content) VALUES ('delete', old.id, old.title, old.content);
-		END;`,
-		`
-		CREATE TRIGGER IF NOT EXISTS posts_au AFTER UPDATE ON posts BEGIN
-			INSERT INTO posts_fts(posts_fts, rowid, title, content) VALUES ('delete', old.id, old.title, old.content);
-			INSERT INTO posts_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
-		END;`,
-	}
-
-	for _, trigger := range triggers {
-		if err := db.Exec(trigger).Error; err != nil {
-			return nil, err
-		}
 	}
 
 	// Seed the database with initial settings

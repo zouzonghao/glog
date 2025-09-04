@@ -26,7 +26,7 @@ func (h *BlogHandler) Index(c *gin.Context) {
 	isLoggedIn := exists && isLoggedInValue.(bool)
 	posts, total, err := h.postService.GetPublishedPostsPage(page, pageSize, isLoggedIn)
 	if err != nil {
-		render(c, http.StatusInternalServerError, "error.html", gin.H{
+		render(c, http.StatusInternalServerError, "404.html", gin.H{
 			"error": "加载文章失败",
 		})
 		return

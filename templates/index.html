@@ -11,8 +11,7 @@
                     <a href="/post/{{ .Slug }}" class="title">
                         {{ .Title }}
                         {{ if .IsPrivate }}
-                            <img src="/static/pic/lock.svg" alt="Private" class="lock-light" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
-                            <img src="/static/pic/lock-w.svg" alt="Private" class="lock-dark" style="width: 0.8em; height: 0.8em; vertical-align: -0.05em; margin-left: 5px;">
+                            <span class="private-icon"></span>
                         {{ end }}
                     </a>
                 </li>

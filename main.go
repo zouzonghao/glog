@@ -2,21 +2,23 @@ package main
 
 import (
 	"flag"
-	"html/template"
-	"io/fs"
-	"log"
-	"net/http"
-
 	"glog/internal/handlers"
 	"glog/internal/repository"
 	"glog/internal/services"
 	"glog/internal/utils"
+	"html/template"
+	"io/fs"
+	"log"
+	"net/http"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
+
+// IsRelease is a build-time variable that will be true if the 'release' tag is used.
+var IsRelease bool
 
 // Global filesystems that will be populated by either assets_dev.go or assets_prod.go at startup.
 var templatesFS fs.FS
@@ -41,12 +43,18 @@ func createRenderer() multitemplate.Renderer {
 	add("login.html", "base.html", "login.html")
 	add("search.html", "base.html", "search.html", "_pagination.html")
 	add("404.html", "base.html", "404.html")
-	add("error.html", "base.html", "error.html")
 
 	return r
 }
 
 func main() {
+	// Defer the freeing of jieba resources
+
+	// Set Gin mode based on build tag
+	if IsRelease {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	// Asset loading is now handled automatically by build tags.
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
 	flag.Parse()
@@ -88,7 +96,9 @@ func main() {
 	r.Use(handlers.SettingsMiddleware(settingService))
 
 	// 静态文件服务
-	r.StaticFS("/static", http.FS(staticFS))
+	staticGroup := r.Group("/static")
+	staticGroup.Use(handlers.CacheControlMiddleware())
+	staticGroup.StaticFS("/", http.FS(staticFS))
 
 	// 博客路由
 	r.GET("/", blogHandler.Index)
@@ -108,7 +118,7 @@ func main() {
 		admin.GET("/new", adminHandler.NewPost)
 		admin.GET("/editor", adminHandler.Editor)
 		admin.POST("/save", adminHandler.SavePost)
-		admin.GET("/delete/:id", adminHandler.DeletePost)
+		admin.POST("/delete/:id", adminHandler.DeletePost)
 	}
 
 	settings := r.Group("/settings")

@@ -10,9 +10,10 @@
     --textColor: #22272a;
     --linkColor: #7a8288; /* 一个柔和的灰色链接 */
     --accentColor: #cb2a42;
-    --accent2Color: #bfc1c2; /* A lighter gray for borders */
+    --accent2Color: #bfc1c2bb; /* A lighter gray for borders */
     --quoteColor: #848a8f; /* 用于元信息的浅灰色 */
     --bgColor-transparent: rgba(250, 250, 250, 0.8);
+    --inputBgColor: #ffffff;
 
     --font-sans: ui-sans-serif, system-ui, sans-serif;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -28,6 +29,7 @@
 html {
     font-family: var(--font-sans);
     scrollbar-gutter: stable;
+    scroll-behavior: smooth;
 }
 body {
     background-color: var(--bgColor);
@@ -188,7 +190,9 @@ nav.main-nav ul {
     gap: 0.5rem;
     font-size: 1rem;
 }
-
+nav.main-nav a {
+    letter-spacing: 1px; /* 或者 1px, 2px 等，根据需要调整 */
+}
 
 
 nav.main-nav li:not(:last-child)::after {
@@ -297,6 +301,7 @@ html.dark {
     --accent2Color: #444; /* 深色模式下的边框颜色 */
     --quoteColor: #8c8d8f; /* 深色模式下的引用和元信息颜色 */
     --bgColor-transparent: rgba(29, 31, 32, 0.8); /* 深色模式下的半透明背景颜色 */
+    --inputBgColor: #000000;
 }
 /* 9. 搜索表单
 ---------------------------------------------------------------------------------------------------- */
@@ -323,6 +328,7 @@ html.dark {
     font-size: 0.9rem;
     padding: 0.2rem 0.75rem;
     width: 150px; /* 根据需要调整 */
+transition: width 0.3s ease;
 }
 
 .search-input::placeholder {
@@ -348,6 +354,24 @@ html.dark {
     opacity: 0.7;
 }
 
+/* 自定义搜索输入框的清除按钮 (x) */
+.search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    cursor: pointer;
+    background-color: var(--quoteColor);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    transition: background-color 0.2s;
+}
+
+.search-input::-webkit-search-cancel-button:hover {
+    background-color: var(--accentColor);
+}
 /* 11. New Pagination
 ---------------------------------------------------------------------------------------------------- */
 .pagination-new {
@@ -421,15 +445,17 @@ html.dark {
 
 .setting-header h2 {
     font-size: 1.2rem; /* Unify with .group-title */
-    margin-top: 0.5rem;
     margin-bottom: 0.2rem;
 }
+
 /* 13. 响应式设计
 ---------------------------------------------------------------------------------------------------- */
+.nav-toggle-checkbox {
+    display: none; /* 隐藏 checkbox */
+}
+
 .menu-toggle {
     display: none; /* 默认隐藏 */
-    background: none;
-    border: none;
     cursor: pointer;
     padding: 0;
     color: var(--textColor);
@@ -468,7 +494,7 @@ html.dark {
         margin-top: 10px; /* 与头部保持距离 */
     }
 
-    nav.main-nav.is-open {
+    .nav-toggle-checkbox:checked ~ .site-info > nav.main-nav {
         display: block; /* 点击按钮时显示 */
     }
 
@@ -523,6 +549,7 @@ html.dark {
     background-color: var(--textColor);
     border-radius: 4px;
     position: absolute;
+    transition: transform 0.3s ease, background-color 0.3s ease;
 }
 
 .hamburger-inner::before, .hamburger-inner::after {
@@ -538,17 +565,17 @@ html.dark {
     bottom: -8px;
 }
 
-.menu-toggle.is-active .hamburger-inner {
+.nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner {
     transform: translate3d(0, 0, 0) rotate(45deg);
     background-color: var(--accentColor);
 }
 
-.menu-toggle.is-active .hamburger-inner::before {
+.nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner::before {
     transform: translate3d(0, 8px, 0) rotate(-90deg);
     background-color: var(--accentColor);
 }
 
-.menu-toggle.is-active .hamburger-inner::after {
+.nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner::after {
     transform: translate3d(0, -8px, 0) rotate(-90deg);
     background-color: var(--accentColor);
 }
@@ -571,10 +598,10 @@ html.dark {
     color: var(--textColor);
     font-size: 0.9rem;
     border-bottom: 1px solid var(--accent2Color);
-    background-color: #e2e3e4;
+    background-color: #d4d6d848;
 }
 html.dark .post-list-header {
-    background-color: #27303d;
+    background-color: #374151;
 }
 
 
@@ -587,18 +614,20 @@ html.dark .post-list-header {
     border-bottom: none;
 }
 .post-list-item:hover {
-    background-color: #f9fafb;
+    background-color: #d4d6d848;
 }
 html.dark .post-list-item:hover {
     background-color: #374151;
 }
 
-.col-title { width: 400px; flex-shrink: 0; padding-right: 0rem; }
+.col-title { width: 380px; flex-shrink: 0; padding-right: 0rem; }
 .col-status { width: 70px; flex-shrink: 0; text-align: center; }
-.col-private { width: 60px; flex-shrink: 0; text-align: center; }
+.col-private { width: 70px; flex-shrink: 0; text-align: center; }
 .col-date { width: 110px; flex-shrink: 0; text-align: center; }
-.col-actions { width: 90px; flex-shrink: 0; text-align: center; }
-
+.col-actions { width: 100px; flex-shrink: 0; text-align: center; }
+.col-actions a {
+    border-bottom: none;
+}
 .col-title span, .col-title a {
     display: block;
     white-space: nowrap;
@@ -633,7 +662,7 @@ html.dark .post-list-item:hover {
 .col-actions {
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .empty-state {
@@ -706,26 +735,15 @@ html.dark .post-list-item:hover {
         text-overflow: ellipsis;
     }
 }
-/* 16. Editor Styles
+/* 16. Form and Component Styles
 ---------------------------------------------------------------------------------------------------- */
-.editor-container {
-    max-width: 800px;
-    margin: 0rem auto;
-    background-color: var(--bgColor);
-    /* border: 1px solid var(--accent2Color); */
-    border-radius: 8px;
-}
-
-html.dark .editor-container {
-    background-color: var(--bgColor); /* A slightly lighter dark shade for the container */
-}
-
-.editor-form .form-group {
-    margin-bottom: 1.0rem;
+.settings-form-group,
+.editor-form-group {
+    margin-top: 0.5rem;
     background-color: var(--bgColor);
 }
 
-.editor-form label {
+.app-form label {
     display: block;
     margin-bottom: 0.25rem;
     font-weight: 450;
@@ -733,53 +751,27 @@ html.dark .editor-container {
     background-color: var(--bgColor);
 }
 
-.editor-form input[type="text"],
-.editor-form input[type="password"],
-.editor-form textarea,
-.editor-form select {
+.app-form input[type="text"],
+.app-form input[type="password"],
+.app-form textarea,
+.app-form select {
     width: 100%;
     padding: 0.5rem;
     border: 1px solid var(--accent2Color);
     border-radius: 4px;
-    background-color: var(--bgColor);
+    background-color: var(--inputBgColor);
     color: var(--textColor);
     font-size: 0.9rem;
     transition: border-color 0.2s;
 }
 
-.editor-form input[type="text"]:focus,
-.editor-form input[type="password"]:focus,
-.editor-form textarea:focus,
-.editor-form select:focus {
+.app-form input[type="text"]:focus,
+.app-form input[type="password"]:focus,
+.app-form textarea:focus,
+.app-form select:focus {
     outline: none;
     border-color: var(--accentColor);
 }
-
-.editor-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    margin-top: 1.0rem;
-
-}
-
-.editor-options .form-group-inline {
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-}
-
-.editor-options input[type="checkbox"] {
-    width: 1.2em;
-    height: 1.2em;
-}
-
-.editor-actions {
-    margin-top: 2rem;
-    text-align: right;
-    font-size: 1.2em;
-}
-
 
 /* Alert styles */
 #editor-alert-container, #alert-container, #ai-test-alert-container {
@@ -833,7 +825,6 @@ html.dark .alert.info {
     position: fixed;
     bottom: 30px;
     right: 30px;
-    display: none;
     width: 45px;
     height: 45px;
     background-color: var(--accentColor);
@@ -847,16 +838,66 @@ html.dark .alert.info {
     transition: opacity 0.3s, visibility 0.3s, background-color 0.3s;
     border: none;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.back-to-top.show {
+    opacity: 0.7;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .back-to-top:hover {
     background-color: var(--textColor);
     color: var(--bgColor);
     border: none;
+    opacity: 1;
+}
+
+/* 17. Editor Styles
+---------------------------------------------------------------------------------------------------- */
+.editor-container {
+    max-width: 800px;
+    margin: 0rem auto;
+    background-color: var(--bgColor);
+    /* border: 1px solid var(--accent2Color); */
+    border-radius: 8px;
+}
+
+html.dark .editor-container {
+    background-color: var(--bgColor); /* A slightly lighter dark shade for the container */
+}
+
+.editor-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 0.2rem;
+
+}
+
+.editor-options .form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.editor-options input[type="checkbox"] {
+    width: 1.2em;
+    height: 1.2em;
+}
+
+.editor-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem; /* 调整链接之间的垂直间距 */
 }
 
 
-/* 17. Post Content Styles
+/* 18. Post Content Styles
 ---------------------------------------------------------------------------------------------------- */
 .post-content {
     line-height: 1.7;
@@ -900,7 +941,7 @@ html.dark .alert.info {
     color: var(--quoteColor);
 }
 
-/* 18. Inline Code Styles
+/* 19. Inline Code Styles
 ---------------------------------------------------------------------------------------------------- */
 :not(pre) > code {
     color: #28a0c1;
@@ -916,14 +957,120 @@ html.dark :not(pre) > code {
     background-color: #38232a; /* A dark, reddish background */
 }
 
-.lock-dark {
+.private-icon {
+    display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
+    vertical-align: -0.05em;
+    margin-left: 5px;
+}
+
+html.light .private-icon {
+    content: url(/static/pic/lock.svg);
+}
+
+html.dark .private-icon {
+    content: url(/static/pic/lock-w.svg);
+}
+
+/* 20. Two-Step Delete Confirmation
+---------------------------------------------------------------------------------------------------- */
+.delete-wrapper {
+    position: relative;
+    display: inline-block;
+    outline: none;
+}
+.delete-init:hover {
+    color: var(--accentColor);
+    border-bottom-color: var(--accentColor);
+}
+.delete-init,
+.delete-confirm {
+    cursor: pointer;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.delete-confirm {
     display: none;
 }
 
-html.dark .lock-dark {
+.delete-wrapper:focus-within .delete-init {
+    display: none;
+}
+
+.delete-wrapper:focus-within .delete-confirm {
     display: inline-block;
 }
 
-html.dark .lock-light {
-    display: none;
+.delete-confirm {
+    color: var(--accentColor);
+    transition: opacity 0.3s ease; /* Add transition for smooth effect */
+}
+
+.delete-confirm.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none; /* Prevent clicks when disabled */
+}
+
+/* 21. Notification System */
+#notification-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.notification {
+    color: var(--textColor);
+    padding: 8px 16px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    min-width: 240px; /* 固定宽度以保持一致 */
+    min-height: 40px; /* 设置最小高度 */
+    display: flex; /* 使用 Flexbox 进行对齐 */
+    align-items: center; /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
+    text-align: center;
+    font-size: 0.9rem;
+    background-color: var(--bgColor-transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 10px;
+}
+
+html.dark .notification {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.success,
+html.dark .notification.success {
+    background-color: rgba(40, 167, 70, 0.458);
+    border: none;
+}
+
+.notification.error,
+html.dark .notification.error {
+    background-color: rgba(220, 53, 70, 0.475);
+    border: none;
+}
+
+.notification.info,
+html.dark .notification.info {
+    background-color: rgba(23, 163, 184, 0.572);
+    border: none;
 }

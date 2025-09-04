@@ -15,6 +15,7 @@ var embedTemplatesFS embed.FS
 var embedStaticFS embed.FS
 
 func init() {
+	IsRelease = true
 	log.Println("Running in release mode, using embedded assets.")
 	var err error
 	templatesFS, err = fs.Sub(embedTemplatesFS, "templates")

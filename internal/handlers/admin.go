@@ -4,10 +4,12 @@ import (
 	"glog/internal/models"
 	"glog/internal/services"
 	"glog/internal/utils"
+	"glog/internal/utils/segmenter"
 	"math"
 	"net/http"
 	"strconv"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,7 +33,11 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	status := c.DefaultQuery("status", "all")
 	pageSize := 10
 
-	posts, total, err := h.postService.GetPostsPage(page, pageSize, query, status)
+	searchQuery := query
+	if searchQuery != "" {
+		searchQuery = segmenter.SegmentTextForQuery(searchQuery)
+	}
+	posts, total, err := h.postService.GetPostsPage(page, pageSize, searchQuery, status)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "加载文章失败")
 		return
@@ -40,11 +46,16 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
 	pagination := utils.GeneratePagination(page, totalPages)
 
+	session := sessions.Default(c)
+	flashes := session.Flashes("success")
+	session.Save() // Clear flashes after reading
+
 	render(c, http.StatusOK, "admin.html", gin.H{
 		"posts":      posts,
 		"Pagination": pagination,
 		"Query":      query,
 		"Status":     status,
+		"Flashes":    flashes,
 	})
 }
 
@@ -95,7 +106,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 		if h.postService.CheckPostLock(uint(id)) {
 			c.JSON(http.StatusConflict, gin.H{
 				"status":  "locked",
-				"message": "正在生成AI摘要，文章已锁定，请稍候再试。",
+				"message": "正在生成AI摘要，文章已锁定，请稍候再试...",
 			})
 			return
 		}
@@ -119,9 +130,9 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 		return
 	}
 
-	message := "文章已保存。"
+	message := "文章已保存！"
 	if aiSummary && title == "未命名标题" {
-		message = "文章已保存，AI正在生成标题和摘要，请稍后刷新查看。"
+		message = "文章已保存，AI正在生成标题和摘要，请稍后刷新查看..."
 	} else if aiSummary {
 		message = "文章已保存，AI摘要正在生成中..."
 	}
@@ -144,17 +155,17 @@ func (h *AdminHandler) DeletePost(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.String(http.StatusBadRequest, "无效的文章 ID")
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的文章 ID"})
 		return
 	}
 
 	err = h.postService.DeletePost(uint(id))
 	if err != nil {
-		c.String(http.StatusInternalServerError, "删除文章失败")
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "删除文章失败"})
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/admin")
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "文章已成功删除"})
 }
 
 func (h *AdminHandler) ShowSettingsPage(c *gin.Context) {

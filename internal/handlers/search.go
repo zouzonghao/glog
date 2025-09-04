@@ -26,13 +26,13 @@ func (h *SearchHandler) Search(c *gin.Context) {
 	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize := 15 // 与首页保持一致
+	pageSize := 10 // 与首页保持一致
 
 	isLoggedIn, _ := c.Get("IsLoggedIn")
 
 	posts, total, err := h.postService.SearchPublishedPostsPage(query, page, pageSize, isLoggedIn.(bool))
 	if err != nil {
-		render(c, http.StatusInternalServerError, "error.html", gin.H{
+		render(c, http.StatusInternalServerError, "404.html", gin.H{
 			"error": "Search failed",
 		})
 		return
