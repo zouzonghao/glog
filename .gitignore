@@ -5,3 +5,13 @@ blog.db*
 glog_server*
 glog*
 **/.DS_Store
+
+# Build tools
+build_tool
+internal/.DS_Store
+static/pagefind
+*.json
+# Go test artifacts
+*.test
+cpu.prof*
+mem.prof*
