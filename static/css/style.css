@@ -1124,3 +1124,63 @@ html.dark .table-wrapper {
     gap: 0.75rem;
     align-items: center;
 }
+
+
+/* General button disabled state */
+.btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Login Page Styles */
+.login-container {
+    margin-top: 4rem;
+}
+
+.login-form-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.login-password-input {
+    flex-grow: 1;
+    max-width: 200px;
+}
+
+.login-submit-btn {
+    font-size: 1.2em;
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--textColor);
+    border-bottom: 1px solid var(--textColor);
+    padding: 0;
+}
+
+/* Editor Page Styles */
+.btn-editor-action {
+    font-size: 0.9rem;
+}
+
+/* Settings Page Styles */
+.settings-form-group-spaced {
+    margin-top: 1.5rem;
+}
+
+.setting-header-separated {
+    margin-top: 3rem;
+    border-top: 1px solid #eee;
+    padding-top: 1.5rem;
+}
+
+.upload-form-wrapper {
+    display: contents;
+}
+
+.hidden-file-input {
+    display: none;
+}

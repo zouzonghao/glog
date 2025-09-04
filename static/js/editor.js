@@ -100,15 +100,4 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('保存时发生错误，请检查网络！', 'error');
         });
     });
-
-    // Add a disabled class to the CSS to handle the link
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-    `;
-    document.head.appendChild(style);
 });

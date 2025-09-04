@@ -11,6 +11,7 @@ const (
 
 	// Setting Keys
 	SettingPassword             = "password"
+	SettingFavicon              = "favicon"
 	SettingOpenAIBaseURL        = "openai_base_url"
 	SettingOpenAIToken          = "openai_token"
 	SettingOpenAIModel          = "openai_model"

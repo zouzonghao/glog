@@ -76,7 +76,7 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	if pageSize <= 0 {
 		pageSize = 10
 	}
-	query := c.Query("query")
+	query := c.Query("q")
 	status := c.DefaultQuery("status", "all")
 
 	posts, total, err := h.postService.GetPostsPageByAdmin(page, pageSize, query, status)

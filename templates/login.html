@@ -3,11 +3,11 @@
 {{ define "title" }}登录{{ end }}
 
 {{ define "content" }}
-<div class="editor-container" style="margin-top: 4rem;">
+<div class="editor-container login-container">
     <form id="login-form" action="/login" method="post" class="editor-form app-form">
-        <div class="form-group" style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="请输入密码" style="flex-grow: 1; max-width: 200px;">
-            <button type="submit" id="login-btn" style="font-size: 1.2em; flex-shrink: 0; border: none; background: none; cursor: pointer; color: var(--textColor); border-bottom: 1px solid var(--textColor); padding: 0;">登录</button>
+        <div class="form-group login-form-group">
+            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="请输入密码" class="login-password-input">
+            <button type="submit" id="login-btn" class="login-submit-btn">登录</button>
         </div>
     </form>
 </div>

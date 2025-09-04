@@ -6,14 +6,14 @@
 </div>
 
 <form id="settings-form" action="/admin/setting" method="POST" class="app-form" autocomplete="off">
-    <div class="settings-form-group" style="margin-top: 1.5rem;">
+    <div class="settings-form-group settings-form-group-spaced">
         <label for="password">管理员密码</label>
         <input type="password" id="password" name="password" placeholder="留空则不修改" autocomplete="new-password">
     </div>
 
     <div class="settings-form-group">
-        <label for="site_logo">站点 Logo URL</label>
-        <input type="text" id="site_logo" name="site_logo" value="{{ .site_logo }}" autocomplete="no">
+        <label for="favicon">站点 Favicon URL (浏览器标签页图标)</label>
+        <input type="text" id="favicon" name="favicon" value="{{ .favicon }}" autocomplete="no">
     </div>
 
     <div class="settings-form-group">
@@ -26,27 +26,28 @@
         <input type="text" id="site_description" name="site_description" value="{{ .site_description }}" autocomplete="no">
     </div>
  
-    <div class="settings-actions" style="margin-top: 1.5rem;">
+    <div class="settings-actions settings-form-group-spaced">
         <button type="button" id="save-settings-btn" class="btn">💾 保存站点信息</button>
     </div>
 </form>
-<div class="setting-header" style="margin-top: 3rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+
+<div class="setting-header setting-header-separated">
     <h2 class="group-title">AI 集成</h2>
 </div>
-<div class="backup-actions" style="margin-top: 1.5rem;">
+<div class="backup-actions settings-form-group-spaced">
     <button type="button" id="ai-settings-btn" class="btn">🔧 设置 AI 功能</button>
 </div>
 
-<div class="setting-header" style="margin-top: 3rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
+<div class="setting-header setting-header-separated">
     <h2 class="group-title">备份与恢复</h2>
 </div>
 
-<div class="backup-actions" style="margin-top: 1.5rem;">
+<div class="backup-actions settings-form-group-spaced">
     <button type="button" id="github-backup-btn" class="btn">🔧 GitHub 备份</button>
     <button type="button" id="webdav-backup-btn" class="btn">🔧 WebDAV 备份</button>
     <a href="/admin/setting/backup" id="backup-btn" class="btn">💾 下载备份</a>
-    <form id="upload-form" style="display: contents;">
-        <input type="file" id="backup-file" name="backup" accept=".zip,.json" style="display: none;">
+    <form id="upload-form" class="upload-form-wrapper">
+        <input type="file" id="backup-file" name="backup" accept=".zip,.json" class="hidden-file-input">
         <button type="button" id="upload-btn" class="btn">📤 上传恢复</button>
     </form>
 </div>

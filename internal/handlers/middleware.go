@@ -104,7 +104,11 @@ func render(c *gin.Context, status int, templateName string, data gin.H) {
 		// Merge settings into the data map
 		for key, value := range settings.(map[string]string) {
 			if _, ok := data[key]; !ok { // Don't overwrite existing data
-				data[key] = value
+				if key == constants.SettingFavicon {
+					data[key] = value
+				} else {
+					data[key] = value
+				}
 			}
 		}
 	}

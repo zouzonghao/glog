@@ -41,7 +41,7 @@ func InitDatabase() (*gorm.DB, error) {
 func seedSettings(db *gorm.DB) error {
 	defaultSettings := map[string]string{
 		"password":         "admin",
-		"site_logo":        "",
+		"favicon":          "",
 		"site_description": "由 Glog 驱动的博客",
 		"openai_base_url":  "",
 		"openai_token":     "",

@@ -91,6 +91,9 @@ func main() {
 	staticGroup.Use(handlers.CacheControlMiddleware())
 	staticGroup.StaticFS("/", http.FS(staticFS))
 
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File("./static/pic/favicon.ico")
+	})
 	r.GET("/", blogHandler.Index)
 	r.GET("/post/:slug", blogHandler.ShowPost)
 	r.GET("/search", searchHandler.Search)

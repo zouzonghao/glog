@@ -69,3 +69,82 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+// 全局可用的模态框设置函数
+function setupGlobalModal(modalId, openTriggerId, closeTriggers = []) {
+    const modal = document.getElementById(modalId);
+    const openTrigger = document.getElementById(openTriggerId);
+
+    if (!modal || !openTrigger) {
+        console.warn(`Modal or open trigger not found for modalId: ${modalId}`);
+        return;
+    }
+
+    const showModal = () => {
+        modal.classList.add('show');
+    };
+
+    const hideModal = () => {
+        modal.classList.remove('show');
+    };
+
+    openTrigger.addEventListener('click', showModal);
+
+    // Add close triggers
+    const allCloseTriggers = [...closeTriggers, ...modal.querySelectorAll('.modal-close-btn, .modal-cancel-btn')];
+    allCloseTriggers.forEach(trigger => {
+        const el = (typeof trigger === 'string') ? document.getElementById(trigger) : trigger;
+        if (el) {
+            el.addEventListener('click', hideModal);
+        }
+    });
+
+    // Close when clicking on the background
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            hideModal();
+        }
+    });
+}
+function showGlobalPasswordPrompt(title) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('password-prompt-modal');
+        if (!modal) {
+            console.error('Password prompt modal not found!');
+            resolve(null);
+            return;
+        }
+
+        const form = modal.querySelector('form');
+        const titleEl = document.getElementById('password-prompt-title');
+        const inputEl = document.getElementById('password-prompt-input');
+        const confirmBtn = document.getElementById('password-prompt-confirm-btn');
+        const cancelBtn = document.getElementById('password-prompt-cancel-btn');
+
+        titleEl.textContent = title;
+        inputEl.value = '';
+
+        const cleanup = () => {
+            confirmBtn.onclick = null;
+            cancelBtn.onclick = null;
+            form.onsubmit = null;
+            modal.classList.remove('show');
+        };
+
+        const closeModal = (value) => {
+            cleanup();
+            resolve(value);
+        };
+
+        const submitHandler = (event) => {
+            event.preventDefault();
+            closeModal(inputEl.value);
+        };
+
+        confirmBtn.onclick = () => submitHandler(new Event('submit'));
+        cancelBtn.onclick = () => closeModal(null);
+        form.onsubmit = submitHandler;
+
+        modal.classList.add('show');
+        inputEl.focus();
+    });
+}

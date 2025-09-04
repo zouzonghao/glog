@@ -9,37 +9,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Modal Setup ---
-    setupModal(
-        'ai-modal', 
-        'ai-settings-btn', 
-        'save-ai-btn', 
-        'test-ai-btn', 
-        'ai-settings-form', 
-        '/admin/setting/test-ai'
-    );
-    
-    setupModal(
-        'github-modal', 
-        'github-backup-btn', 
-        'save-github-btn', 
-        'test-github-btn', 
-        'github-settings-form', 
-        '/admin/setting/test-github', 
-        'backup-github-now-btn', 
-        '/admin/setting/backup-github-now'
-    );
+    // --- Modal Setup using Global Function ---
+    setupGlobalModal('ai-modal', 'ai-settings-btn');
+    setupGlobalModal('github-modal', 'github-backup-btn');
+    setupGlobalModal('webdav-modal', 'webdav-backup-btn');
+    // Note: password-prompt-modal is now opened programmatically when needed.
 
-    setupModal(
-        'webdav-modal', 
-        'webdav-backup-btn', 
-        'save-webdav-btn', 
-        'test-webdav-btn', 
-        'webdav-settings-form', 
-        '/admin/setting/test-webdav', 
-        'backup-webdav-now-btn', 
-        '/admin/setting/backup-webdav-now'
-    );
+    // --- Form-specific Logic inside Modals ---
+    attachModalFormLogic('save-ai-btn', 'ai-settings-form', 'ai-modal');
+    attachModalFormLogic('save-github-btn', 'github-settings-form', 'github-modal');
+    attachModalFormLogic('save-webdav-btn', 'webdav-settings-form', 'webdav-modal');
+
+    attachTestConnectionLogic('test-ai-btn', 'ai-settings-form', '/admin/setting/test-ai');
+    attachTestConnectionLogic('test-github-btn', 'github-settings-form', '/admin/setting/test-github');
+    attachTestConnectionLogic('test-webdav-btn', 'webdav-settings-form', '/admin/setting/test-webdav');
+
+    attachBackupNowLogic('backup-github-now-btn', '/admin/setting/backup-github-now');
+    attachBackupNowLogic('backup-webdav-now-btn', '/admin/setting/backup-webdav-now');
+
 
     // --- Backup and Upload Logic ---
     const uploadBtn = document.getElementById('upload-btn');
@@ -55,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!file) return;
 
             if (file.name.endsWith('.zip')) {
-                const password = await showPasswordPrompt('请输入备份文件密码：');
+                const password = await showGlobalPasswordPrompt('请输入备份文件密码：');
                 if (password === null) {
                     event.target.value = '';
                     return;
@@ -156,26 +143,11 @@ function uploadZipFile(file, password = '') {
     });
 }
 
-function setupModal(modalId, openBtnId, saveBtnId, testBtnId, formId, testUrl, backupNowBtnId, backupNowUrl) {
-    const modal = document.getElementById(modalId);
-    const openBtn = document.getElementById(openBtnId);
-    if (!modal || !openBtn) return;
-
-    const closeBtn = modal.querySelector('.modal-close-btn');
+function attachModalFormLogic(saveBtnId, formId, modalId) {
     const saveBtn = document.getElementById(saveBtnId);
-    const testBtn = testBtnId ? document.getElementById(testBtnId) : null;
-    const backupNowBtn = backupNowBtnId ? document.getElementById(backupNowBtnId) : null;
     const form = document.getElementById(formId);
-
-    openBtn.addEventListener('click', () => modal.classList.add('show'));
-    closeBtn.addEventListener('click', () => modal.classList.remove('show'));
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.classList.remove('show');
-        }
-    });
-
-    if (saveBtn) {
+    const modal = document.getElementById(modalId);
+    if (saveBtn && form && modal) {
         saveBtn.addEventListener('click', (e) => {
             e.preventDefault();
             saveFormData(form, () => {
@@ -183,8 +155,12 @@ function setupModal(modalId, openBtnId, saveBtnId, testBtnId, formId, testUrl, b
             });
         });
     }
+}
 
-    if (testBtn) {
+function attachTestConnectionLogic(testBtnId, formId, testUrl) {
+    const testBtn = document.getElementById(testBtnId);
+    const form = document.getElementById(formId);
+    if (testBtn && form) {
         testBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const testButton = e.target;
@@ -204,7 +180,10 @@ function setupModal(modalId, openBtnId, saveBtnId, testBtnId, formId, testUrl, b
             .finally(() => testButton.disabled = false);
         });
     }
+}
 
+function attachBackupNowLogic(backupNowBtnId, backupNowUrl) {
+    const backupNowBtn = document.getElementById(backupNowBtnId);
     if (backupNowBtn) {
         backupNowBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -243,50 +222,5 @@ function saveFormData(formElement, callback) {
     .catch(error => {
         console.error('表单提交错误：', error);
         showNotification('保存时发生错误，请检查网络连接！', 'error');
-    });
-}
-
-function showPasswordPrompt(title) {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('password-prompt-modal');
-        const form = modal.querySelector('form');
-        const titleEl = document.getElementById('password-prompt-title');
-        const inputEl = document.getElementById('password-prompt-input');
-        const confirmBtn = document.getElementById('password-prompt-confirm-btn');
-        const cancelBtn = document.getElementById('password-prompt-cancel-btn');
-        const closeBtn = modal.querySelector('.modal-close-btn');
-
-        titleEl.textContent = title;
-        inputEl.value = '';
-
-        const closeModal = (value) => {
-            modal.classList.remove('show');
-            confirmBtn.onclick = null;
-            cancelBtn.onclick = null;
-            closeBtn.onclick = null;
-            form.onsubmit = null;
-            window.removeEventListener('click', outsideClickListener);
-            resolve(value);
-        };
-
-        const outsideClickListener = (event) => {
-            if (event.target === modal) {
-                closeModal(null);
-            }
-        };
-
-        const submitHandler = (event) => {
-            event.preventDefault();
-            closeModal(inputEl.value);
-        };
-
-        confirmBtn.onclick = () => submitHandler(new Event('submit'));
-        cancelBtn.onclick = () => closeModal(null);
-        closeBtn.onclick = () => closeModal(null);
-        form.onsubmit = submitHandler;
-        window.addEventListener('click', outsideClickListener);
-
-        modal.classList.add('show');
-        inputEl.focus();
     });
 }

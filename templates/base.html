@@ -29,8 +29,8 @@
     </script>
     <link rel="stylesheet" href="/static/css/style.css">
     
-    {{ if .site_logo }}
-    <link rel="icon" href="{{ .site_logo }}" type="image/x-icon">
+    {{ if .favicon }}
+    <link rel="icon" href="{{ .favicon }}" type="image/x-icon">
     {{ else }}
     <link rel="icon" href="/static/pic/favicon.ico" type="image/x-icon">
     {{ end }}
@@ -47,9 +47,6 @@
                         <div class="hamburger-inner"></div>
                     </div>
                 </label>
-                {{ if .site_logo }}
-                <a href="/" class="site-logo-link"><img src="{{ .site_logo }}" alt="Logo" class="site-logo"></a>
-                {{ end }}
                 <div class="site-info">
                     <a href="/" class="site-title">{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}</a>
                     <nav class="main-nav" id="main-nav">
@@ -92,7 +89,7 @@
 <a href="#top" id="back-to-top" class="back-to-top" title="Back to top">&uarr;</a>
     
 <div id="notification-container"></div>
-    {{ block "scripts" . }}{{ end }}
     <script src="/static/js/main.js"></script>
+    {{ block "scripts" . }}{{ end }}
 </body>
 </html>

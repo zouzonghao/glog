@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const batchDeleteBtn = document.getElementById('batch-delete-btn');
     const batchSetPrivateBtn = document.getElementById('batch-set-private-btn');
     const batchSetPublicBtn = document.getElementById('batch-set-public-btn');
+    const modalConfirmBtn = document.getElementById('modal-confirm-btn');
 
     let currentAction = null;
     let currentIsPrivate = false;
@@ -116,49 +117,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentAction === 'delete') {
                 const modalContainer = document.getElementById('modal-container');
                 if (modalContainer) {
-                    modalContainer.style.display = 'none';
-                    modalContainer.style.opacity = '0';
-                    modalContainer.style.visibility = 'hidden';
+                    modalContainer.classList.remove('show');
                 }
             }
         }
     }
 
     if (batchDeleteBtn) {
+        setupGlobalModal('modal-container', 'batch-delete-btn');
         batchDeleteBtn.addEventListener('click', () => {
-            const modalContainer = document.getElementById('modal-container');
-            if (!modalContainer) {
-                console.error('Modal container #modal-container not found!');
-                showNotification('页面组件加载失败，请刷新重试。', 'error');
-                return;
-            }
-
-            if (!modalContainer.dataset.listenersAttached) {
-                const modalConfirmBtn = document.getElementById('modal-confirm-btn');
-                const modalCancelBtn = document.getElementById('modal-cancel-btn');
-
-                if (modalConfirmBtn && modalCancelBtn) {
-                    const closeModal = () => {
-                        modalContainer.style.display = 'none';
-                        modalContainer.style.opacity = '0';
-                        modalContainer.style.visibility = 'hidden';
-                    };
-                    modalConfirmBtn.addEventListener('click', handleBatchAction);
-                    modalCancelBtn.addEventListener('click', closeModal);
-                    modalContainer.addEventListener('click', (event) => {
-                        if (event.target === modalContainer) {
-                            closeModal();
-                        }
-                    });
-                    modalContainer.dataset.listenersAttached = 'true';
-                }
-            }
-            
             currentAction = 'delete';
-            modalContainer.style.display = 'flex';
-            modalContainer.style.opacity = '1';
-            modalContainer.style.visibility = 'visible';
         });
+    }
+    
+    if (modalConfirmBtn) {
+        modalConfirmBtn.addEventListener('click', handleBatchAction);
     }
 
     if (batchSetPrivateBtn) {
