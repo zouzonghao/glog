@@ -35,8 +35,9 @@ release-all: build-tool prepare
 	@echo "All release builds complete."
 
 # Renamed 'release' to 'build-platform' to avoid confusion and handle single platform builds.
-build-platform:
+build-platform: build-tool prepare
 	@$(MAKE) build
+	@$(MAKE) cleanup
 
 run:
 	@echo "Running in development mode..."
