@@ -40,7 +40,7 @@ jobs:
       # 步骤 5: 压缩构建产物
       - name: Compress artifacts
         run: |
-          tar -czf glog-linux-amd64.tar.gz glog-linux-amd64
+          tar --owner=0 --group=0 -czf glog-linux-amd64.tar.gz glog-linux-amd64
           zip -j glog-windows-amd64.zip glog-windows-amd64.exe
           tar -czf glog-darwin-arm64.tar.gz glog-darwin-arm64
 

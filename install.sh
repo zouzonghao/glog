@@ -114,6 +114,8 @@ install_service() {
     info "清空旧文件并解压新文件到 ${INSTALL_DIR}..."
     find "$INSTALL_DIR" -mindepth 1 ! -name 'glog.db' -exec rm -rf {} +
     tar -xzf "$TEMP_FILE" -C "$INSTALL_DIR" || die "解压文件失败。"
+    info "设置文件所有权为 root..."
+    chown -R root:root "$INSTALL_DIR" || die "设置文件所有权失败。"
 
     ORIGINAL_EXECUTABLE="${INSTALL_DIR}/glog-linux-amd64"
     TARGET_EXECUTABLE="${INSTALL_DIR}/${EXECUTABLE_NAME}"
