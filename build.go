@@ -78,6 +78,10 @@ func processAssets() error {
 			return fmt.Errorf("failed to create directory %s: %w", destDir, err)
 		}
 
+		if _, err := os.Stat(sourceDir); os.IsNotExist(err) {
+			continue
+		}
+
 		err := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
