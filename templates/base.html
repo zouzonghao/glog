@@ -34,7 +34,7 @@
             --color-background-transparent: rgba(250, 250, 250, 0.8);
             --color-background-input: #ffffff;
             --color-text-primary: #171b1d;
-            --color-text-secondary: #3f3f3b;
+            --color-text-secondary: #5e5e58;
             --color-text-link: #7a8288;
             --color-accent-primary: #cb2a42;
             --color-border-primary: #8d9294bb;
@@ -337,7 +337,7 @@
             padding-top: 2rem;
             opacity: .5;
             font-size: .875rem;
-            color: var(--color-text-secondary);
+            color: var(--color-text-primary);
         }
 
         /* Back to top styles */
@@ -487,27 +487,11 @@
             height: auto;
         }
 
-        /* Private icon styles */
-        .private-icon {
-            width: .8em;
-            height: .8em;
-            vertical-align: -.05em;
-            margin-left: 5px;
-            display: inline-block;
-        }
 
-        html.light .private-icon {
-            content: url(/static/pic/lock.svg);
-        }
-
-        html.dark .private-icon {
-            content: url(/static/pic/lock-w.svg);
-        }
 
         /* Text secondary color styles */
         .empty-state, .pagination-new .current, .pagination-new .ellipsis, 
-        .pagination-new .prev-next.disabled, .post-list-minimal .date, 
-        footer.main-footer {
+        .pagination-new .prev-next.disabled, .post-list-minimal .date {
             color: var(--color-text-secondary);
         }
 
@@ -579,6 +563,174 @@
                 width: calc(100% - 150px);
             }
         }
+        /* 17. 通知系统
+        ---------------------------------------------------------------------------------------------------- */
+        #notification-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .notification {
+            color: var(--color-text-primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            min-width: 240px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.9rem;
+            background-color: var(--color-background-transparent);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 10px;
+        }
+        html.dark .notification {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .notification.success,
+        html.dark .notification.success {
+            background-color: rgba(40, 167, 70, 0.458);
+            border: none;
+        }
+        .notification.error,
+        html.dark .notification.error {
+            background-color: rgba(220, 53, 70, 0.475);
+            border: none;
+        }
+        .notification.info,
+        html.dark .notification.info {
+            background-color: rgba(23, 163, 184, 0.572);
+            border: none;
+        }
+
+        /* 18. 模态框 (Modal)
+        ---------------------------------------------------------------------------------------------------- */
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .modal-container {
+            display: none; /* Default hidden */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-container.show {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: var(--color-background);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-content p {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        .modal-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .modal-btn {
+            padding: 0.4rem 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .modal-btn.confirm {
+            background-color: var(--color-accent-primary);
+            color: #fff;
+        }
+        .modal-btn.confirm:hover {
+            opacity: 0.8;
+        }
+        .modal-btn.cancel {
+            background-color: var(--color-border-primary);
+            color: var(--color-text-primary);
+        }
+        .modal-btn.cancel:hover {
+            opacity: 0.8;
+        }
+
+
+        .settings-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+
+        .admin-search-form {
+            padding: 0rem;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--color-accent-primary);
+        }
+
+        .modal-content .app-form {
+            text-align: left;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            color: var(--color-text-primary);
+        }
+
+        .modal-content {
+            position: relative;
+        }
+
     </style>
     
     {{ if .favicon }}

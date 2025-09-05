@@ -5,8 +5,6 @@
                 {{/* Previous Page Link */}}
                 {{ if .HasPrev }}
                     <a href="?page={{ .PrevPage }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">上一页</a>
-                {{ else }}
-                    <span class="prev-next disabled">上一页</span>
                 {{ end }}
 
                 <div class="pagination-center">
@@ -38,8 +36,6 @@
                 {{/* Next Page Link */}}
                 {{ if .HasNext }}
                     <a href="?page={{ .NextPage }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">下一页</a>
-                {{ else }}
-                    <span class="prev-next disabled">下一页</span>
                 {{ end }}
             </nav>
         {{ end }}
