@@ -3,6 +3,300 @@
 {{ define "title" }}后台管理{{ end }}
 
 {{ define "content" }}
+    <style>
+        /* Admin page specific styles */
+        .admin-header,
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0;
+        }
+
+        .admin-header,
+        .post-header {
+            margin-bottom: 2rem;
+        }
+
+        .admin-header h2,
+        .setting-header h2 {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .setting-header h2 {
+            margin-bottom: .2rem;
+        }
+
+        .admin-search-form {
+            padding: 0;
+        }
+
+        .post-list-container {
+            border: none;
+        }
+
+        .post-list-header,
+        .post-list-item {
+            border-bottom: 1px solid var(--color-border-primary);
+            font-size: .9rem;
+            display: flex;
+            align-items: center;
+            padding: .3rem 0;
+        }
+
+        .post-list-header {
+            font-weight: 600;
+        }
+
+        html.dark .post-list-header,
+        html.dark .post-list-item:hover {
+            background-color: #374151;
+        }
+
+        .col-checkbox {
+            display: flex;
+            justify-content: center;
+            width: 40px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .col-title {
+            width: 400px;
+            flex-shrink: 0;
+            padding-right: 0;
+        }
+
+        .col-date,
+        .col-private {
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .col-private {
+            width: 80px;
+        }
+
+        .col-date {
+            width: 130px;
+        }
+
+        .col-actions {
+            width: 110px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .col-title a,
+        .col-title span {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .col-actions a,
+        .col-title a,
+        .col-title a:hover,
+        .post-content tr:last-child td,
+        .post-list-body .post-list-item:last-child,
+        .site-title {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            border-top: 1px solid var(--color-border-primary);
+            color: var(--color-text-secondary);
+        }
+
+        .batch-actions-container {
+            margin-top: 1rem;
+            display: flex;
+            gap: .5rem;
+        }
+
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, .6);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: none;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+
+        .modal-container.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: var(--color-background);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, .2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-content p {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--color-accent-primary);
+        }
+
+        .modal-content .app-form {
+            text-align: left;
+        }
+
+        .modal-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            padding: .4rem 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: .9rem;
+            font-weight: 500;
+            transition: background-color .2s, color .2s;
+        }
+
+        .modal-btn.confirm {
+            background-color: var(--color-accent-primary);
+            color: #fff;
+        }
+
+        .modal-btn.cancel {
+            background-color: var(--color-border-primary);
+        }
+
+        .modal-btn.cancel,
+        .modal-close-btn:hover {
+            color: var(--color-text-primary);
+        }
+
+        .modal-btn.cancel:hover,
+        .modal-btn.confirm:hover {
+            opacity: .8;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            transition: color .2s;
+        }
+
+        .btn,
+        .menu-toggle,
+        .page-size-selector select,
+        .search-input,
+        .theme-toggle {
+            color: var(--color-text-primary);
+        }
+
+        .btn {
+            padding: .25rem .5rem;
+            border: 1px solid var(--color-border-primary);
+            background-color: var(--color-background);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: color .2s, border-color .2s;
+            text-align: center;
+            font-size: .9rem;
+            line-height: 1.4;
+            display: inline-block;
+        }
+
+        .btn:hover:not(:disabled) {
+            color: var(--color-accent-primary);
+            border: 1px solid var(--color-accent-primary);
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .btn.disabled,
+        .delete-confirm.disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .delete-wrapper {
+            position: relative;
+            outline: 0;
+            display: inline-block;
+        }
+
+        .delete-confirm,
+        .delete-init {
+            cursor: pointer;
+            transition: opacity .2s ease-in-out;
+        }
+
+        .delete-confirm {
+            display: none;
+            transition: opacity .3s;
+        }
+
+        .delete-wrapper:focus-within .delete-init {
+            display: none;
+        }
+
+        .delete-wrapper:focus-within .delete-confirm {
+            display: inline-block;
+        }
+
+        .delete-confirm,
+        .modal-content h3 {
+            color: var(--color-accent-primary);
+        }
+
+        @media (max-width: 768px) {
+            .post-list-header .col-date,
+            .post-list-header .col-private,
+            .post-list-item .col-date,
+            .post-list-item .col-private,
+            .site-title {
+                display: none;
+            }
+
+            .post-list-header .col-title,
+            .post-list-item .col-title {
+                width: calc(100% - 150px);
+            }
+        }
+    </style>
+
     <div class="admin-header">
         <h2 class="group-title">文章管理</h2>
         <form id="admin-search-form" action="/admin" method="get" class="search-form admin-search-form">

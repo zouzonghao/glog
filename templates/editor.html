@@ -1,6 +1,164 @@
 {{ define "title" }}{{ if .post }}编辑文章{{ else }}写新文章{{ end }}{{ end }}
 
 {{ define "content" }}
+    <style>
+        /* Editor page specific styles */
+        .group-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            margin-top: 0;
+        }
+
+        .editor-container {
+            margin-top: 4rem;
+        }
+
+        .app-form label {
+            display: block;
+            font-weight: 450;
+        }
+
+        .app-form input[type=number],
+        .app-form input[type=password],
+        .app-form input[type=text],
+        .app-form select,
+        .app-form textarea {
+            width: 100%;
+            padding: .5rem;
+            border: 1px solid var(--color-border-primary);
+            border-radius: 4px;
+            background-color: var(--color-background-input);
+            color: var(--color-text-primary);
+            font-size: .8rem;
+            transition: border-color .2s;
+        }
+
+        .app-form input[type=number]:focus,
+        .app-form input[type=password]:focus,
+        .app-form input[type=text]:focus,
+        .app-form select:focus,
+        .app-form textarea:focus {
+            outline: 0;
+            border-color: var(--color-accent-primary);
+        }
+
+        .editor-form-group,
+        .settings-form-group {
+            margin-top: .5rem;
+        }
+
+        .editor-title-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .editor-title-group #title {
+            flex-grow: 1;
+        }
+
+        .editor-title-group #published_at {
+            width: 150px;
+        }
+
+        .editor-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: .2rem;
+        }
+
+        .editor-options .form-group-inline {
+            display: flex;
+            align-items: center;
+            gap: .2rem;
+        }
+
+        .editor-options input[type=checkbox] {
+            width: 1.2em;
+            height: 1.2em;
+        }
+
+        .editor-actions {
+            display: flex;
+            align-items: flex-end;
+            gap: .5rem;
+            justify-content: flex-end;
+        }
+
+        .btn,
+        .delete-wrapper,
+        .private-icon {
+            display: inline-block;
+        }
+
+        .btn {
+            padding: .25rem .5rem;
+            border: 1px solid var(--color-border-primary);
+            background-color: var(--color-background);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: color .2s, border-color .2s;
+            text-align: center;
+            font-size: .9rem;
+            line-height: 1.4;
+            color: var(--color-text-primary);
+        }
+
+        .btn:hover:not(:disabled) {
+            color: var(--color-accent-primary);
+            border: 1px solid var(--color-accent-primary);
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .btn-editor-action,
+        .editor-container .app-form input[type=text],
+        .editor-container .app-form textarea {
+            font-size: .9rem;
+        }
+
+        .delete-wrapper {
+            position: relative;
+            outline: 0;
+        }
+
+        .delete-confirm,
+        .delete-init {
+            cursor: pointer;
+            transition: opacity .2s ease-in-out;
+        }
+
+        .delete-confirm {
+            display: none;
+            transition: opacity .3s;
+        }
+
+        .delete-wrapper:focus-within .delete-init {
+            display: none;
+        }
+
+        .delete-wrapper:focus-within .delete-confirm {
+            display: inline-block;
+        }
+
+        .btn.disabled,
+        .delete-confirm.disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .delete-confirm,
+        .modal-content h3 {
+            color: var(--color-accent-primary);
+        }
+    </style>
+
     <h2 class="group-title">{{ if .post }}文章编辑{{ else }}文章新建{{ end }}</h2>
     <div class="editor-container">
         <form id="app-form" action="/admin/save" method="POST" class="app-form">

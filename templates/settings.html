@@ -1,6 +1,258 @@
 {{define "title"}}站点设置{{end}}
 
 {{define "content"}}
+    <style>
+        /* Settings page specific styles */
+        .setting-header,
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0;
+        }
+
+        .setting-header,
+        .post-header {
+            margin-bottom: 2rem;
+        }
+
+        .admin-header h2,
+        .setting-header h2 {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .setting-header h2 {
+            margin-bottom: .2rem;
+        }
+
+        .setting-header-separated {
+            margin-top: 3rem;
+            border-top: 1px solid #eee;
+            padding-top: 1.5rem;
+        }
+
+        .app-form label {
+            display: block;
+            font-weight: 450;
+        }
+
+        .app-form input[type=number],
+        .app-form input[type=password],
+        .app-form input[type=text],
+        .app-form select,
+        .app-form textarea {
+            width: 100%;
+            padding: .5rem;
+            border: 1px solid var(--color-border-primary);
+            border-radius: 4px;
+            background-color: var(--color-background-input);
+            color: var(--color-text-primary);
+            font-size: .8rem;
+            transition: border-color .2s;
+        }
+
+        .app-form input[type=number]:focus,
+        .app-form input[type=password]:focus,
+        .app-form input[type=text]:focus,
+        .app-form select:focus,
+        .app-form textarea:focus {
+            outline: 0;
+            border-color: var(--color-accent-primary);
+        }
+
+        .settings-form-group,
+        .editor-form-group {
+            margin-top: .5rem;
+        }
+
+        .settings-form-group-spaced {
+            margin-top: 1.5rem;
+        }
+
+        .settings-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: .5rem;
+        }
+
+        .backup-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .75rem;
+            align-items: center;
+        }
+
+        .upload-form-wrapper {
+            display: contents;
+        }
+
+        .hidden-file-input {
+            display: none;
+        }
+
+        .btn,
+        .delete-wrapper,
+        .private-icon {
+            display: inline-block;
+        }
+
+        .btn {
+            padding: .25rem .5rem;
+            border: 1px solid var(--color-border-primary);
+            background-color: var(--color-background);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: color .2s, border-color .2s;
+            text-align: center;
+            font-size: .9rem;
+            line-height: 1.4;
+            color: var(--color-text-primary);
+        }
+
+        .btn:hover:not(:disabled) {
+            color: var(--color-accent-primary);
+            border: 1px solid var(--color-accent-primary);
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, .6);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: none;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+
+        .modal-container.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: var(--color-background);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, .2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-content p {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--color-accent-primary);
+        }
+
+        .modal-content .app-form {
+            text-align: left;
+        }
+
+        .modal-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            padding: .4rem 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: .9rem;
+            font-weight: 500;
+            transition: background-color .2s, color .2s;
+        }
+
+        .modal-btn.confirm {
+            background-color: var(--color-accent-primary);
+            color: #fff;
+        }
+
+        .modal-btn.cancel {
+            background-color: var(--color-border-primary);
+        }
+
+        .modal-btn.cancel,
+        .modal-close-btn:hover {
+            color: var(--color-text-primary);
+        }
+
+        .modal-btn.cancel:hover,
+        .modal-btn.confirm:hover {
+            opacity: .8;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            transition: color .2s;
+        }
+
+        .delete-wrapper {
+            position: relative;
+            outline: 0;
+        }
+
+        .delete-confirm,
+        .delete-init {
+            cursor: pointer;
+            transition: opacity .2s ease-in-out;
+        }
+
+        .delete-confirm {
+            display: none;
+            transition: opacity .3s;
+        }
+
+        .delete-wrapper:focus-within .delete-init {
+            display: none;
+        }
+
+        .delete-wrapper:focus-within .delete-confirm {
+            display: inline-block;
+        }
+
+        .btn.disabled,
+        .delete-confirm.disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .delete-confirm,
+        .modal-content h3 {
+            color: var(--color-accent-primary);
+        }
+    </style>
+
 <div class="setting-header">
     <h2 class="group-title">站点信息</h2>
 </div>

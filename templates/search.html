@@ -1,5 +1,72 @@
 {{ template "base.html" . }}
 
+<style>
+    /* Search page specific styles */
+    .posts-group {
+        margin-bottom: 2rem;
+    }
+
+    .group-title {
+        font-size: 1.2rem;
+        font-weight: 500;
+        margin-bottom: 2rem;
+        margin-top: 0;
+    }
+
+    .post-list-minimal {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .post-list-minimal li {
+        display: flex;
+        align-items: baseline;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+
+    .post-list-minimal .date {
+        font-size: .9rem;
+        width: 120px;
+        flex-shrink: 0;
+        color: var(--color-text-secondary);
+    }
+
+    .post-list-minimal .title {
+        font-weight: 400;
+    }
+
+    .private-icon {
+        width: .8em;
+        height: .8em;
+        vertical-align: -.05em;
+        margin-left: 5px;
+        display: inline-block;
+    }
+
+    html.light .private-icon {
+        content: url(/static/pic/lock.svg);
+    }
+
+    html.dark .private-icon {
+        content: url(/static/pic/lock-w.svg);
+    }
+
+    @media (max-width: 768px) {
+        .post-list-header .col-date,
+        .post-list-item .col-date,
+        .site-title {
+            display: none;
+        }
+
+        .post-list-header .col-title,
+        .post-list-item .col-title {
+            width: calc(100% - 150px);
+        }
+    }
+</style>
+
 {{ define "content" }}
     <div class="posts-group">
         <h2 class="group-title">搜索结果: "{{ .query }}"</h2>

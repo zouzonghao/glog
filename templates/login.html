@@ -3,6 +3,138 @@
 {{ define "title" }}登录{{ end }}
 
 {{ define "content" }}
+    <style>
+        /* Login page specific styles */
+        .editor-container {
+            margin-top: 4rem;
+        }
+
+        .login-container {
+            margin-top: 4rem;
+        }
+
+        .editor-form,
+        .app-form {
+            label {
+                display: block;
+                font-weight: 450;
+            }
+
+            input[type=number],
+            input[type=password],
+            input[type=text],
+            select,
+            textarea {
+                width: 100%;
+                padding: .5rem;
+                border: 1px solid var(--color-border-primary);
+                border-radius: 4px;
+                background-color: var(--color-background-input);
+                color: var(--color-text-primary);
+                font-size: .8rem;
+                transition: border-color .2s;
+            }
+
+            input[type=number]:focus,
+            input[type=password]:focus,
+            input[type=text]:focus,
+            select:focus,
+            textarea:focus {
+                outline: 0;
+                border-color: var(--color-accent-primary);
+            }
+        }
+
+        .form-group,
+        .editor-form-group,
+        .settings-form-group {
+            margin-top: .5rem;
+        }
+
+        .login-form-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .login-password-input {
+            flex-grow: 1;
+            max-width: 200px;
+        }
+
+        .login-submit-btn {
+            font-size: 1.2em;
+            flex-shrink: 0;
+            border: none;
+            background: 0 0;
+            cursor: pointer;
+            color: var(--textColor);
+            border-bottom: 1px solid var(--textColor);
+            padding: 0;
+        }
+
+        .btn,
+        .delete-wrapper,
+        .private-icon {
+            display: inline-block;
+        }
+
+        .btn {
+            padding: .25rem .5rem;
+            border: 1px solid var(--color-border-primary);
+            background-color: var(--color-background);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: color .2s, border-color .2s;
+            text-align: center;
+            font-size: .9rem;
+            line-height: 1.4;
+            color: var(--color-text-primary);
+        }
+
+        .btn:hover:not(:disabled) {
+            color: var(--color-accent-primary);
+            border: 1px solid var(--color-accent-primary);
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .delete-wrapper {
+            position: relative;
+            outline: 0;
+        }
+
+        .delete-confirm,
+        .delete-init {
+            cursor: pointer;
+            transition: opacity .2s ease-in-out;
+        }
+
+        .delete-confirm {
+            display: none;
+            transition: opacity .3s;
+        }
+
+        .delete-wrapper:focus-within .delete-init {
+            display: none;
+        }
+
+        .delete-wrapper:focus-within .delete-confirm {
+            display: inline-block;
+        }
+
+        .btn.disabled,
+        .delete-confirm.disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
+
 <div class="editor-container login-container">
     <form id="login-form" action="/login" method="post" class="editor-form app-form">
         <div class="form-group login-form-group">
