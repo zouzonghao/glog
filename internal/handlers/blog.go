@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"glog/internal/constants"
 	"glog/internal/services"
 	"glog/internal/utils"
@@ -20,8 +21,14 @@ func NewBlogHandler(postService *services.PostService) *BlogHandler {
 }
 
 func (h *BlogHandler) Index(c *gin.Context) {
+	// 使用 Link 响应头预加载关键资源
+	// 这是一个比 HTTP/2 Server Push 更现代、更受浏览器支持的方案
+	header := c.Writer.Header()
+	header.Add("Link", fmt.Sprintf(`</static/css/style.css>; rel=preload; as=style`))
+	header.Add("Link", fmt.Sprintf(`</static/js/main.js>; rel=preload; as=script`))
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize := 10 // 每页显示15篇文章
+	pageSize := 10 // 每页显示10篇文章
 
 	isLoggedInValue, exists := c.Get(constants.ContextKeyIsLoggedIn)
 	isLoggedIn := exists && isLoggedInValue.(bool)
