@@ -94,9 +94,14 @@ func main() {
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.File("./static/pic/favicon.ico")
 	})
-	r.GET("/", blogHandler.Index)
-	r.GET("/post/:slug", blogHandler.ShowPost)
-	r.GET("/search", searchHandler.Search)
+
+	pageGroup := r.Group("/")
+	pageGroup.Use(handlers.PageCacheMiddleware())
+	{
+		pageGroup.GET("/", blogHandler.Index)
+		pageGroup.GET("/post/:slug", blogHandler.ShowPost)
+		pageGroup.GET("/search", searchHandler.Search)
+	}
 
 	r.GET("/login", authHandler.ShowLoginPage)
 	r.POST("/login", authHandler.Login)

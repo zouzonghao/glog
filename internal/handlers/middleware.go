@@ -22,6 +22,14 @@ func CacheControlMiddleware() gin.HandlerFunc {
 	}
 }
 
+// PageCacheMiddleware adds Cache-Control headers to public pages.
+func PageCacheMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+		c.Next()
+	}
+}
+
 // APIAuthMiddleware checks for a valid Bearer token.
 func APIAuthMiddleware(settingService *services.SettingService) gin.HandlerFunc {
 	return func(c *gin.Context) {
