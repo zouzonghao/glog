@@ -57,7 +57,7 @@ func (r *PostRepository) FindPage(page, pageSize int, isLoggedIn bool) ([]models
 	if !isLoggedIn {
 		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now().In(shanghaiLocation))
 	}
-	err := query.Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
+	err := query.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 
@@ -89,7 +89,7 @@ func (r *PostRepository) FindAllByAdmin(page, pageSize int, query, status string
 		dbQuery = dbQuery.Where("is_private = ?", true)
 	}
 
-	err := dbQuery.Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
+	err := dbQuery.Select("id", "published_at", "title", "slug", "is_private", "updated_at").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 
@@ -160,7 +160,7 @@ func (r *PostRepository) SearchPageByLike(keywords []string, page, pageSize int,
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now().In(shanghaiLocation))
 	}
 
-	err := dbQuery.Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
+	err := dbQuery.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 

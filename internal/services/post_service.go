@@ -88,6 +88,7 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 	}
 
 	excerpt := utils.GenerateExcerpt(content, 150)
+	coverURL := utils.ExtractFirstImageURL(content) // 提取封面
 
 	slugStr, err := s.generateUniqueSlug(title, 0)
 	if err != nil {
@@ -105,6 +106,7 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 		Content:     content,
 		ContentHTML: htmlContent,
 		Excerpt:     excerpt,
+		Cover:       coverURL, // 保存封面
 		IsPrivate:   isPrivate,
 		PublishedAt: publishedAt,
 	}
@@ -212,6 +214,7 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	post.Content = content
 	post.ContentHTML = htmlContent
 	post.Excerpt = utils.GenerateExcerpt(content, 150)
+	post.Cover = utils.ExtractFirstImageURL(content) // 提取封面
 	post.IsPrivate = isPrivate
 	post.PublishedAt = publishedAt
 
@@ -388,6 +391,7 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		PublishedAt: post.PublishedAt,
 		Title:       post.Title,
 		Slug:        post.Slug,
+		Cover:       post.Cover, // 传递封面
 		Body:        template.HTML(post.ContentHTML),
 		Excerpt:     post.Excerpt,
 		IsPrivate:   post.IsPrivate,
@@ -460,6 +464,7 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 			IsPrivate:   p.IsPrivate,
 			PublishedAt: p.PublishedAt,
 			Excerpt:     utils.GenerateExcerpt(p.Content, 150),
+			Cover:       utils.ExtractFirstImageURL(p.Content), // 导入时也提取封面
 		})
 	}
 

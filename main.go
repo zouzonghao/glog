@@ -34,12 +34,14 @@ func createRenderer() multitemplate.Renderer {
 	}
 
 	add("index.html", "base.html", "index.html", "_pagination.html")
+	add("index_cards.html", "base.html", "index_cards.html", "_pagination.html")
 	add("post.html", "base.html", "post.html")
 	add("admin.html", "base.html", "admin.html", "_pagination.html")
 	add("editor.html", "base.html", "editor.html")
 	add("settings.html", "base.html", "settings.html")
 	add("login.html", "base.html", "login.html")
 	add("search.html", "base.html", "search.html", "_pagination.html")
+	add("search_cards.html", "base.html", "search_cards.html", "_pagination.html")
 	add("404.html", "base.html", "404.html")
 
 	return r
@@ -95,13 +97,9 @@ func main() {
 		c.File("./static/pic/favicon.ico")
 	})
 
-	pageGroup := r.Group("/")
-	pageGroup.Use(handlers.PageCacheMiddleware())
-	{
-		pageGroup.GET("/", blogHandler.Index)
-		pageGroup.GET("/post/:slug", blogHandler.ShowPost)
-		pageGroup.GET("/search", searchHandler.Search)
-	}
+	r.GET("/", blogHandler.Index)
+	r.GET("/post/:slug", blogHandler.ShowPost)
+	r.GET("/search", searchHandler.Search)
 
 	r.GET("/login", authHandler.ShowLoginPage)
 	r.POST("/login", authHandler.Login)
