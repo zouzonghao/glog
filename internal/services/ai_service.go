@@ -60,7 +60,7 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 	if needsTitle {
 		prompt = "请为以下文章生成标题和摘要。"
 	}
-	prompt += "请严格按照以下JSON格式返回，不要添加任何额外的解释或说明文字：\n"
+	prompt += "摘要严格限制50字以内，需简短精炼。请严格按照以下JSON格式返回，不要添加任何额外的解释或说明文字：\n"
 	prompt += "`{\"title\": \"生成的标题（如果需要）\", \"summary\": \"生成的摘要\"}`\n"
 	prompt += "如果不需要生成标题，请将title字段留空。\n"
 	prompt += "文章内容如下：\n\n" + content
