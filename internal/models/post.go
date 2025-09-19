@@ -12,6 +12,7 @@ type Post struct {
 	PublishedAt time.Time `gorm:"index"`
 	Title       string    `gorm:"not null" json:"title" form:"title"`
 	Slug        string    `gorm:"uniqueIndex;not null" json:"slug"`
+	Cover       string    `json:"cover" form:"cover"` // 新增封面图字段
 	Content     string    `gorm:"type:text;not null" json:"content" form:"content"`
 	ContentHTML string    `gorm:"type:text" json:"content_html"`
 	Excerpt     string    `json:"excerpt"`
@@ -26,6 +27,7 @@ type RenderedPost struct {
 	PublishedAt time.Time
 	Title       string
 	Slug        string
+	Cover       string        // 新增封面图字段
 	Summary     template.HTML // Rendered HTML of the content before <!--more-->
 	Body        template.HTML // Rendered HTML of the content after <!--more-->
 	Excerpt     string        // Plain text excerpt for lists
@@ -35,6 +37,7 @@ type RenderedPost struct {
 // PostBackup is a simplified struct for backup and restore operations.
 type PostBackup struct {
 	Title       string    `json:"title"`
+	Cover       string    `json:"cover"` // 备份时也包含封面
 	Content     string    `json:"content"`
 	IsPrivate   bool      `json:"is_private"`
 	PublishedAt time.Time `json:"published_at"`

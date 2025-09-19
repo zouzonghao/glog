@@ -112,3 +112,17 @@ func GenerateExcerpt(md string, length int) string {
 	}
 	return string(runes)
 }
+
+// ExtractFirstImageURL uses a regular expression to find the first Markdown image URL.
+func ExtractFirstImageURL(md string) string {
+	// Regex to find the first markdown image: ![alt text](image_url)
+	re := regexp.MustCompile(`!\[.*?\]\((.*?)\)`)
+	matches := re.FindStringSubmatch(md)
+
+	if len(matches) > 1 {
+		// The first capturing group (index 1) is the URL
+		return matches[1]
+	}
+
+	return ""
+}

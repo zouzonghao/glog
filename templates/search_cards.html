@@ -1,0 +1,34 @@
+{{ template "base.html" . }}
+
+{{ define "content" }}
+    <div class="cards-view">
+        <h2 class="group-title">搜索结果: "{{ .query }}"</h2>
+        <div class="post-cards-container">
+            {{ range .posts }}
+                <a href="/post/{{ .Slug }}" class="post-card" data-title="{{ .Title }}">
+                    <div class="card-cover">
+                        {{ if .Cover }}
+                            <img src="{{ .Cover }}" alt="{{ .Title }}" loading="lazy">
+                        {{ else }}
+                            <div class="pseudo-cover">
+                                <!-- JS will generate a pseudo-image here -->
+                            </div>
+                        {{ end }}
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-title">
+                            {{ .Title }}
+                            {{ if .IsPrivate }}
+                                <span class="private-icon"></span>
+                            {{ end }}
+                        </h3>
+                    </div>
+                </a>
+            {{ else }}
+                <p>没有找到与 "{{ .query }}" 相关的文章。</p>
+            {{ end }}
+        </div>
+    </div>
+
+    {{ template "pagination" . }}
+{{ end }}

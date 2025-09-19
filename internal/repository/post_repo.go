@@ -57,7 +57,7 @@ func (r *PostRepository) FindPage(page, pageSize int, isLoggedIn bool) ([]models
 	if !isLoggedIn {
 		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now().In(shanghaiLocation))
 	}
-	err := query.Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
+	err := query.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 
