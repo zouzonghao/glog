@@ -15,3 +15,5 @@ static/pagefind
 *.test
 cpu.prof*
 mem.prof*
+static/js
+static/css

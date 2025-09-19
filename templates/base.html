@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {{ block "description" . }}<meta name="description" content="{{ .site_description }}">{{ end }}
     <title>{{ block "title" . }}{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}{{ end }}</title>
-    
-<script>
+    <script>
+        document.addEventListener("DOMContentLoaded",function(){let e=document.querySelector(".post-cards-container");if(!e)return;let t=document.createElement("div");t.className="card-column";let a=document.createElement("div");a.className="card-column";let n=Array.from(e.querySelectorAll(".post-card"));function r(e){e.forEach(e=>{t.children.length<=a.children.length?t.appendChild(e):a.appendChild(e)})}e.innerHTML="",e.appendChild(t),e.appendChild(a);let l=["#ffb3ba","#ffdfba","#ffffba","#baffc9","#bae1ff","#fec8d8","#f2d2a9","#f9eac3","#c3e6cb","#b5d8f2","#f6a6b2","#e9c39b","#f4e0a3","#a9d9c3","#9cc2e5"];function c(e){let t=e.querySelector(".pseudo-cover");if(t){let a=l[Math.floor(Math.random()*l.length)];t.style.backgroundColor=a;let n=e.dataset.title||"",r=document.createElement("span");r.textContent=n,t.innerHTML="",t.appendChild(r)}}n.forEach(c),r(n);let o=document.getElementById("infinite-scroll-trigger");if(!o)return;let d=document.getElementById("loading-indicator"),s=!1,i=new IntersectionObserver(t=>{t[0].isIntersecting&&function t(){if(s)return;if("true"!==e.dataset.hasNext){d.innerHTML="<p>没有更多了</p>",d.style.display="block",i&&i.disconnect();return}s=!0,d.style.display="block";let a=parseInt(e.dataset.currentPage,10),n=new URL(window.location.href);n.searchParams.set("page",a+1),fetch(n.toString()).then(e=>e.text()).then(t=>{let a=new DOMParser,n=a.parseFromString(t,"text/html"),l=Array.from(n.querySelectorAll(".post-card")),o=n.querySelector(".post-cards-container");if(l.length>0){let f=l.map(e=>{let t=document.importNode(e,!0);return c(t),t});r(f)}o?(e.dataset.currentPage=o.dataset.currentPage,e.dataset.hasNext=o.dataset.hasNext):e.dataset.hasNext="false",s=!1,d.style.display="none","false"===e.dataset.hasNext&&(d.innerHTML="<p>没有更多了</p>",d.style.display="block",i&&i.disconnect())}).catch(e=>{console.error("Error loading more posts:",e),d.innerHTML="<p>加载失败，请重试</p>",s=!1})}()},{rootMargin:"200px"});i.observe(o)});
+    </script>
+    <script>
         (function() {
             const savedTheme = localStorage.getItem("theme");
             const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -27,6 +29,9 @@
             document.documentElement.classList.add(theme);
         })();
     </script>
+    <style>
+        .post-cards-container{display:flex;justify-content:space-between;gap:15px;padding:0;margin:20px 0}.card-column{flex:1;display:flex;flex-direction:column;gap:20px;min-width:0}.post-card{width:100%;text-decoration:none;color:inherit;background-color:transparent;box-shadow:none;border:none;border-radius:0}.post-card:hover .card-title{color:var(--accent-color)}.card-cover{width:100%;min-height:200px;height:auto;position:relative;background-color:#f0f0f0;border-radius:12px;overflow:hidden;outline:1px solid var(--color-border-primary)}.card-cover img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}.pseudo-cover{width:100%;height:100%;min-height:inherit;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.7);font-size:1.2rem;font-weight:700;text-align:center;padding:20px;box-sizing:border-box}.card-info{padding:8px 4px}.card-title{margin:0;font-size:1rem;line-height:1.4;color:var(--text-color);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;transition:color .2s}@media (max-width:600px){.post-cards-container{gap:10px}.card-column{gap:15px}}#infinite-scroll-trigger{height:50px;width:100%}#loading-indicator{width:100%;text-align:center;padding:20px 0;color:var(--text-color-secondary);font-size:.9rem}#loading-indicator .spinner{display:inline-block;border:3px solid rgba(0,0,0,.1);width:24px;height:24px;border-radius:50%;border-left-color:var(--accent-color);animation:1s infinite spin;margin-bottom:10px}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    </style>
     <style>
         /* CSS variables */
         :root {
@@ -778,6 +783,15 @@
                         </svg>
                     </button>
                 </form>
+                {{ if .is_index }}
+                <a href="{{ if eq .View "cards" }}/?view=list{{ else }}/?view=cards{{ end }}" class="theme-toggle" title="切换视图">
+                    {{ if eq .View "cards" }}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    {{ else }}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    {{ end }}
+                </a>
+                {{ end }}
                 <a href="#" id="theme-toggle" class="theme-toggle" title="Toggle theme">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                     <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
