@@ -1,21 +1,25 @@
 /* Card view specific styles */
 
 .post-cards-container {
-    /* Use columns for a masonry/pinterest-like effect */
-    column-count: 2;
-    column-gap: 15px;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px; /* Space between columns */
     padding: 0;
     margin: 20px 0;
 }
 
+.card-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Space between items in a column */
+    min-width: 0; /* Prevent flexbox overflow */
+}
+
 .post-card {
-    display: inline-block; /* Important for masonry layout */
     width: 100%;
-    margin-bottom: 20px; /* Space between items */
     text-decoration: none;
     color: inherit;
-    /* Prevent items from breaking across columns */
-    break-inside: avoid;
     /* Remove all card-like styles */
     background-color: transparent;
     box-shadow: none;
@@ -82,10 +86,39 @@
 /* Responsive adjustments */
 @media (max-width: 600px) {
     .post-cards-container {
-        column-count: 2; /* Keep 2 columns even on smaller screens */
         gap: 10px;
     }
-    .post-card {
-        margin-bottom: 15px;
+    .card-column {
+        gap: 15px;
     }
+}
+
+/* Infinite Scroll Styles */
+#infinite-scroll-trigger {
+    height: 50px;
+    width: 100%;
+}
+
+#loading-indicator {
+    width: 100%;
+    text-align: center;
+    padding: 20px 0;
+    color: var(--text-color-secondary);
+    font-size: 0.9rem;
+}
+
+#loading-indicator .spinner {
+    display: inline-block;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border-left-color: var(--accent-color);
+    animation: spin 1s ease infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

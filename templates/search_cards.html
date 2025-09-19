@@ -3,7 +3,7 @@
 {{ define "content" }}
     <div class="cards-view">
         <h2 class="group-title">搜索结果: "{{ .query }}"</h2>
-        <div class="post-cards-container">
+        <div class="post-cards-container" data-current-page="{{ .Pagination.CurrentPage }}" data-next-page="{{ .Pagination.NextPage }}" data-total-pages="{{ .Pagination.TotalPages }}" data-has-next="{{ .Pagination.HasNext }}">
             {{ range .posts }}
                 <a href="/post/{{ .Slug }}" class="post-card" data-title="{{ .Title }}">
                     <div class="card-cover">
@@ -28,7 +28,13 @@
                 <p>没有找到与 "{{ .query }}" 相关的文章。</p>
             {{ end }}
         </div>
-    </div>
 
-    {{ template "pagination" . }}
+        {{ if .Pagination.HasNext }}
+        <div id="infinite-scroll-trigger"></div>
+        <div id="loading-indicator" style="display: none;">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+        </div>
+        {{ end }}
+    </div>
 {{ end }}
