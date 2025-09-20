@@ -384,6 +384,14 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		}
 	}
 
+	coverURL := post.Cover
+	if coverURL != "" && !strings.HasSuffix(coverURL, ".avif") {
+		coverPrefix, err := s.settingService.GetSetting(constants.SettingCoverPrefix)
+		if err == nil && coverPrefix != "" {
+			coverURL = coverPrefix + coverURL
+		}
+	}
+
 	renderedPost := &models.RenderedPost{
 		ID:          post.ID,
 		CreatedAt:   post.CreatedAt,
@@ -391,7 +399,7 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		PublishedAt: post.PublishedAt,
 		Title:       post.Title,
 		Slug:        post.Slug,
-		Cover:       post.Cover, // 传递封面
+		Cover:       coverURL, // 传递封面
 		Body:        template.HTML(post.ContentHTML),
 		Excerpt:     post.Excerpt,
 		IsPrivate:   post.IsPrivate,
