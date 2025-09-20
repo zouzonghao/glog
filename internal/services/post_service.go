@@ -82,7 +82,7 @@ func (s *PostService) CheckPostLock(postID uint) bool {
 	return postLocks[postID]
 }
 
-func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummary bool, publishedAt time.Time) (*models.Post, bool, error) {
+func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummary bool, aiCover bool, aiCoverPrompt string, publishedAt time.Time) (*models.Post, bool, error) {
 	if title == "" {
 		title = "未命名标题"
 	}
@@ -117,74 +117,95 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 	}
 
 	aiTriggered := false
-	if aiSummary {
-		separator := "<!--more-->"
-		if !strings.Contains(content, separator) || len(strings.TrimSpace(strings.SplitN(content, separator, 2)[0])) == 0 {
-			aiTriggered = true
-			s.LockPost(post.ID)
-			go func() {
-				defer s.UnlockPost(post.ID)
-				settings, err := s.settingService.GetAllSettings()
-				if err != nil {
-					fmt.Printf("获取 AI 设置失败 for post ID %d: %v\n", post.ID, err)
-					return
-				}
-				baseURL := settings[constants.SettingOpenAIBaseURL]
-				token := settings[constants.SettingOpenAIToken]
-				model := settings[constants.SettingOpenAIModel]
+	shouldTriggerSummary := aiSummary && (!strings.Contains(content, "<!--more-->") || len(strings.TrimSpace(strings.SplitN(content, "<!--more-->", 2)[0])) == 0)
 
+	if shouldTriggerSummary || aiCover {
+		aiTriggered = true
+		s.LockPost(post.ID)
+		go func() {
+			defer s.UnlockPost(post.ID)
+
+			settings, err := s.settingService.GetAllSettings()
+			if err != nil {
+				utils.AILog("文章 '%s': 获取AI设置失败: %v", post.Title, err)
+				return
+			}
+			baseURL := settings[constants.SettingOpenAIBaseURL]
+			token := settings[constants.SettingOpenAIToken]
+			model := settings[constants.SettingOpenAIModel]
+			pollinationsToken := settings[constants.SettingPollinationsToken]
+			coverPrefix := settings[constants.SettingCoverPrefix]
+
+			updateMap := make(map[string]interface{})
+
+			if shouldTriggerSummary {
 				aiResp, err := s.aiService.GenerateSummaryAndTitle(post.Content, title == "未命名标题", baseURL, token, model)
 				if err != nil {
-					fmt.Printf("AI 摘要生成失败 for post ID %d: %v\n", post.ID, err)
-					return
-				}
-
-				updateMap := make(map[string]interface{})
-				contentChanged := false
-
-				if aiResp.Summary != "" {
-					updateMap["excerpt"] = aiResp.Summary
-					var newContent string
-					if strings.Contains(post.Content, separator) {
-						parts := strings.SplitN(post.Content, separator, 2)
-						if len(strings.TrimSpace(parts[0])) == 0 {
-							newContent = fmt.Sprintf("%s\n\n%s%s", aiResp.Summary, separator, parts[1])
+					utils.AILog("文章 '%s': AI摘要生成失败: %v", post.Title, err)
+				} else {
+					utils.AILog("文章 '%s': AI摘要生成成功", post.Title)
+					separator := "<!--more-->"
+					contentChanged := false
+					if aiResp.Summary != "" {
+						updateMap["excerpt"] = aiResp.Summary
+						var newContent string
+						if strings.Contains(post.Content, separator) {
+							parts := strings.SplitN(post.Content, separator, 2)
+							if len(strings.TrimSpace(parts[0])) == 0 {
+								newContent = fmt.Sprintf("%s\n\n%s%s", aiResp.Summary, separator, parts[1])
+								contentChanged = true
+							}
+						} else {
+							newContent = fmt.Sprintf("%s\n\n%s\n\n%s", aiResp.Summary, separator, post.Content)
 							contentChanged = true
 						}
-					} else {
-						newContent = fmt.Sprintf("%s\n\n%s\n\n%s", aiResp.Summary, separator, post.Content)
-						contentChanged = true
-					}
 
-					if contentChanged {
-						updateMap["content"] = newContent
-						newHtmlContent, err := s.processAndRenderContent(newContent)
-						if err == nil {
-							updateMap["content_html"] = newHtmlContent
+						if contentChanged {
+							updateMap["content"] = newContent
+							newHtmlContent, err := s.processAndRenderContent(newContent)
+							if err == nil {
+								updateMap["content_html"] = newHtmlContent
+							}
+						}
+					}
+					if aiResp.Title != "" && aiResp.Title != post.Title {
+						updateMap["title"] = aiResp.Title
+						newSlug, slugErr := s.generateUniqueSlug(aiResp.Title, post.ID)
+						if slugErr == nil {
+							updateMap["slug"] = newSlug
 						}
 					}
 				}
-				if aiResp.Title != "" && aiResp.Title != post.Title {
-					updateMap["title"] = aiResp.Title
-					newSlug, slugErr := s.generateUniqueSlug(aiResp.Title, post.ID)
-					if slugErr == nil {
-						updateMap["slug"] = newSlug
-					}
-				}
+			}
 
-				if len(updateMap) > 0 {
-					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
-						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					}
+			if aiCover {
+				var textForCover string
+				if aiCoverPrompt != "" {
+					textForCover = aiCoverPrompt
+				} else {
+					textForCover = post.Content
 				}
-			}()
-		}
+				newCoverURL, err := s.aiService.GenerateCover(textForCover, baseURL, token, model, pollinationsToken, coverPrefix)
+				if err != nil {
+					utils.AILog("文章 '%s': AI封面生成失败: %v", post.Title, err)
+				} else if newCoverURL != "" {
+					updateMap["cover"] = newCoverURL
+					utils.AILog("文章 '%s': AI封面生成成功", post.Title)
+				}
+			}
+
+			if len(updateMap) > 0 {
+				if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
+					utils.AILog("文章 '%s': 更新AI生成内容失败: %v", post.Title, err)
+				}
+			}
+		}()
 	}
 
 	return post, aiTriggered, nil
 }
 
-func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool, aiSummary bool, publishedAt time.Time) (*models.Post, bool, error) {
+func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool, aiSummary bool, aiCover bool, aiCoverPrompt string, publishedAt time.Time) (*models.Post, bool, error) {
 	if strings.TrimSpace(content) == "" {
 		return nil, false, s.DeletePost(id)
 	}
@@ -224,66 +245,89 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	}
 
 	aiTriggered := false
-	if aiSummary {
-		separator := "<!--more-->"
-		if !strings.Contains(content, separator) || len(strings.TrimSpace(strings.SplitN(content, separator, 2)[0])) == 0 {
-			aiTriggered = true
-			s.LockPost(post.ID)
-			go func() {
-				defer s.UnlockPost(post.ID)
-				settings, err := s.settingService.GetAllSettings()
-				if err != nil {
-					return
-				}
-				baseURL := settings[constants.SettingOpenAIBaseURL]
-				token := settings[constants.SettingOpenAIToken]
-				model := settings[constants.SettingOpenAIModel]
+	shouldTriggerSummary := aiSummary && (!strings.Contains(content, "<!--more-->") || len(strings.TrimSpace(strings.SplitN(content, "<!--more-->", 2)[0])) == 0)
 
+	if shouldTriggerSummary || aiCover {
+		aiTriggered = true
+		s.LockPost(post.ID)
+		go func() {
+			defer s.UnlockPost(post.ID)
+
+			settings, err := s.settingService.GetAllSettings()
+			if err != nil {
+				utils.AILog("文章 '%s': 获取AI设置失败: %v", post.Title, err)
+				return
+			}
+			baseURL := settings[constants.SettingOpenAIBaseURL]
+			token := settings[constants.SettingOpenAIToken]
+			model := settings[constants.SettingOpenAIModel]
+			pollinationsToken := settings[constants.SettingPollinationsToken]
+			coverPrefix := settings[constants.SettingCoverPrefix]
+
+			updateMap := make(map[string]interface{})
+
+			if shouldTriggerSummary {
 				aiResp, err := s.aiService.GenerateSummaryAndTitle(post.Content, title == "未命名标题", baseURL, token, model)
 				if err != nil {
-					return
-				}
-
-				updateMap := make(map[string]interface{})
-				contentChanged := false
-
-				if aiResp.Summary != "" {
-					updateMap["excerpt"] = aiResp.Summary
-					var newContent string
-					if strings.Contains(post.Content, separator) {
-						parts := strings.SplitN(post.Content, separator, 2)
-						if len(strings.TrimSpace(parts[0])) == 0 {
-							newContent = fmt.Sprintf("%s\n\n%s%s", aiResp.Summary, separator, parts[1])
+					utils.AILog("文章 '%s': AI摘要生成失败: %v", post.Title, err)
+				} else {
+					utils.AILog("文章 '%s': AI摘要生成成功", post.Title)
+					separator := "<!--more-->"
+					contentChanged := false
+					if aiResp.Summary != "" {
+						updateMap["excerpt"] = aiResp.Summary
+						var newContent string
+						if strings.Contains(post.Content, separator) {
+							parts := strings.SplitN(post.Content, separator, 2)
+							if len(strings.TrimSpace(parts[0])) == 0 {
+								newContent = fmt.Sprintf("%s\n\n%s%s", aiResp.Summary, separator, parts[1])
+								contentChanged = true
+							}
+						} else {
+							newContent = fmt.Sprintf("%s\n\n%s\n\n%s", aiResp.Summary, separator, post.Content)
 							contentChanged = true
 						}
-					} else {
-						newContent = fmt.Sprintf("%s\n\n%s\n\n%s", aiResp.Summary, separator, post.Content)
-						contentChanged = true
-					}
 
-					if contentChanged {
-						updateMap["content"] = newContent
-						newHtmlContent, err := s.processAndRenderContent(newContent)
-						if err == nil {
-							updateMap["content_html"] = newHtmlContent
+						if contentChanged {
+							updateMap["content"] = newContent
+							newHtmlContent, err := s.processAndRenderContent(newContent)
+							if err == nil {
+								updateMap["content_html"] = newHtmlContent
+							}
+						}
+					}
+					if aiResp.Title != "" && aiResp.Title != post.Title {
+						updateMap["title"] = aiResp.Title
+						newSlug, slugErr := s.generateUniqueSlug(aiResp.Title, post.ID)
+						if slugErr == nil {
+							updateMap["slug"] = newSlug
 						}
 					}
 				}
-				if aiResp.Title != "" && aiResp.Title != post.Title {
-					updateMap["title"] = aiResp.Title
-					newSlug, slugErr := s.generateUniqueSlug(aiResp.Title, post.ID)
-					if slugErr == nil {
-						updateMap["slug"] = newSlug
-					}
-				}
+			}
 
-				if len(updateMap) > 0 {
-					if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
-						fmt.Printf("用 AI 生成的内容更新文章失败 for post ID %d: %v\n", post.ID, err)
-					}
+			if aiCover {
+				var textForCover string
+				if aiCoverPrompt != "" {
+					textForCover = aiCoverPrompt
+				} else {
+					textForCover = post.Content
 				}
-			}()
-		}
+				newCoverURL, err := s.aiService.GenerateCover(textForCover, baseURL, token, model, pollinationsToken, coverPrefix)
+				if err != nil {
+					utils.AILog("文章 '%s': AI封面生成失败: %v", post.Title, err)
+				} else if newCoverURL != "" {
+					updateMap["cover"] = newCoverURL
+					utils.AILog("文章 '%s': AI封面生成成功", post.Title)
+				}
+			}
+
+			if len(updateMap) > 0 {
+				if err := s.repo.UpdateFields(post.ID, updateMap); err != nil {
+					utils.AILog("文章 '%s': 更新AI生成内容失败: %v", post.Title, err)
+				}
+			}
+		}()
 	}
 
 	return post, aiTriggered, nil
@@ -384,8 +428,9 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		}
 	}
 
+	// 拼接封面前缀
 	coverURL := post.Cover
-	if coverURL != "" && !strings.HasSuffix(coverURL, ".avif") {
+	if coverURL != "" && strings.HasSuffix(coverURL, ".png") {
 		coverPrefix, err := s.settingService.GetSetting(constants.SettingCoverPrefix)
 		if err == nil && coverPrefix != "" {
 			coverURL = coverPrefix + coverURL

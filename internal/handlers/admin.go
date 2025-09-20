@@ -146,6 +146,8 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	publishedAtStr := c.PostForm("published_at")
 	isPrivate := c.PostForm("is_private") == "on"
 	aiSummary := c.PostForm("ai_summary") == "on"
+	aiCover := c.PostForm("ai_cover") == "on"
+	aiCoverPrompt := c.PostForm("ai_cover_prompt")
 
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
@@ -163,7 +165,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 		if h.postService.CheckPostLock(uint(id)) {
 			c.JSON(http.StatusConflict, gin.H{
 				"status":  "locked",
-				"message": "正在生成AI摘要，文章已锁定，请稍候再试...",
+				"message": "正在生成AI内容，文章已锁定，请稍候再试...",
 			})
 			return
 		}
@@ -173,10 +175,10 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	var aiTriggered bool
 
 	if idStr == "" || idStr == "0" {
-		post, aiTriggered, err = h.postService.CreatePost(title, content, isPrivate, aiSummary, publishedAt)
+		post, aiTriggered, err = h.postService.CreatePost(title, content, isPrivate, aiSummary, aiCover, aiCoverPrompt, publishedAt)
 	} else {
 		id, _ := strconv.ParseUint(idStr, 10, 64)
-		post, aiTriggered, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, aiSummary, publishedAt)
+		post, aiTriggered, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, aiSummary, aiCover, aiCoverPrompt, publishedAt)
 	}
 
 	if err != nil {
@@ -203,10 +205,8 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	}
 
 	message := "文章已保存！"
-	if aiTriggered && title == "未命名标题" {
-		message = "文章已保存，AI正在生成标题和摘要，请稍后刷新查看..."
-	} else if aiTriggered {
-		message = "文章已保存，AI摘要正在生成中..."
+	if aiTriggered {
+		message = "文章已保存，AI 内容正在生成中，请稍后刷新查看..."
 	}
 
 	response := gin.H{
@@ -543,4 +543,30 @@ func (h *AdminHandler) BackupToWebdavNow(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "已成功触发 WebDAV 备份！"})
+}
+
+func (h *AdminHandler) GetAILogs(c *gin.Context) {
+	logs, err := os.ReadFile("ai.log")
+	if err != nil {
+		if os.IsNotExist(err) {
+			c.JSON(http.StatusOK, gin.H{"status": "success", "logs": "暂无 AI 日志。"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "无法读取 AI 日志文件: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "logs": string(logs)})
+}
+
+func (h *AdminHandler) ClearAILogs(c *gin.Context) {
+	err := os.Truncate("ai.log", 0)
+	if err != nil {
+		if os.IsNotExist(err) {
+			c.JSON(http.StatusOK, gin.H{"status": "success", "message": "日志文件不存在，无需清除。"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "无法清除 AI 日志文件: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "AI 日志已成功清除！"})
 }

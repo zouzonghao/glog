@@ -13,10 +13,24 @@ document.addEventListener('DOMContentLoaded', function() {
     setupGlobalModal('ai-modal', 'ai-settings-btn');
     setupGlobalModal('github-modal', 'github-backup-btn');
     setupGlobalModal('webdav-modal', 'webdav-backup-btn');
+    setupGlobalModal('pollinations-modal', 'pollinations-settings-btn');
+    setupGlobalModal('ai-logs-modal', 'ai-logs-btn');
     // Note: password-prompt-modal is now opened programmatically when needed.
+
+    // --- AI Logs Button Logic ---
+    const aiLogsBtn = document.getElementById('ai-logs-btn');
+    if (aiLogsBtn) {
+        aiLogsBtn.addEventListener('click', fetchAndDisplayAILogs);
+    }
+
+    const clearAiLogsBtn = document.getElementById('clear-ai-logs-btn');
+    if (clearAiLogsBtn) {
+        clearAiLogsBtn.addEventListener('click', clearAILogs);
+    }
 
     // --- Form-specific Logic inside Modals ---
     attachModalFormLogic('save-ai-btn', 'ai-settings-form', 'ai-modal');
+    attachModalFormLogic('save-pollinations-btn', 'pollinations-settings-form', 'pollinations-modal');
     attachModalFormLogic('save-github-btn', 'github-settings-form', 'github-modal');
     attachModalFormLogic('save-webdav-btn', 'webdav-settings-form', 'webdav-modal');
 
@@ -222,5 +236,48 @@ function saveFormData(formElement, callback) {
     .catch(error => {
         console.error('表单提交错误：', error);
         showNotification('保存时发生错误，请检查网络连接！', 'error');
+    });
+}
+
+function fetchAndDisplayAILogs() {
+    const logsContent = document.getElementById('ai-logs-content');
+    if (!logsContent) return;
+
+    logsContent.textContent = '正在加载日志...';
+
+    fetch('/admin/setting/ai-logs')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                logsContent.textContent = data.logs || '暂无 AI 日志。';
+            } else {
+                logsContent.textContent = '加载日志失败: ' + data.message;
+            }
+        })
+        .catch(error => {
+            console.error('获取AI日志失败:', error);
+            logsContent.textContent = '加载日志时发生网络错误。';
+        });
+}
+
+function clearAILogs() {
+    showNotification('正在清除日志...', 'info');
+    fetch('/admin/setting/ai-logs/clear', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        showNotification(data.message, data.status);
+        if (data.status === 'success') {
+            // Also clear the content in the modal
+            const logsContent = document.getElementById('ai-logs-content');
+            if (logsContent) {
+                logsContent.textContent = '日志已清除。';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('清除AI日志失败:', error);
+        showNotification('清除日志时发生网络错误。', 'error');
     });
 }

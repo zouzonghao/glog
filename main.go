@@ -11,6 +11,9 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
@@ -54,6 +57,18 @@ func main() {
 
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
 	flag.Parse()
+
+	utils.InitAILogger()
+	defer utils.CloseAILogger()
+
+	// Graceful shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		utils.CloseAILogger()
+		os.Exit(0)
+	}()
 
 	db, err := utils.InitDatabase()
 	if err != nil {
@@ -127,6 +142,8 @@ func main() {
 		settings.POST("/test-webdav", adminHandler.TestWebdavSettings)
 		settings.POST("/backup-github-now", adminHandler.BackupToGithubNow)
 		settings.POST("/backup-webdav-now", adminHandler.BackupToWebdavNow)
+		settings.GET("/ai-logs", adminHandler.GetAILogs)
+		settings.POST("/ai-logs/clear", adminHandler.ClearAILogs)
 	}
 	api := r.Group("/api/v1")
 	api.Use(handlers.APIAuthMiddleware(settingService))

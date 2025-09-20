@@ -1186,3 +1186,24 @@ html.dark .table-wrapper {
 .hidden-file-input {
     display: none;
 }
+
+/* AI Logs Modal Styles */
+.logs-container {
+    margin-top: 1rem;
+    background-color: #1a1a1a; /* Dark background for the console look */
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 1rem;
+    height: 300px; /* Fixed height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    text-align: left;
+}
+
+#ai-logs-content {
+    font-family: var(--font-mono); /* Use monospaced font */
+    font-size: 0.85rem;
+    color: #e0e0e0; /* Light grey text */
+    white-space: pre-wrap; /* Ensure long lines wrap */
+    word-wrap: break-word;
+    margin: 0;
+}
