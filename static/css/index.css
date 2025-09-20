@@ -1,0 +1,531 @@
+/*
+ * Glog 的主题 (修订版 3)
+ * ----------------------------------------------------------------------------------------------------
+ * 目录：
+ * 1.  设计变量 (Design Variables)
+ * 2.  基础与全局样式 (Base & Global Styles)
+ * 3.  布局 (Layout)
+ * 4.  排版 (Typography)
+ * 5.  头部与导航 (Header & Navigation)
+ * 6.  页脚 (Footer)
+ * 7.  文章列表 (Post Lists)
+ * 8.  主题切换 (Theme Toggle)
+ * 9.  搜索表单 (Search Form)
+ * 10. 分页 (Pagination)
+ * 11. 后台管理页面 (Admin & Settings Pages)
+ * 12. 响应式设计 (Responsive Design)
+ * 13. 汉堡菜单动画 (Hamburger Menu Animation)
+ * 14. 表单与组件 (Forms & Components)
+ * 15. 文章内容样式 (Post Content Styles)
+ * 16. 特殊组件 (Special Components - Private Icon, Delete Wrapper, etc.)
+ * 17. 通知系统 (Notification System)
+ * 18. 模态框 (Modal)
+ * ----------------------------------------------------------------------------------------------------
+ */
+
+/* 1. 设计变量 (Design Variables)
+---------------------------------------------------------------------------------------------------- */
+:root {
+    /* --- 亮色主题 --- */
+    /* 背景色 */
+    --color-background: #fafafa; /* 主背景色 */
+    --color-background-transparent: rgba(250, 250, 250, 0.8); /* 带透明度的背景色，用于导航栏等 */
+    --color-background-input: #ffffff; /* 输入框背景色 */
+
+    /* 文本颜色 */
+    --color-text-primary: #22272a; /* 主要文本颜色 */
+    --color-text-secondary: #848a8f; /* 次要文本，用于元信息、引用等 */
+    --color-text-link: #7a8288; /* 链接文本颜色 */
+
+    /* 强调色 */
+    --color-accent-primary: #cb2a42; /* 主要强调色，用于标题、关键链接等 */
+    --color-border-primary: #bfc1c2bb; /* 主要边框颜色 */
+
+    /* --- 字体 --- */
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
+    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* --- 暗色主题 --- */
+html.dark {
+    /* 背景色 */
+    --color-background: #1d1f20;
+    --color-background-transparent: rgba(29, 31, 32, 0.8);
+    --color-background-input: #000000;
+
+    /* 文本颜色 */
+    --color-text-primary: #bebdbd;
+    --color-text-secondary: #8c8d8f;
+    --color-text-link: #cbcaca;
+
+    /* 强调色 */
+    --color-accent-primary: #29bc89;
+    --color-border-primary: #444;
+}
+
+/* 2. 基础与全局样式
+---------------------------------------------------------------------------------------------------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+}
+html {
+    font-family: var(--font-sans);
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+}
+body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+/* 3. 布局
+---------------------------------------------------------------------------------------------------- */
+.main-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 2rem 0.5rem;
+    margin: 0 auto;
+    max-width: 48rem;
+}
+main {
+    flex-grow: 1;
+    margin-top: 2.5rem;
+}
+
+/* 4. 排版
+---------------------------------------------------------------------------------------------------- */
+ h2 {
+    color: var(--color-accent-primary);
+}
+h2 { font-size: 1.4rem; font-weight: 380; margin-top: 1.5em; margin-bottom: 1em; }
+
+.group-title {
+    font-size: 1.2rem;
+    color: var(--color-accent-primary);
+    margin-bottom: 2rem;
+    margin-top: 0;
+    font-weight: 500;
+}
+
+p {
+    margin-bottom: 1em;
+}
+a {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-text-primary);
+    padding-bottom: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+a:hover {
+    color: var(--color-accent-primary);
+    border-bottom-color: var(--color-accent-primary);
+}
+
+/* 5. 头部与导航
+---------------------------------------------------------------------------------------------------- */
+header.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding-bottom: 2rem;
+}
+header.main-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    border-bottom: 1px solid var(--color-border-primary);
+}
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.site-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.site-title {
+    font-size: 1.8rem;
+    font-weight: 300;
+    margin-bottom: 0.25rem;
+    border-bottom: none;
+    color: var(--color-accent-primary);
+    transition: text-shadow 0.3s ease;
+}
+.site-title:hover {
+    text-shadow: 0 0 10px var(--color-accent-primary);
+}
+nav.main-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+nav.main-nav a {
+    letter-spacing: 1px;
+}
+nav.main-nav li:not(:last-child)::after {
+    content: "|";
+    margin-left: 0.5rem;
+    color: var(--color-text-secondary);
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.5rem;
+}
+
+/* 6. 页脚
+---------------------------------------------------------------------------------------------------- */
+footer.main-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 0;
+    padding-top: 2rem;
+    opacity: 0.5;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+/* 7. 文章列表
+---------------------------------------------------------------------------------------------------- */
+/* 首页简约列表 */
+.post-list-minimal {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.post-list-minimal li {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+.post-list-minimal .date {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    width: 120px;
+    flex-shrink: 0;
+}
+.post-list-minimal .title {
+    font-weight: normal;
+}
+
+/* 后台管理列表 */
+
+/* 8. 主题切换
+---------------------------------------------------------------------------------------------------- */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    color: var(--color-text-primary);
+}
+.theme-toggle:hover {
+    opacity: 0.7;
+}
+.sun-icon, .moon-icon {
+    width: 24px;
+    height: 24px;
+}
+.dark .sun-icon { display: block; }
+.dark .moon-icon { display: none; }
+.light .sun-icon { display: none; }
+.light .moon-icon { display: block; }
+
+/* 9. 搜索表单
+---------------------------------------------------------------------------------------------------- */
+.search-form {
+    display: flex;
+    align-items: center;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border-primary);
+    opacity: 0.8;
+    border-radius: 0.3rem;
+    padding: 0.2rem;
+}
+.search-form:focus-within {
+    border-color: var(--color-accent-primary);
+    opacity: 1;
+}
+.search-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    padding: 0.2rem 0.75rem;
+    width: 150px;
+    transition: width 0.3s ease;
+}
+.search-input::placeholder {
+    color: var(--color-text-secondary);
+}
+.search-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+.search-icon {
+    opacity: 0.7;
+}
+.search-icon:hover {
+    opacity: 1;
+}
+/* 自定义搜索输入框的清除按钮 (x) */
+.search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    cursor: pointer;
+    background-color: var(--color-text-secondary);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    transition: background-color 0.2s;
+}
+.search-input::-webkit-search-cancel-button:hover {
+    background-color: var(--color-accent-primary);
+}
+
+/* 10. 分页
+---------------------------------------------------------------------------------------------------- */
+
+/* 11. 后台管理页面
+---------------------------------------------------------------------------------------------------- */
+
+.menu-toggle {
+    display: none;
+}
+/* 12. 响应式设计
+---------------------------------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .main-wrapper {
+        padding: 1.5rem 1rem;
+    }
+    header.main-header {
+        align-items: center;
+    }
+    .site-title {
+        display: none;
+    }
+    header .menu-toggle {
+        display: block;
+        z-index: 1100;
+    }
+    nav.main-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: var(--color-background-transparent);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        border-radius: 10px;
+        margin-top: 10px;
+    }
+    .nav-toggle-checkbox:checked ~ .site-info > nav.main-nav {
+        display: block;
+    }
+    nav.main-nav ul {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    nav.main-nav li:not(:last-child)::after {
+        content: "";
+    }
+    .search-input {
+        width: 150px;
+    }
+    .header-right {
+        padding-top: 0;
+    }
+    /* 后台列表响应式 */
+}
+
+/* 13. 汉堡菜单动画
+---------------------------------------------------------------------------------------------------- */
+.nav-toggle-checkbox {
+    display: none;
+}
+.menu-toggle {
+    cursor: pointer;
+    padding: 0;
+    color: var(--color-text-primary);
+    width: 24px;
+    height: 24px;
+    position: relative;
+}
+.hamburger-box {
+    position: relative;
+    width: 24px;
+    height: 24px;
+}
+.hamburger-inner, .hamburger-inner::before, .hamburger-inner::after {
+    width: 24px;
+    height: 2px;
+    background-color: var(--color-text-primary);
+    border-radius: 4px;
+    position: absolute;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+.hamburger-inner {
+    display: block;
+    top: 50%;
+    margin-top: -1px;
+}
+.hamburger-inner::before, .hamburger-inner::after {
+    content: "";
+    display: block;
+}
+.hamburger-inner::before {
+    top: -8px;
+}
+.hamburger-inner::after {
+    bottom: -8px;
+}
+.nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner {
+    transform: rotate(45deg);
+    background-color: var(--color-accent-primary);
+}
+.nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner::before {
+    transform: translate3d(0, 8px, 0) rotate(-90deg);
+    background-color: var(--color-accent-primary);
+}
+.nav-toggle-checkbox:checked ~ .menu-toggle .hamburger-inner::after {
+    transform: translate3d(0, -8px, 0) rotate(-90deg);
+    background-color: var(--color-accent-primary);
+}
+
+/* 14. 表单与组件
+---------------------------------------------------------------------------------------------------- */
+
+/* 15. 文章内容样式
+---------------------------------------------------------------------------------------------------- */
+
+/* 表格样式 (最终修订版) */
+
+/* 为暗色模式定制更深的阴影 */
+
+/* 移除表格主体最右侧多余的边框 */
+
+/* 移除最后一行多余的边框 */
+
+/* 16. 特殊组件
+---------------------------------------------------------------------------------------------------- */
+/* 私密文章图标 */
+.private-icon {
+    display: inline-block;
+    width: 0.8em;
+    height: 0.8em;
+    vertical-align: -0.05em;
+    margin-left: 5px;
+}
+html.light .private-icon {
+    content: url(/static/pic/lock.svg);
+}
+html.dark .private-icon {
+    content: url(/static/pic/lock-w.svg);
+}
+
+/* 两步删除确认 */
+
+/* 返回顶部按钮 */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 45px;
+    height: 45px;
+    background-color: var(--color-accent-primary);
+    color: var(--color-background);
+    text-align: center;
+    line-height: 45px;
+    font-size: 20px;
+    text-decoration: none;
+    border-radius: 50%;
+    z-index: 1000;
+    transition: opacity 0.3s, visibility 0.3s, background-color 0.3s;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+.back-to-top.show {
+    opacity: 0.7;
+    visibility: visible;
+    pointer-events: auto;
+}
+.back-to-top:hover {
+    background-color: var(--color-text-primary);
+    color: var(--color-background);
+    border: none;
+    opacity: 1;
+}
+
+/* 17. 通知系统
+---------------------------------------------------------------------------------------------------- */
+
+/* 18. 模态框 (Modal)
+---------------------------------------------------------------------------------------------------- */
+
+
+
+/* --- 表格对齐最终解决方案 --- */
+
+/* 1. 为所有单元格设置默认居中对齐 */
+
+/* 2. 使用属性选择器覆盖 Markdown 生成的特定对齐方式 */
+/* 使用 !important 确保这些规则的优先级最高，覆盖所有默认设置 */
+
+/* --- 响应式表格包裹容器 --- */
+
+/* 为暗色模式定制更深的阴影 */
+
+/* --- 自定义滚动条样式 (表格和代码块) --- */
+/* 适用于 Webkit 内核浏览器，如 Chrome, Safari, Edge */
+
+
+/* General button disabled state */
+
+/* Login Page Styles */
+
+/* Editor Page Styles */
+
+/* Settings Page Styles */

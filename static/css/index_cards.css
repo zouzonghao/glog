@@ -102,13 +102,11 @@ main {
 
 /* 4. 排版
 ---------------------------------------------------------------------------------------------------- */
-h1, h2, h3, h4 {
+ h2, h3 {
     color: var(--color-accent-primary);
 }
-h1 { font-size: 1.5rem; font-weight: 500; margin-top: 0; margin-bottom: 0.25em; }
 h2 { font-size: 1.4rem; font-weight: 380; margin-top: 1.5em; margin-bottom: 1em; }
 h3 { font-size: 1.2rem; font-weight: 350; margin-top: 1.25em; margin-bottom: 0.5em; }
-h4 { font-size: 1.1rem; font-weight: 300; margin-top: 0.5em; margin-bottom: 0.5em; }
 
 .group-title {
     font-size: 1.2rem;
@@ -133,9 +131,6 @@ a:hover {
     color: var(--color-accent-primary);
     border-bottom-color: var(--color-accent-primary);
 }
-strong {
-    font-weight: 600;
-}
 
 /* 5. 头部与导航
 ---------------------------------------------------------------------------------------------------- */
@@ -159,11 +154,6 @@ header.main-header::after {
     display: flex;
     align-items: center;
     gap: 1rem;
-}
-.site-logo {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
 }
 .site-info {
     display: flex;
@@ -221,85 +211,8 @@ footer.main-footer {
 /* 7. 文章列表
 ---------------------------------------------------------------------------------------------------- */
 /* 首页简约列表 */
-.post-list-minimal {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.post-list-minimal li {
-    display: flex;
-    align-items: baseline;
-    margin-bottom: 1rem;
-    gap: 1rem;
-}
-.post-list-minimal .date {
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    width: 120px;
-    flex-shrink: 0;
-}
-.post-list-minimal .title {
-    font-weight: normal;
-}
 
 /* 后台管理列表 */
-.post-list-container {
-    border: none;
-}
-.post-list-header, .post-list-item {
-    display: flex;
-    align-items: center;
-    padding: 0.3rem 0rem;
-}
-.post-list-header {
-    font-weight: 600;
-    font-size: 0.9rem;
-    border-bottom: 1px solid var(--color-border-primary);
-    background-color: #d4d6d848;
-}
-html.dark .post-list-header {
-    background-color: #374151;
-}
-.post-list-item {
-    border-bottom: 1px solid var(--color-border-primary);
-    font-size: 0.9rem;
-}
-.post-list-body .post-list-item:last-child {
-    border-bottom: none;
-}
-.post-list-item:hover {
-    background-color: #d4d6d848;
-}
-html.dark .post-list-item:hover {
-    background-color: #374151;
-}
-.col-checkbox { display: flex; justify-content: center; width: 40px; flex-shrink: 0; text-align: center; }
-.col-title { width: 400px; flex-shrink: 0; padding-right: 0rem; }
-.col-private { width: 80px; flex-shrink: 0; text-align: center; }
-.col-date { width: 130px; flex-shrink: 0; text-align: center; }
-.col-actions { width: 110px; flex-shrink: 0; text-align: center; }
-.col-actions a {
-    border-bottom: none;
-}
-.col-title span, .col-title a {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.col-title a {
-    font-weight: normal;
-    border-bottom: none;
-}
-.col-title a:hover {
-    border-bottom: none;
-}
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--color-text-secondary);
-    border-top: 1px solid var(--color-border-primary);
-}
 
 /* 8. 主题切换
 ---------------------------------------------------------------------------------------------------- */
@@ -388,88 +301,9 @@ html.dark .post-list-item:hover {
 
 /* 10. 分页
 ---------------------------------------------------------------------------------------------------- */
-.pagination-new {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 4rem;
-    font-size: 0.9rem;
-}
-.pagination-center {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    flex-grow: 1;
-}
-.pagination-new .page-numbers {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-grow: 0; /* 不拉伸 */
-}
-.pagination-new .page-number,
-.pagination-new .ellipsis {
-    padding: 0;
-    border-radius: 0;
-}
-.pagination-new a.page-number {
-    padding-bottom: 0;
-}
-.pagination-new .current {
-    background-color: transparent;
-    color: var(--color-text-secondary);
-    border: none;
-    font-weight: normal;
-    padding-bottom: 1px;
-}
-.pagination-new .prev-next {
-    font-size: 0.9rem;
-}
-.pagination-new .prev-next.disabled {
-    color: var(--color-text-secondary);
-    opacity: 0.6;
-    pointer-events: none;
-}
-.pagination-new .ellipsis {
-    color: var(--color-text-secondary);
-}
-.page-size-selector select {
-    padding: 0.2rem 0.4rem;
-    border: 1px solid var(--color-border-primary);
-    border-radius: 4px;
-    background-color: var(--color-background-input);
-    color: var(--color-text-primary);
-    font-size: 0.8rem;
-    height: auto;
-}
 
 /* 11. 后台管理页面
 ---------------------------------------------------------------------------------------------------- */
-.admin-header, .setting-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 0;
-}
-.admin-header {
-    margin-bottom: 2rem;
-}
-.setting-header {
-    margin-bottom: 0rem;
-}
-.admin-header h2, .setting-header h2 {
-    font-size: 1.2rem;
-    margin: 0;
-}
-.setting-header h2 {
-    margin-bottom: 0.2rem;
-}
-.batch-actions-container {
-    margin-top: 1rem;
-    display: flex;
-    gap: 0.5rem;
-}
 
 .menu-toggle {
     display: none;
@@ -523,20 +357,6 @@ html.dark .post-list-item:hover {
         padding-top: 0;
     }
     /* 后台列表响应式 */
-    .post-list-header .col-private,
-    .post-list-header .col-date {
-        display: none;
-    }
-    .post-list-header .col-title {
-        width: calc(100% - 150px); /* Checkbox + Actions */
-    }
-    .post-list-item .col-private,
-    .post-list-item .col-date {
-        display: none;
-    }
-    .post-list-item .col-title {
-        width: calc(100% - 150px);
-    }
 }
 
 /* 13. 汉堡菜单动画
@@ -595,203 +415,17 @@ html.dark .post-list-item:hover {
 
 /* 14. 表单与组件
 ---------------------------------------------------------------------------------------------------- */
-.app-form label {
-    display: block;
-    font-weight: 450;
-}
-.settings-form .app-form label{
-    margin-bottom: 0.25rem;
-}
-.app-form input[type="text"],
-.app-form input[type="password"],
-.app-form input[type="number"],
-.app-form textarea,
-.app-form select {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--color-border-primary);
-    border-radius: 4px;
-    background-color: var(--color-background-input);
-    color: var(--color-text-primary);
-    font-size: 0.8rem;
-    transition: border-color 0.2s;
-}
-.editor-container .app-form input[type="text"],
-.editor-container .app-form textarea {
-    font-size: 0.9rem;
-}
-.app-form input[type="text"]:focus,
-.app-form input[type="password"]:focus,
-.app-form input[type="number"]:focus,
-.app-form textarea:focus,
-.app-form select:focus {
-    outline: none;
-    border-color: var(--color-accent-primary);
-}
-.settings-form-group,
-.editor-form-group {
-    margin-top: 0.5rem;
-}
-.editor-title-group {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-.editor-title-group #title {
-    flex-grow: 1;
-}
-.editor-title-group #published_at {
-    width: 150px;
-
-}
-.editor-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    margin-top: 0.2rem;
-}
-.editor-options .form-group-inline {
-    display: flex;
-    align-items: center;
-    gap: 0.2rem;
-}
-.editor-options input[type="checkbox"] {
-    width: 1.2em;
-    height: 1.2em;
-}
-.editor-actions {
-    display: flex;
-    align-items: flex-end; /* 保持子元素垂直底部对齐 */
-    gap: 0.5rem;
-    justify-content: flex-end; /* 靠右对齐的关键 */
-}
-.btn {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--color-border-primary);
-    background-color: var(--color-background);
-    color: var(--color-text-primary);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
-    font-size: 0.9rem; /* 统一字体大小 */
-    line-height: 1.4; /* 统一高度 */
-}
-.btn:hover:not(:disabled) {
-    color: var(--color-accent-primary);
-    border: 1px solid var(--color-accent-primary);
-}
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
 
 /* 15. 文章内容样式
 ---------------------------------------------------------------------------------------------------- */
-.post-header {
-    margin-bottom: 2rem;
-}
-.post-content {
-    line-height: 1.35;
-}
-.post-content img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 1.5rem auto;
-    border-radius: 8px;
-}
-.post-content pre {
-    background-color: #2d2d2d;
-    color: #cccccc;
-    padding: 0.75em;
-    margin: .5em 0;
-    overflow-x: auto;
-    border-radius: 0.3em;
-    font-size: 0.85em;
-}
-.post-content code {
-    word-break: break-all;
-}
-.post-content blockquote {
-    border-left: 3px solid var(--color-text-secondary);
-    padding-left: 1.5rem;
-    margin-left: 0;
-    font-style: italic;
-    color: var(--color-text-secondary);
-}
-.post-summary {
-    border-left: 3px solid var(--color-text-secondary);
-    padding-left: 1.5rem;
-    margin-left: 0;
-    margin-bottom: 2rem;
-    font-style: italic;
-    color: var(--color-text-secondary);
-}
-:not(pre) > code {
-    color: #28a0c1;
-    background-color: #edf8facf;
-    padding: 2px 4px;
-    border-radius: 4px;
-    font-size: 90%;
-    font-family: var(--font-mono);
-}
-html.dark :not(pre) > code {
-    color: #ff7597;
-    background-color: #38232a;
-}
 
 /* 表格样式 (最终修订版) */
-.post-content table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.9rem;
-    border: 1px solid var(--color-border-primary);
-    border-radius: 8px;
-    overflow: hidden;
-    /* 阴影效果已移至 .table-wrapper */
-}
 
 /* 为暗色模式定制更深的阴影 */
-html.dark .post-content table {
-    border-color: #333; /* 暗模式下边框颜色稍作调整 */
-}
-
-.post-content th,
-.post-content td {
-    padding: 0.75em 1em;
-    border-bottom: 1px solid var(--color-border-primary);
-    border-right: 1px solid var(--color-border-primary);
-}
-
-html.dark .post-content th,
-html.dark .post-content td {
-    border-color: #333; /* 统一暗模式下的单元格边框颜色 */
-}
 
 /* 移除表格主体最右侧多余的边框 */
-.post-content td:last-child,
-.post-content th:last-child {
-    border-right: none;
-}
 
 /* 移除最后一行多余的边框 */
-.post-content tr:last-child td {
-    border-bottom: none;
-}
-
-.post-content th {
-    font-weight: 600;
-    background-color: rgba(128, 128, 128, 0.08);
-    border-bottom-width: 2px;
-}
-
-html.dark .post-content th {
-    background-color: rgba(255, 255, 255, 0.05); /* 暗模式下表头背景色 */
-}
 
 /* 16. 特殊组件
 ---------------------------------------------------------------------------------------------------- */
@@ -811,38 +445,6 @@ html.dark .private-icon {
 }
 
 /* 两步删除确认 */
-.delete-wrapper {
-    position: relative;
-    display: inline-block;
-    outline: none;
-}
-.delete-init:hover {
-    color: var(--color-accent-primary);
-    border-bottom-color: var(--color-accent-primary);
-}
-.delete-init,
-.delete-confirm {
-    cursor: pointer;
-    transition: opacity 0.2s ease-in-out;
-}
-.delete-confirm {
-    display: none;
-}
-.delete-wrapper:focus-within .delete-init {
-    display: none;
-}
-.delete-wrapper:focus-within .delete-confirm {
-    display: inline-block;
-}
-.delete-confirm {
-    color: var(--color-accent-primary);
-    transition: opacity 0.3s ease;
-}
-.delete-confirm.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-}
 
 /* 返回顶部按钮 */
 .back-to-top {
@@ -919,11 +521,6 @@ html.dark .notification {
     opacity: 1;
     transform: translateY(0);
 }
-.notification.success,
-html.dark .notification.success {
-    background-color: rgba(40, 167, 70, 0.458);
-    border: none;
-}
 .notification.error,
 html.dark .notification.error {
     background-color: rgba(220, 53, 70, 0.475);
@@ -937,95 +534,6 @@ html.dark .notification.info {
 
 /* 18. 模态框 (Modal)
 ---------------------------------------------------------------------------------------------------- */
-.modal-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-}
-.modal-container {
-    display: none; /* Default hidden */
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.modal-container.show {
-    display: flex;
-    opacity: 1;
-}
-.modal-content {
-    background-color: var(--color-background);
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-}
-.modal-content p {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    font-size: 1.1rem;
-}
-.modal-actions {
-    margin-top: 1.5rem;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-}
-.modal-btn {
-    padding: 0.4rem 1.2rem;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: background-color 0.2s, color 0.2s;
-}
-.modal-btn.confirm {
-    background-color: var(--color-accent-primary);
-    color: #fff;
-}
-.modal-btn.confirm:hover {
-    opacity: 0.8;
-}
-.modal-btn.cancel {
-    background-color: var(--color-border-primary);
-    color: var(--color-text-primary);
-}
-.modal-btn.cancel:hover {
-    opacity: 0.8;
-}
-
-
-.settings-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-}
-
-
-.admin-search-form {
-    padding: 0rem;
-}
-
-.modal-content h3 {
-    margin-top: 0;
-    color: var(--color-accent-primary);
-}
-
-.modal-content .app-form {
-    text-align: left;
-}
 
 .modal-close-btn {
     position: absolute;
@@ -1042,145 +550,151 @@ html.dark .notification.info {
     color: var(--color-text-primary);
 }
 
-.modal-content {
-    position: relative;
-}
-
 
 
 /* --- 表格对齐最终解决方案 --- */
 
 /* 1. 为所有单元格设置默认居中对齐 */
-.post-content td,
-.post-content th {
-    text-align: center;
-}
 
 /* 2. 使用属性选择器覆盖 Markdown 生成的特定对齐方式 */
 /* 使用 !important 确保这些规则的优先级最高，覆盖所有默认设置 */
-.post-content [align="left"] {
-    text-align: left !important;
-}
-
-.post-content [align="center"] {
-    text-align: center !important;
-}
-
-.post-content [align="right"] {
-    text-align: right !important;
-}
 
 /* --- 响应式表格包裹容器 --- */
-.table-wrapper {
-    overflow-x: auto; /* 核心：在容器上启用水平滚动 */
-    width: max-content; /* 关键：让容器宽度适应表格内容 */
-    max-width: 100%; /* 确保容器不会超过页面宽度 */
-    -webkit-overflow-scrolling: touch; /* 在 iOS 上启用平滑滚动 */
-    margin: 1.8em auto; /* 修改外边距，实现水平居中 */
-    border-radius: 8px; /* 匹配表格的圆角 */
-    /* 为亮色模式添加柔和的阴影 */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.3s ease-in-out; /* 添加过渡效果 */
-}
 
 /* 为暗色模式定制更深的阴影 */
-html.dark .table-wrapper {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-}
-
-.table-wrapper table {
-    margin: 0; /* 移除 table 自身的外边距 */
-}
 
 /* --- 自定义滚动条样式 (表格和代码块) --- */
 /* 适用于 Webkit 内核浏览器，如 Chrome, Safari, Edge */
-.table-wrapper::-webkit-scrollbar,
-.post-content pre::-webkit-scrollbar {
-    height: 8px; /* 水平滚动条高度 */
-    width: 8px;  /* 垂直滚动条宽度 */
-}
-
-.table-wrapper::-webkit-scrollbar-track,
-.post-content pre::-webkit-scrollbar-track {
-    background: transparent; /* 轨道背景透明 */
-}
-
-.table-wrapper::-webkit-scrollbar-thumb,
-.post-content pre::-webkit-scrollbar-thumb {
-    background-color: var(--color-border-primary); /* 滑块颜色使用次要强调色 */
-    border-radius: 4px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb:hover,
-.post-content pre::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-accent-primary); /* 鼠标悬浮时使用主要强调色 */
-}
-
-.backup-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: center;
-}
 
 
 /* General button disabled state */
-.btn.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-}
 
 /* Login Page Styles */
-.login-container {
-    margin-top: 4rem;
+
+/* Editor Page Styles */
+
+/* Settings Page Styles */
+/* Card view specific styles */
+
+.post-cards-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px; /* Space between columns */
+    padding: 0;
+    margin: 20px 0;
 }
 
-.login-form-group {
+.card-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Space between items in a column */
+    min-width: 0; /* Prevent flexbox overflow */
+}
+
+.post-card {
+    width: 100%;
+    text-decoration: none;
+    color: inherit;
+    /* Remove all card-like styles */
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+}
+
+.post-card:hover .card-title {
+    color: var(--accent-color); /* Add hover effect to title */
+}
+
+.card-cover {
+    width: 100%;
+    min-height: 200px; /* Set a minimum height */
+    height: auto; /* Allow height to grow with content */
+    position: relative;
+    background-color: #f0f0f0; /* Fallback color */
+    border-radius: 12px; /* Add rounded corners to the image */
+    overflow: hidden;
+    outline: 1px solid var(--color-border-primary);
+}
+
+.card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensure image covers the container */
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.pseudo-cover {
+    width: 100%;
+    height: 100%;
+    min-height: inherit; /* Inherit min-height from parent */
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+    color: rgba(0, 0, 0, 0.7); /* Darker text for the cover */
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 20px; /* More padding for text */
+    box-sizing: border-box;
 }
 
-.login-password-input {
-    flex-grow: 1;
-    max-width: 200px;
+.card-info {
+    padding: 8px 4px; /* Add some space below the image */
 }
 
-.login-submit-btn {
-    font-size: 1.2em;
-    flex-shrink: 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: var(--textColor);
-    border-bottom: 1px solid var(--textColor);
-    padding: 0;
+.card-title {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.4;
+    color: var(--text-color); /* Use the main text color */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
 }
 
-/* Editor Page Styles */
-.btn-editor-action {
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .post-cards-container {
+        gap: 10px;
+    }
+    .card-column {
+        gap: 15px;
+    }
+}
+
+/* Infinite Scroll Styles */
+#infinite-scroll-trigger {
+    height: 50px;
+    width: 100%;
+}
+
+#loading-indicator {
+    width: 100%;
+    text-align: center;
+    padding: 20px 0;
+    color: var(--text-color-secondary);
     font-size: 0.9rem;
 }
 
-/* Settings Page Styles */
-.settings-form-group-spaced {
-    margin-top: 1.5rem;
+#loading-indicator .spinner {
+    display: inline-block;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border-left-color: var(--accent-color);
+    animation: spin 1s ease infinite;
+    margin-bottom: 10px;
 }
 
-.setting-header-separated {
-    margin-top: 3rem;
-    border-top: 1px solid #eee;
-    padding-top: 1.5rem;
-}
-
-.upload-form-wrapper {
-    display: contents;
-}
-
-.hidden-file-input {
-    display: none;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

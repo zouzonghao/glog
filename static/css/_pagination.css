@@ -1,0 +1,211 @@
+/*
+ * Glog 的主题 (修订版 3)
+ * ----------------------------------------------------------------------------------------------------
+ * 目录：
+ * 1.  设计变量 (Design Variables)
+ * 2.  基础与全局样式 (Base & Global Styles)
+ * 3.  布局 (Layout)
+ * 4.  排版 (Typography)
+ * 5.  头部与导航 (Header & Navigation)
+ * 6.  页脚 (Footer)
+ * 7.  文章列表 (Post Lists)
+ * 8.  主题切换 (Theme Toggle)
+ * 9.  搜索表单 (Search Form)
+ * 10. 分页 (Pagination)
+ * 11. 后台管理页面 (Admin & Settings Pages)
+ * 12. 响应式设计 (Responsive Design)
+ * 13. 汉堡菜单动画 (Hamburger Menu Animation)
+ * 14. 表单与组件 (Forms & Components)
+ * 15. 文章内容样式 (Post Content Styles)
+ * 16. 特殊组件 (Special Components - Private Icon, Delete Wrapper, etc.)
+ * 17. 通知系统 (Notification System)
+ * 18. 模态框 (Modal)
+ * ----------------------------------------------------------------------------------------------------
+ */
+
+/* 1. 设计变量 (Design Variables)
+---------------------------------------------------------------------------------------------------- */
+:root {
+    /* --- 亮色主题 --- */
+    /* 背景色 */
+    --color-background: #fafafa; /* 主背景色 */
+    --color-background-transparent: rgba(250, 250, 250, 0.8); /* 带透明度的背景色，用于导航栏等 */
+    --color-background-input: #ffffff; /* 输入框背景色 */
+
+    /* 文本颜色 */
+    --color-text-primary: #22272a; /* 主要文本颜色 */
+    --color-text-secondary: #848a8f; /* 次要文本，用于元信息、引用等 */
+    --color-text-link: #7a8288; /* 链接文本颜色 */
+
+    /* 强调色 */
+    --color-accent-primary: #cb2a42; /* 主要强调色，用于标题、关键链接等 */
+    --color-border-primary: #bfc1c2bb; /* 主要边框颜色 */
+
+    /* --- 字体 --- */
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
+    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* --- 暗色主题 --- */
+
+/* 2. 基础与全局样式
+---------------------------------------------------------------------------------------------------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+}
+
+/* 3. 布局
+---------------------------------------------------------------------------------------------------- */
+
+/* 4. 排版
+---------------------------------------------------------------------------------------------------- */
+a {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-text-primary);
+    padding-bottom: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+a:hover {
+    color: var(--color-accent-primary);
+    border-bottom-color: var(--color-accent-primary);
+}
+
+/* 5. 头部与导航
+---------------------------------------------------------------------------------------------------- */
+
+/* 6. 页脚
+---------------------------------------------------------------------------------------------------- */
+
+/* 7. 文章列表
+---------------------------------------------------------------------------------------------------- */
+/* 首页简约列表 */
+
+/* 后台管理列表 */
+
+/* 8. 主题切换
+---------------------------------------------------------------------------------------------------- */
+
+/* 9. 搜索表单
+---------------------------------------------------------------------------------------------------- */
+/* 自定义搜索输入框的清除按钮 (x) */
+
+/* 10. 分页
+---------------------------------------------------------------------------------------------------- */
+.pagination-new {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4rem;
+    font-size: 0.9rem;
+}
+.pagination-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    flex-grow: 1;
+}
+.pagination-new .page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 0; /* 不拉伸 */
+}
+.pagination-new .page-number,
+.pagination-new .ellipsis {
+    padding: 0;
+    border-radius: 0;
+}
+.pagination-new a.page-number {
+    padding-bottom: 0;
+}
+.pagination-new .current {
+    background-color: transparent;
+    color: var(--color-text-secondary);
+    border: none;
+    font-weight: normal;
+    padding-bottom: 1px;
+}
+.pagination-new .prev-next {
+    font-size: 0.9rem;
+}
+.pagination-new .ellipsis {
+    color: var(--color-text-secondary);
+}
+.page-size-selector select {
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 4px;
+    background-color: var(--color-background-input);
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
+    height: auto;
+}
+
+/* 11. 后台管理页面
+---------------------------------------------------------------------------------------------------- */
+/* 12. 响应式设计
+---------------------------------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    /* 后台列表响应式 */
+}
+
+/* 13. 汉堡菜单动画
+---------------------------------------------------------------------------------------------------- */
+
+/* 14. 表单与组件
+---------------------------------------------------------------------------------------------------- */
+
+/* 15. 文章内容样式
+---------------------------------------------------------------------------------------------------- */
+
+/* 表格样式 (最终修订版) */
+
+/* 为暗色模式定制更深的阴影 */
+
+/* 移除表格主体最右侧多余的边框 */
+
+/* 移除最后一行多余的边框 */
+
+/* 16. 特殊组件
+---------------------------------------------------------------------------------------------------- */
+/* 私密文章图标 */
+
+/* 两步删除确认 */
+
+/* 返回顶部按钮 */
+
+/* 17. 通知系统
+---------------------------------------------------------------------------------------------------- */
+
+/* 18. 模态框 (Modal)
+---------------------------------------------------------------------------------------------------- */
+
+
+
+/* --- 表格对齐最终解决方案 --- */
+
+/* 1. 为所有单元格设置默认居中对齐 */
+
+/* 2. 使用属性选择器覆盖 Markdown 生成的特定对齐方式 */
+/* 使用 !important 确保这些规则的优先级最高，覆盖所有默认设置 */
+
+/* --- 响应式表格包裹容器 --- */
+
+/* 为暗色模式定制更深的阴影 */
+
+/* --- 自定义滚动条样式 (表格和代码块) --- */
+/* 适用于 Webkit 内核浏览器，如 Chrome, Safari, Edge */
+
+
+/* General button disabled state */
+
+/* Login Page Styles */
+
+/* Editor Page Styles */
+
+/* Settings Page Styles */
