@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"glog/internal/constants"
 	"glog/internal/services"
 	"glog/internal/utils"
@@ -53,17 +52,6 @@ func (h *BlogHandler) Index(c *gin.Context) {
 	// 设置 cookie，以便记住用户的选择
 	// 域名设置为根路径，有效期设置为一年
 	c.SetCookie("view", view, 3600*24*365, "/", "", false, true)
-
-	// 使用 Link 响应头预加载关键资源
-	// 这是一个比 HTTP/2 Server Push 更现代、更受浏览器支持的方案
-	header := c.Writer.Header()
-	header.Add("Link", fmt.Sprintf(`<%s>; rel=preload; as=style`, "/static/css/style.css"))
-	header.Add("Link", fmt.Sprintf(`<%s>; rel=preload; as=script`, "/static/js/main.js"))
-	// 如果是卡片视图，额外预加载其专属资源
-	if view == "cards" {
-		header.Add("Link", fmt.Sprintf(`<%s>; rel=preload; as=style`, "/static/css/cards.css"))
-		header.Add("Link", fmt.Sprintf(`<%s>; rel=preload; as=script`, "/static/js/cards.js"))
-	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize := 10 // 每页显示10篇文章

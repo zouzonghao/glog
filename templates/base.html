@@ -27,6 +27,12 @@
             document.documentElement.classList.add(theme);
         })();
     </script>
+    <link rel="preload" href="/static/css/style.css" as="style">
+    <link rel="preload" href="/static/js/main.js" as="script">
+    {{ if eq .View "cards" }}
+    <link rel="preload" href="/static/css/cards.css" as="style">
+    <link rel="preload" href="/static/js/cards.js" as="script">
+    {{ end }}
     <link rel="stylesheet" href="/static/css/style.css">
     
     {{ if .favicon }}
