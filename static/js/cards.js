@@ -1,3 +1,29 @@
+const macaronColors = [
+    '#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff',
+    '#fec8d8', '#f2d2a9', '#f9eac3', '#c3e6cb', '#b5d8f2',
+    '#f6a6b2', '#e9c39b', '#f4e0a3', '#a9d9c3', '#9cc2e5'
+];
+
+function generatePseudoCover(card) {
+    const cover = card.querySelector('.pseudo-cover');
+    if (cover) {
+        const randomColor = macaronColors[Math.floor(Math.random() * macaronColors.length)];
+        cover.style.backgroundColor = randomColor;
+        const title = card.dataset.title || '';
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = title;
+        cover.innerHTML = '';
+        cover.appendChild(titleSpan);
+    }
+    
+    function handleCoverError(img) {
+        const cardCover = img.parentElement;
+        const card = cardCover.closest('.post-card');
+        cardCover.innerHTML = '<div class="pseudo-cover"></div>';
+        generatePseudoCover(card);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.querySelector('.post-cards-container');
     if (!container) return;
@@ -24,30 +50,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Logic for generating pseudo-covers ---
-    const macaronColors = [
-        '#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff',
-        '#fec8d8', '#f2d2a9', '#f9eac3', '#c3e6cb', '#b5d8f2',
-        '#f6a6b2', '#e9c39b', '#f4e0a3', '#a9d9c3', '#9cc2e5'
-    ];
-
-    function generatePseudoCover(card) {
-        const cover = card.querySelector('.pseudo-cover');
-        if (cover) {
-            const randomColor = macaronColors[Math.floor(Math.random() * macaronColors.length)];
-            cover.style.backgroundColor = randomColor;
-            const title = card.dataset.title || '';
-            const titleSpan = document.createElement('span');
-            titleSpan.textContent = title;
-            cover.innerHTML = '';
-            cover.appendChild(titleSpan);
-        }
-    }
-
     // Generate covers for initial cards before distributing them
     initialCards.forEach(generatePseudoCover);
     // Distribute initial cards
     distributeCards(initialCards);
+
+    // --- Logic for handling cover image errors using event delegation ---
+    container.addEventListener('error', (event) => {
+        if (event.target.tagName === 'IMG') {
+            const cardCover = event.target.parentElement;
+            const card = cardCover.closest('.post-card');
+            cardCover.innerHTML = '<div class="pseudo-cover"></div>';
+            generatePseudoCover(card);
+        }
+    }, true); // Use capture phase to catch the event early
 
     // --- Logic for infinite scroll ---
     const trigger = document.getElementById('infinite-scroll-trigger');

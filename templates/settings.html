@@ -25,6 +25,11 @@
         <label for="site_description">站点描述</label>
         <input type="text" id="site_description" name="site_description" value="{{ .site_description }}" autocomplete="no">
     </div>
+
+    <div class="settings-form-group">
+        <label for="cover_prefix">封面前缀</label>
+        <input type="text" id="cover_prefix" name="cover_prefix" value="{{ .cover_prefix }}" autocomplete="no">
+    </div>
  
     <div class="settings-actions settings-form-group-spaced">
         <button type="button" id="save-settings-btn" class="btn">💾 保存站点信息</button>
