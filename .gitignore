@@ -15,5 +15,6 @@ static/pagefind
 *.test
 cpu.prof*
 mem.prof*
+*.log
 
 node_modules

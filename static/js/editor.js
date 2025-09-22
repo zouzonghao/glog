@@ -3,7 +3,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const contentArea = document.getElementById('content');
     const postIdInput = document.getElementById('post-id');
     const openLink = document.querySelector('.editor-actions a.open-post-link');
-
+    const aiCoverCheckbox = document.getElementById('ai_cover');
+    const aiCoverPromptContainer = document.getElementById('ai-cover-prompt-container');
+   
+    // Toggle AI cover prompt visibility based on checkbox
+    const toggleAiCoverPrompt = () => {
+    	if (aiCoverCheckbox.checked) {
+    		aiCoverPromptContainer.style.display = 'block';
+    	} else {
+    		aiCoverPromptContainer.style.display = 'none';
+    	}
+    };
+   
+    aiCoverCheckbox.addEventListener('change', toggleAiCoverPrompt);
+    // Initial check on page load
+    toggleAiCoverPrompt();
+   
     // Function to update the state of all action buttons
     const updateButtonStates = () => {
         const isNewPost = postIdInput.value === '0';

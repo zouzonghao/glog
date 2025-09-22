@@ -440,7 +440,9 @@ footer.main-footer {
 }
 .app-form input[type="text"],
 .app-form input[type="password"],
-.app-form input[type="number"] {
+.app-form input[type="number"],
+.app-form textarea,
+.app-form select {
     width: 100%;
     padding: 0.5rem;
     border: 1px solid var(--color-border-primary);
@@ -450,9 +452,15 @@ footer.main-footer {
     font-size: 0.8rem;
     transition: border-color 0.2s;
 }
+.editor-container .app-form input[type="text"],
+.editor-container .app-form textarea {
+    font-size: 0.9rem;
+}
 .app-form input[type="text"]:focus,
 .app-form input[type="password"]:focus,
-.app-form input[type="number"]:focus {
+.app-form input[type="number"]:focus,
+.app-form textarea:focus,
+.app-form select:focus {
     outline: none;
     border-color: var(--color-accent-primary);
 }
@@ -644,6 +652,11 @@ footer.main-footer {
 
 
 /* General button disabled state */
+.btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
 
 /* Login Page Styles */
 
@@ -666,4 +679,25 @@ footer.main-footer {
 
 .hidden-file-input {
     display: none;
+}
+
+/* AI Logs Modal Styles */
+.logs-container {
+    margin-top: 1rem;
+    background-color: #1a1a1a; /* Dark background for the console look */
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 1rem;
+    height: 300px; /* Fixed height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    text-align: left;
+}
+
+#ai-logs-content {
+    font-family: var(--font-mono); /* Use monospaced font */
+    font-size: 0.85rem;
+    color: #e0e0e0; /* Light grey text */
+    white-space: pre-wrap; /* Ensure long lines wrap */
+    word-wrap: break-word;
+    margin: 0;
 }
