@@ -363,6 +363,8 @@ func (s *AIService) generateImageFromPollinations(encodedPrompt, token, coverPre
 			return nil, "", "", fmt.Errorf("创建 Pollinations 请求失败: %w", err)
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
+		// 模拟浏览器行为，明确表示接受 webp  格式
+		req.Header.Set("Accept", "image/webp,image/apng,image/*,*/*;q=0.8")
 
 		resp, err := s.Client.Do(req)
 		if err != nil {

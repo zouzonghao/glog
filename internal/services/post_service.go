@@ -490,6 +490,7 @@ func (s *PostService) GetAllPostsForBackup() ([]models.PostBackup, error) {
 	for i, p := range posts {
 		backupPosts[i] = models.PostBackup{
 			Title:       p.Title,
+			Cover:       p.Cover,
 			Content:     p.Content,
 			IsPrivate:   p.IsPrivate,
 			PublishedAt: p.PublishedAt,
@@ -509,6 +510,10 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 		if err != nil {
 			return fmt.Errorf("为导入的文章 '%s' 渲染 HTML 失败: %w", p.Title, err)
 		}
+		cover := p.Cover
+		if cover == "" {
+			cover = utils.ExtractFirstImageURL(p.Content)
+		}
 		newPosts = append(newPosts, models.Post{
 			Title:       p.Title,
 			Slug:        slugStr,
@@ -517,7 +522,7 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 			IsPrivate:   p.IsPrivate,
 			PublishedAt: p.PublishedAt,
 			Excerpt:     utils.GenerateExcerpt(p.Content, 150),
-			Cover:       utils.ExtractFirstImageURL(p.Content), // 导入时也提取封面
+			Cover:       cover,
 		})
 	}
 
