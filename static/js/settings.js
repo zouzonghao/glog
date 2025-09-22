@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupGlobalModal('ai-modal', 'ai-settings-btn');
     setupGlobalModal('github-modal', 'github-backup-btn');
     setupGlobalModal('webdav-modal', 'webdav-backup-btn');
-    setupGlobalModal('pollinations-modal', 'pollinations-settings-btn');
+    setupGlobalModal('imageapi-modal', 'imageapi-settings-btn');
     setupGlobalModal('ai-logs-modal', 'ai-logs-btn');
     // Note: password-prompt-modal is now opened programmatically when needed.
 
@@ -30,13 +30,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Form-specific Logic inside Modals ---
     attachModalFormLogic('save-ai-btn', 'ai-settings-form', 'ai-modal');
-    attachModalFormLogic('save-pollinations-btn', 'pollinations-settings-form', 'pollinations-modal');
+    attachModalFormLogic('save-imageapi-btn', 'imageapi-settings-form', 'imageapi-modal');
     attachModalFormLogic('save-github-btn', 'github-settings-form', 'github-modal');
     attachModalFormLogic('save-webdav-btn', 'webdav-settings-form', 'webdav-modal');
 
     attachTestConnectionLogic('test-ai-btn', 'ai-settings-form', '/admin/setting/test-ai');
     attachTestConnectionLogic('test-github-btn', 'github-settings-form', '/admin/setting/test-github');
     attachTestConnectionLogic('test-webdav-btn', 'webdav-settings-form', '/admin/setting/test-webdav');
+    // Special logic for ImageAPI test button
+    const testImageApiBtn = document.getElementById('test-imageapi-btn');
+    if (testImageApiBtn) {
+        testImageApiBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const form = document.getElementById('imageapi-settings-form');
+            const testButton = e.target;
+            showNotification('测试中...', 'info');
+            testButton.disabled = true;
+
+            fetch('/admin/setting/test-imageapi', {
+                method: 'POST',
+                body: new URLSearchParams(new FormData(form))
+            })
+            .then(res => res.json())
+            .then(data => {
+                showNotification(data.message, data.status);
+                if (data.status === 'success' && data.models && data.models.length > 0) {
+                    updateImageApiModelSelector(data.models);
+                }
+            })
+            .catch(err => {
+                console.error('测试连接失败:', err);
+                showNotification('测试请求失败，请检查网络或后台日志！', 'error');
+            })
+            .finally(() => testButton.disabled = false);
+        });
+    }
 
     attachBackupNowLogic('backup-github-now-btn', '/admin/setting/backup-github-now');
     attachBackupNowLogic('backup-webdav-now-btn', '/admin/setting/backup-webdav-now');
@@ -258,6 +286,38 @@ function fetchAndDisplayAILogs() {
             console.error('获取AI日志失败:', error);
             logsContent.textContent = '加载日志时发生网络错误。';
         });
+}
+
+function updateImageApiModelSelector(providers) {
+    const container = document.getElementById('imageapi-model-container');
+    if (!container) return;
+
+    const currentModel = container.querySelector('input[name="imageapi_model"]')?.value;
+
+    const select = document.createElement('select');
+    select.id = 'imageapi_model';
+    select.name = 'imageapi_model';
+
+    providers.forEach(provider => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = provider.provider;
+        provider.models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.name;
+            option.textContent = model.name;
+            if (model.name === currentModel) {
+                option.selected = true;
+            }
+            optgroup.appendChild(option);
+        });
+        select.appendChild(optgroup);
+    });
+
+    // Replace the input with the new select element
+    const label = container.querySelector('label');
+    container.innerHTML = ''; // Clear the container
+    container.appendChild(label);
+    container.appendChild(select);
 }
 
 function clearAILogs() {

@@ -136,6 +136,7 @@ func main() {
 		settings.GET("/", adminHandler.ShowSettingsPage)
 		settings.POST("/", adminHandler.UpdateSettings)
 		settings.POST("/test-ai", adminHandler.TestAISettings)
+		settings.POST("/test-imageapi", adminHandler.TestImageAPIHandler)
 		settings.GET("/backup", adminHandler.BackupSite)
 		settings.POST("/upload", adminHandler.UploadBackup)
 		settings.POST("/test-github", adminHandler.TestGithubSettings)

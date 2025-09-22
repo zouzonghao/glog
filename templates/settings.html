@@ -26,11 +26,12 @@
         <input type="text" id="site_description" name="site_description" value="{{ .site_description }}" autocomplete="no">
     </div>
 
+ 
     <div class="settings-form-group">
         <label for="cover_prefix">封面前缀</label>
         <input type="text" id="cover_prefix" name="cover_prefix" value="{{ .cover_prefix }}" autocomplete="no">
     </div>
- 
+
     <div class="settings-actions settings-form-group-spaced">
         <button type="button" id="save-settings-btn" class="btn">💾 保存站点信息</button>
     </div>
@@ -41,7 +42,7 @@
 </div>
 <div class="backup-actions settings-form-group-spaced">
     <button type="button" id="ai-settings-btn" class="btn">🔧 基本模型</button>
-    <button type="button" id="pollinations-settings-btn" class="btn">🎨 AI 封面模型</button>
+    <button type="button" id="imageapi-settings-btn" class="btn">🎨 AI 封面模型</button>
     <button type="button" id="ai-logs-btn" class="btn">📜 AI 日志</button>
 </div>
 
@@ -86,18 +87,27 @@
     </div>
 </div>
 
-<!-- Pollinations Settings Modal -->
-<div id="pollinations-modal" class="modal-container">
+<!-- ImageAPI Settings Modal -->
+<div id="imageapi-modal" class="modal-container">
     <div class="modal-content">
         <span class="modal-close-btn">&times;</span>
-        <h3>AI 封面功能设置</h3>
-        <form id="pollinations-settings-form" class="app-form" autocomplete="off">
+        <h3>AI 封面功能设置 (ImageAPI)</h3>
+        <form id="imageapi-settings-form" class="app-form" autocomplete="off">
             <div class="settings-form-group">
-                <label for="pollinations_token">Pollinations Token</label>
-                <input type="password" id="pollinations_token" name="pollinations_token" placeholder="留空则不修改" autocomplete="new-password">
+                <label for="imageapi_url">ImageAPI URL</label>
+                <input type="text" id="imageapi_url" name="imageapi_url" value="{{ .imageapi_url }}" autocomplete="no">
+            </div>
+            <div class="settings-form-group">
+                <label for="imageapi_token">ImageAPI Token</label>
+                <input type="password" id="imageapi_token" name="imageapi_token" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group" id="imageapi-model-container">
+                <label for="imageapi_model">ImageAPI 模型</label>
+                <input type="text" id="imageapi_model" name="imageapi_model" value="{{ .imageapi_model }}" autocomplete="no">
             </div>
             <div class="modal-actions">
-                <button type="button" id="save-pollinations-btn" class="btn">💾 保存设置</button>
+                <button type="button" id="test-imageapi-btn" class="btn">🚀 测试连接</button>
+                <button type="button" id="save-imageapi-btn" class="btn">💾 保存设置</button>
             </div>
         </form>
     </div>

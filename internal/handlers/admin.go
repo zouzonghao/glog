@@ -52,7 +52,7 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 	for key, values := range c.Request.PostForm {
 		if len(values) > 0 {
 			value := values[0]
-			if (key == constants.SettingPassword || key == constants.SettingOpenAIToken || key == constants.SettingGithubToken || key == constants.SettingWebdavPassword) && value == "" {
+			if (key == constants.SettingPassword || key == constants.SettingOpenAIToken || key == constants.SettingGithubToken || key == constants.SettingWebdavPassword || key == constants.SettingImageAPIToken) && value == "" {
 				continue
 			}
 			settingsToUpdate[key] = value
@@ -240,7 +240,20 @@ func (h *AdminHandler) DeletePost(c *gin.Context) {
 }
 
 func (h *AdminHandler) ShowSettingsPage(c *gin.Context) {
-	render(c, http.StatusOK, "settings.html", gin.H{})
+	settings, err := h.settingService.GetAllSettings()
+	if err != nil {
+		// Render the page with an error message or default values
+		render(c, http.StatusInternalServerError, "settings.html", gin.H{
+			"error": "无法加载设置",
+		})
+		return
+	}
+	// Convert map[string]string to gin.H
+	data := make(gin.H)
+	for k, v := range settings {
+		data[k] = v
+	}
+	render(c, http.StatusOK, "settings.html", data)
 }
 
 func (h *AdminHandler) TestAISettings(c *gin.Context) {
@@ -265,6 +278,30 @@ func (h *AdminHandler) TestAISettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "测试成功！连接和配置均有效。"})
+}
+
+func (h *AdminHandler) TestImageAPIHandler(c *gin.Context) {
+	apiURL := c.PostForm(constants.SettingImageAPIURL)
+	apiToken := c.PostForm(constants.SettingImageAPIToken)
+
+	if apiToken == "" {
+		settings, err := h.settingService.GetAllSettings()
+		if err == nil {
+			apiToken = settings[constants.SettingImageAPIToken]
+		}
+	}
+
+	models, err := h.aiService.TestImageAPI(apiURL, apiToken)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "连接失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "连接成功！",
+		"models":  models,
+	})
 }
 
 func (h *AdminHandler) BackupSite(c *gin.Context) {

@@ -16,6 +16,9 @@ const (
 	SettingOpenAIBaseURL        = "openai_base_url"
 	SettingOpenAIToken          = "openai_token"
 	SettingOpenAIModel          = "openai_model"
+	SettingImageAPIURL          = "imageapi_url"
+	SettingImageAPIToken        = "imageapi_token"
+	SettingImageAPIModel        = "imageapi_model"
 	SettingGithubRepo           = "github_repo"
 	SettingGithubBranch         = "github_branch"
 	SettingGithubToken          = "github_token"
@@ -26,7 +29,6 @@ const (
 	SettingWebdavPassword       = "webdav_password"
 	SettingWebdavBackupCron     = "webdav_backup_cron"
 	SettingWebdavLastBackupHash = "webdav_last_backup_hash"
-	SettingPollinationsToken    = "pollinations_token"
 
 	// DEPRECATED: These are for backward compatibility with old setting keys.
 	// They are now replaced by SettingGithubBackupCron and SettingWebdavBackupCron.

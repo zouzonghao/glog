@@ -133,8 +133,9 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 			baseURL := settings[constants.SettingOpenAIBaseURL]
 			token := settings[constants.SettingOpenAIToken]
 			model := settings[constants.SettingOpenAIModel]
-			pollinationsToken := settings[constants.SettingPollinationsToken]
-			coverPrefix := settings[constants.SettingCoverPrefix]
+			imageAPIURL := settings[constants.SettingImageAPIURL]
+			imageAPIToken := settings[constants.SettingImageAPIToken]
+			imageAPIModel := settings[constants.SettingImageAPIModel]
 
 			updateMap := make(map[string]interface{})
 
@@ -179,13 +180,7 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 			}
 
 			if aiCover {
-				var textForCover string
-				if aiCoverPrompt != "" {
-					textForCover = aiCoverPrompt
-				} else {
-					textForCover = post.Content
-				}
-				newCoverURL, err := s.aiService.GenerateCover(textForCover, baseURL, token, model, pollinationsToken, coverPrefix)
+				newCoverURL, err := s.aiService.GenerateCover(aiCoverPrompt, post.Content, baseURL, token, model, imageAPIURL, imageAPIToken, imageAPIModel)
 				if err != nil {
 					utils.AILog("文章 '%s': AI封面生成失败: %v", post.Title, err)
 				} else if newCoverURL != "" {
@@ -261,8 +256,9 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 			baseURL := settings[constants.SettingOpenAIBaseURL]
 			token := settings[constants.SettingOpenAIToken]
 			model := settings[constants.SettingOpenAIModel]
-			pollinationsToken := settings[constants.SettingPollinationsToken]
-			coverPrefix := settings[constants.SettingCoverPrefix]
+			imageAPIURL := settings[constants.SettingImageAPIURL]
+			imageAPIToken := settings[constants.SettingImageAPIToken]
+			imageAPIModel := settings[constants.SettingImageAPIModel]
 
 			updateMap := make(map[string]interface{})
 
@@ -307,13 +303,7 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 			}
 
 			if aiCover {
-				var textForCover string
-				if aiCoverPrompt != "" {
-					textForCover = aiCoverPrompt
-				} else {
-					textForCover = post.Content
-				}
-				newCoverURL, err := s.aiService.GenerateCover(textForCover, baseURL, token, model, pollinationsToken, coverPrefix)
+				newCoverURL, err := s.aiService.GenerateCover(aiCoverPrompt, post.Content, baseURL, token, model, imageAPIURL, imageAPIToken, imageAPIModel)
 				if err != nil {
 					utils.AILog("文章 '%s': AI封面生成失败: %v", post.Title, err)
 				} else if newCoverURL != "" {
@@ -346,7 +336,12 @@ func (s *PostService) GetPostBySlug(slug string, isLoggedIn bool) (*models.Rende
 	if err != nil {
 		return nil, err
 	}
-	return s.renderPost(post)
+	renderedPost, err := s.renderPost(post)
+	if err != nil {
+		return nil, err
+	}
+	s.applyCoverPrefix(renderedPost)
+	return renderedPost, nil
 }
 
 func (s *PostService) GetPostsPage(page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
@@ -368,6 +363,7 @@ func (s *PostService) GetPostsPage(page, pageSize int, isLoggedIn bool) ([]model
 		renderedPosts[i] = *renderedPost
 	}
 
+	s.applyCoverPrefix(renderedPosts)
 	return renderedPosts, int(total), nil
 }
 
@@ -415,6 +411,7 @@ func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLogged
 		renderedPosts[i] = *renderedPost
 	}
 
+	s.applyCoverPrefix(renderedPosts)
 	return renderedPosts, int(total), nil
 }
 
@@ -428,15 +425,6 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		}
 	}
 
-	// 拼接封面前缀
-	coverURL := post.Cover
-	if coverURL != "" && strings.HasSuffix(coverURL, ".png") {
-		coverPrefix, err := s.settingService.GetSetting(constants.SettingCoverPrefix)
-		if err == nil && coverPrefix != "" {
-			coverURL = coverPrefix + coverURL
-		}
-	}
-
 	renderedPost := &models.RenderedPost{
 		ID:          post.ID,
 		CreatedAt:   post.CreatedAt,
@@ -444,7 +432,7 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		PublishedAt: post.PublishedAt,
 		Title:       post.Title,
 		Slug:        post.Slug,
-		Cover:       coverURL, // 传递封面
+		Cover:       post.Cover,
 		Body:        template.HTML(post.ContentHTML),
 		Excerpt:     post.Excerpt,
 		IsPrivate:   post.IsPrivate,
@@ -563,5 +551,26 @@ func (s *PostService) BatchUpdatePosts(ids []uint, action string, isPrivate bool
 		return s.repo.UpdatePrivacyByIDs(ids, isPrivate)
 	default:
 		return fmt.Errorf("不支持的操作: %s", action)
+	}
+}
+
+// applyCoverPrefix 为文章或文章列表的封面URL添加前缀
+func (s *PostService) applyCoverPrefix(data interface{}) {
+	coverPrefix, err := s.settingService.GetSetting(constants.SettingCoverPrefix)
+	if err != nil || coverPrefix == "" {
+		return
+	}
+
+	switch v := data.(type) {
+	case *models.RenderedPost:
+		if v.Cover != "" && !strings.HasSuffix(v.Cover, ".avif") {
+			v.Cover = coverPrefix + v.Cover
+		}
+	case []models.RenderedPost:
+		for i := range v {
+			if v[i].Cover != "" && !strings.HasSuffix(v[i].Cover, ".avif") {
+				v[i].Cover = coverPrefix + v[i].Cover
+			}
+		}
 	}
 }
