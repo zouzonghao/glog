@@ -30,9 +30,9 @@ import Notification from '../components/Notification.astro';
           const response = await login(password);
           if (response.status === 'success') {
             showNotification({ message: '登录成功!', type: 'success' });
-            localStorage.setItem('isLoggedIn', 'true'); // Keep for optimistic UI
-            // Reload the page. The middleware will handle the redirect.
-            window.location.reload();
+            // Redirect to the admin dashboard on successful login.
+            // The middleware will now handle auth checks on subsequent page loads.
+            window.location.href = '/admin';
           } else {
             showNotification({ message: response.message || '登录失败', type: 'error' });
           }

@@ -5,7 +5,7 @@ async function handleLogout(e: Event) {
     e.preventDefault();
     try {
         await logout();
-        window.location.href = '/login';
+        window.location.href = '/';
     } catch (error) {
         console.error('Logout failed:', error);
         // Optionally show a notification to the user

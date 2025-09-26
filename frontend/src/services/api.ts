@@ -124,6 +124,7 @@ export async function login(password: string): Promise<any> {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ password }),
+        credentials: 'include',
     });
 
     const data = await response.json();
