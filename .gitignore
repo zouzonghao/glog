@@ -1,9 +1,9 @@
 .DS_Store
-glog
-glog.db*
-*.db.*
-glog_server*
-glog*
+# Ignore backend artifacts
+backend/glog-*
+backend/glog
+backend/glog.db*
+backend/*.db.*
 **/.DS_Store
 
 # Build tools

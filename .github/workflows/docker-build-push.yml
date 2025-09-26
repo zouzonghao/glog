@@ -31,27 +31,24 @@ jobs:
 
       # 步骤 3: 下载 Go 依赖项
       - name: Download Go modules
+        working-directory: backend
         run: go mod download
 
-      # 步骤 4: 使用 Makefile 构建所有平台的 Go 应用程序
-      - name: Build Go application for all platforms
-        run: make release-all
+      # 步骤 4: 使用 Makefile 构建 Go 应用程序
+      - name: Build Go application
+        working-directory: backend
+        run: make release
 
       # 步骤 5: 压缩构建产物
-      - name: Compress artifacts
-        run: |
-          tar --owner=0 --group=0 -czf glog-linux-amd64.tar.gz glog-linux-amd64
-          zip -j glog-windows-amd64.zip glog-windows-amd64.exe
-          tar -czf glog-darwin-arm64.tar.gz glog-darwin-arm64
+      - name: Compress artifact
+        working-directory: backend
+        run: tar --owner=0 --group=0 -czf glog-linux-amd64.tar.gz glog-linux-amd64
 
       # 步骤 6: 创建 Release 并上传构建产物
-      - name: Create Release and Upload Assets
+      - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            glog-linux-amd64.tar.gz
-            glog-windows-amd64.zip
-            glog-darwin-arm64.tar.gz
+          files: backend/glog-linux-amd64.tar.gz
 
       # 步骤 7: 登录到 Docker Hub
       - name: Log in to Docker Hub
@@ -75,7 +72,7 @@ jobs:
             type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=semver,pattern={{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }} 
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
             # 规则 2: 处理测试标签 (以 b 开头)
             # 例如: git tag b2.1.0 -> docker tag: 2.1.0-beta
@@ -92,8 +89,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
