@@ -16,3 +16,6 @@ static/pagefind
 cpu.prof*
 mem.prof*
 *.log
+# Ignore environment files
+.env
+**/.env

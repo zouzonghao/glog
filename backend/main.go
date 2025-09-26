@@ -17,6 +17,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 var IsRelease bool
@@ -24,6 +25,12 @@ var IsRelease bool
 func main() {
 	if IsRelease {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: .env file not found")
 	}
 
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
@@ -66,14 +73,29 @@ func main() {
 
 	// CORS Middleware
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:4321"} // 在生产环境中应设置为你的前端域名
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:4321" // 开发环境默认值
+	}
+	config.AllowOrigins = []string{frontendURL}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
 	config.AllowCredentials = true
 	r.Use(cors.New(config))
 
-	store := cookie.NewStore([]byte("secret-key-should-be-changed"))
+	sessionSecret := os.Getenv("SESSION_SECRET")
+	if sessionSecret == "" {
+		sessionSecret = "dev-secret-key-should-be-changed" // 开发环境默认密钥
+	}
+	store := cookie.NewStore([]byte(sessionSecret))
+
+	cookieDomain := os.Getenv("COOKIE_DOMAIN")
+	if cookieDomain == "" {
+		cookieDomain = "localhost" // 开发环境默认值
+	}
 	store.Options(sessions.Options{
+		Path:     "/",
+		Domain:   cookieDomain,
 		HttpOnly: true,
 		Secure:   !*unsafe,
 		SameSite: http.SameSiteLaxMode,
@@ -114,6 +136,7 @@ func main() {
 			// Settings
 			settings := admin.Group("/settings")
 			{
+				settings.GET("", adminHandler.GetSettings)
 				settings.GET("/", adminHandler.GetSettings)
 				settings.POST("/", adminHandler.UpdateSettings)
 				settings.POST("/test-ai", adminHandler.TestAISettings)
