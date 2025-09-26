@@ -6,10 +6,10 @@ import (
 )
 
 type Post struct {
-	ID          uint `gorm:"primarykey"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	PublishedAt time.Time `gorm:"index"`
+	ID          uint      `gorm:"primarykey" json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	PublishedAt time.Time `gorm:"index" json:"published_at"`
 	Title       string    `gorm:"not null" json:"title" form:"title"`
 	Slug        string    `gorm:"uniqueIndex;not null" json:"slug"`
 	Cover       string    `json:"cover" form:"cover"` // 新增封面图字段
@@ -21,17 +21,17 @@ type Post struct {
 
 // RenderedPost is a view model for displaying a post with rendered HTML content.
 type RenderedPost struct {
-	ID          uint
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	PublishedAt time.Time
-	Title       string
-	Slug        string
-	Cover       string        // 新增封面图字段
-	Summary     template.HTML // Rendered HTML of the content before <!--more-->
-	Body        template.HTML // Rendered HTML of the content after <!--more-->
-	Excerpt     string        // Plain text excerpt for lists
-	IsPrivate   bool
+	ID          uint          `json:"id"`
+	CreatedAt   time.Time     `json:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at"`
+	PublishedAt time.Time     `json:"published_at"`
+	Title       string        `json:"title"`
+	Slug        string        `json:"slug"`
+	Cover       string        `json:"cover"`
+	Summary     template.HTML `json:"summary,omitempty"`
+	Body        template.HTML `json:"body,omitempty"`
+	Excerpt     string        `json:"excerpt"`
+	IsPrivate   bool          `json:"is_private"`
 }
 
 // PostBackup is a simplified struct for backup and restore operations.

@@ -14,7 +14,7 @@ BINARY_NAME=glog
 BINARY_FILENAME=$(BINARY_NAME)-$(TARGET_GOOS)-$(TARGET_GOARCH)
 
 # --- Main Targets ---
-.PHONY: default run build release clean
+.PHONY: default run build release clean build-frontend
 
 default: run
 
@@ -24,7 +24,16 @@ run:
 	@$(GORUN) .
 
 # Build the application for the target platform
-build:
+# Build the frontend application and copy to backend/static
+build-frontend:
+	@echo "--> Building frontend..."
+	@cd ../frontend && npm install && npm run build
+	@echo "--> Copying frontend build to backend..."
+	@rm -rf ./static
+	@mv ../frontend/dist ./static
+
+# Build the application for the target platform
+build: build-frontend
 	@{ \
 		FILENAME=$(BINARY_FILENAME); \
 		if [ "$(TARGET_GOOS)" = "windows" ]; then \

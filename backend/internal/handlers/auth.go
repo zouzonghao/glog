@@ -63,5 +63,14 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	session.Save()
-	c.Redirect(http.StatusFound, "/login")
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Logged out successfully"})
+}
+
+func (h *AuthHandler) AuthStatus(c *gin.Context) {
+	session := sessions.Default(c)
+	isAuthenticated := session.Get(constants.SessionKeyAuthenticated)
+	isLoggedIn := isAuthenticated != nil && isAuthenticated.(bool)
+	c.JSON(http.StatusOK, gin.H{
+		"isLoggedIn": isLoggedIn,
+	})
 }

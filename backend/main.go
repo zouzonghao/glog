@@ -66,7 +66,7 @@ func main() {
 
 	// CORS Middleware
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"*"} // 在生产环境中应设置为你的前端域名
+	config.AllowOrigins = []string{"http://localhost:4321"} // 在生产环境中应设置为你的前端域名
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
 	config.AllowCredentials = true
@@ -82,12 +82,17 @@ func main() {
 
 	r.Use(handlers.SettingsMiddleware(settingService))
 
+	// Serve frontend static assets
+	r.StaticFS("/assets", http.Dir("./static/assets"))
+
 	// API Routes
 	api := r.Group("/api")
 	{
 		// Auth
 		api.POST("/login", authHandler.Login)
 		api.POST("/logout", authHandler.Logout)
+		api.GET("/logout", authHandler.Logout) // Also accept GET for simple link-based logout
+		api.GET("/auth/status", authHandler.AuthStatus)
 
 		// Blog Posts
 		api.GET("/posts", blogHandler.GetPosts)
@@ -144,7 +149,26 @@ func main() {
 	}
 
 	r.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Not Found"})
+		// For any route not matched by the API, try to serve a corresponding HTML file from Astro's build.
+		// This supports Astro's file-based routing for pages like /post/some-slug -> /post/some-slug.html
+		// We must check if the file exists to avoid breaking API routes.
+		filePath := "./static" + c.Request.URL.Path
+		if c.Request.URL.Path == "/" {
+			filePath = "./static/index.html"
+		} else if _, err := os.Stat(filePath + ".html"); err == nil {
+			filePath = filePath + ".html"
+		} else {
+			// Fallback to index.html for client-side routing or 404.
+			filePath = "./static/index.html"
+		}
+
+		// Check if the file exists before serving
+		if _, err := os.Stat(filePath); err == nil {
+			c.File(filePath)
+		} else {
+			// If no file matches, it's a true 404 for the API.
+			c.JSON(http.StatusNotFound, gin.H{"error": "Not Found"})
+		}
 	})
 
 	go scheduler.Start()

@@ -1,0 +1,45 @@
+---
+import type { PostListResponse } from '../services/api';
+
+export interface Props {
+    post: PostListResponse;
+}
+
+const { post } = Astro.props;
+---
+
+<a href={`/post/${post.Slug}`} class="post-card" data-title={post.Title}>
+    <div class="card-cover">
+        {post.Cover ? (
+            <img src={post.Cover} alt={post.Title} loading="lazy" />
+        ) : (
+            <div class="pseudo-cover">
+                {/* You can add a placeholder SVG or keep it empty for JS to handle */}
+            </div>
+        )}
+    </div>
+    <div class="card-info">
+        <h3 class="card-title">
+            {post.Title}
+            {post.IsPrivate && <span class="private-icon"></span>}
+        </h3>
+    </div>
+</a>
+
+<style>
+    /* Scoped styles from cards.css can be moved here if needed, */
+    /* but for now we rely on the global stylesheet. */
+    .private-icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-left: 8px;
+        background-image: url('/pic/lock.svg');
+        background-size: contain;
+        vertical-align: middle;
+    }
+
+    .dark .private-icon {
+        background-image: url('/pic/lock-w.svg');
+    }
+</style>

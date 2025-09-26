@@ -1,0 +1,75 @@
+<div id="notification-container"></div>
+
+<script>
+    import type { NotificationDetail } from '../utils/notifications';
+
+    document.addEventListener('show-notification', (event) => {
+        const detail = (event as CustomEvent<NotificationDetail>).detail;
+        const { message, type = 'info', duration = 3000 } = detail;
+
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+
+        container.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+
+        // Animate out and remove
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (container.contains(notification)) {
+                    container.removeChild(notification);
+                }
+            }, 500); // Match the CSS transition duration
+        }, duration);
+    });
+</script>
+
+<style is:global>
+    #notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .notification {
+        background-color: var(--bg-color-offset);
+        color: var(--text-color);
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-left: 5px solid var(--primary-color);
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+
+    .notification.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .notification.success {
+        border-left-color: #4CAF50;
+    }
+
+    .notification.error {
+        border-left-color: #f44336;
+    }
+
+    .notification.info {
+        border-left-color: #2196F3;
+    }
+</style>

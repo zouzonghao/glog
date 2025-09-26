@@ -1,0 +1,45 @@
+---
+import type { Post } from '../services/api';
+
+export interface Props {
+  posts: Post[];
+}
+
+const { posts } = Astro.props;
+
+function formatDate(dateString: string) {
+  if (!dateString || dateString.startsWith('0001-01-01')) {
+    return '未发布';
+  }
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return '日期无效';
+    }
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}年${month}月${day}日`;
+  } catch (e) {
+    return '日期无效';
+  }
+}
+---
+<div id="home-page">
+    <h2 class="group-title">全部文章</h2>
+    <ul class="post-list-minimal">
+        {posts.length > 0 ? (
+            posts.map(post => (
+                <li>
+                    <span class="date">{formatDate(post.published_at)}</span>
+                    <a href={`/post/${post.slug}`} class="title">
+                        {post.title}
+                        {post.is_private && <span class="private-icon"></span>}
+                    </a>
+                </li>
+            ))
+        ) : (
+            <li><p>还没有文章。</p></li>
+        )}
+    </ul>
+</div>

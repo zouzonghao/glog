@@ -1,0 +1,122 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Modal from '../../components/Modal.astro';
+
+// In a real app, you'd fetch these settings from your API
+const settings = {
+    favicon: '/pic/favicon.ico',
+    site_title: 'My Glog Site',
+    site_description: 'A blog powered by Glog and Astro',
+    cover_prefix: '',
+    openai_base_url: '',
+    openai_model: '',
+    imageapi_url: '',
+    imageapi_model: '',
+    github_repo: '',
+    github_branch: '',
+    github_interval: 0,
+    webdav_url: '',
+    webdav_user: '',
+    webdav_interval: 0,
+};
+---
+<BaseLayout title="站点设置">
+    <div class="setting-header">
+        <h2 class="group-title">站点信息</h2>
+    </div>
+
+    <form id="settings-form" class="app-form" autocomplete="off">
+        <div class="settings-form-group settings-form-group-spaced">
+            <label for="password">管理员密码</label>
+            <input type="password" id="password" name="password" placeholder="留空则不修改" autocomplete="new-password">
+        </div>
+        <div class="settings-form-group">
+            <label for="favicon">浏览器标签页图标（url）</label>
+            <input type="text" id="favicon" name="favicon" value={settings.favicon} autocomplete="off">
+        </div>
+        <div class="settings-form-group">
+            <label for="site_title">站点标题</label>
+            <input type="text" id="site_title" name="site_title" value={settings.site_title} autocomplete="off">
+        </div>
+        <div class="settings-form-group">
+            <label for="site_description">站点描述</label>
+            <input type="text" id="site_description" name="site_description" value={settings.site_description} autocomplete="off">
+        </div>
+        <div class="settings-form-group">
+            <label for="cover_prefix">封面前缀</label>
+            <input type="text" id="cover_prefix" name="cover_prefix" value={settings.cover_prefix} autocomplete="off">
+        </div>
+        <div class="settings-actions settings-form-group-spaced">
+            <button type="button" id="save-settings-btn" class="btn">💾 保存站点信息</button>
+        </div>
+    </form>
+
+    <div class="setting-header setting-header-separated">
+        <h2 class="group-title">AI 集成</h2>
+    </div>
+    <div class="backup-actions settings-form-group-spaced">
+        <button type="button" data-modal-target="ai-modal" class="btn">🔧 基本模型</button>
+        <button type="button" data-modal-target="imageapi-modal" class="btn">🎨 AI 封面模型</button>
+        <button type="button" data-modal-target="ai-logs-modal" class="btn">📜 AI 日志</button>
+    </div>
+
+    <div class="setting-header setting-header-separated">
+        <h2 class="group-title">备份与恢复</h2>
+    </div>
+    <div class="backup-actions settings-form-group-spaced">
+        <button type="button" data-modal-target="github-modal" class="btn">🔧 GitHub 备份</button>
+        <button type="button" data-modal-target="webdav-modal" class="btn">🔧 WebDAV 备份</button>
+        <a href="/admin/setting/backup" id="backup-btn" class="btn">💾 下载备份</a>
+        <form id="upload-form" class="upload-form-wrapper">
+            <input type="file" id="backup-file" name="backup" accept=".zip,.json" class="hidden-file-input">
+            <button type="button" id="upload-btn" class="btn">📤 上传恢复</button>
+        </form>
+    </div>
+
+    <!-- Modals -->
+    <Modal id="ai-modal" title="AI 功能设置">
+        <form id="ai-settings-form" class="app-form" autocomplete="off">
+            <div class="settings-form-group">
+                <label for="openai_base_url">OpenAI Compatible Base URL</label>
+                <input type="text" id="openai_base_url" name="openai_base_url" value={settings.openai_base_url} autocomplete="off">
+            </div>
+            <div class="settings-form-group">
+                <label for="openai_token">OpenAI Compatible Token</label>
+                <input type="password" id="openai_token" name="openai_token" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group">
+                <label for="openai_model">OpenAI Compatible 模型</label>
+                <input type="text" id="openai_model" name="openai_model" value={settings.openai_model} autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="test-ai-btn" class="btn">🚀 测试连接</button>
+                <button type="button" id="save-ai-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
+    </Modal>
+
+    <Modal id="imageapi-modal" title="AI 封面功能设置 (ImageAPI)">
+        <p>ImageAPI settings form goes here...</p>
+    </Modal>
+
+    <Modal id="ai-logs-modal" title="AI 任务日志">
+        <div class="logs-container">
+            <pre id="ai-logs-content">正在加载日志...</pre>
+        </div>
+        <div class="modal-actions">
+            <button type="button" id="clear-ai-logs-btn" class="btn">🗑️ 清除日志</button>
+        </div>
+    </Modal>
+
+    <Modal id="github-modal" title="GitHub 备份设置">
+        <p>GitHub backup settings form goes here...</p>
+    </Modal>
+
+    <Modal id="webdav-modal" title="WebDAV 备份设置">
+        <p>WebDAV backup settings form goes here...</p>
+    </Modal>
+
+    <script>
+        import '../../scripts/settings.ts';
+    </script>
+</BaseLayout>

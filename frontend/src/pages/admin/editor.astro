@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPostById } from '../../services/api';
+import type { Post } from '../../services/api';
+
+const postId = Astro.url.searchParams.get('id');
+let post: Post | null = null;
+
+if (postId) {
+    try {
+        post = await getPostById(postId);
+    } catch (error) {
+        // Post not found, treat as new post
+        console.error(error);
+    }
+}
+
+const pageTitle = post ? '编辑文章' : '写新文章';
+const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+---
+<BaseLayout title={pageTitle}>
+    <h2 class="group-title">{post ? '文章编辑' : '文章新建'}</h2>
+    <div class="editor-container">
+        <form id="app-form" class="app-form">
+            <input type="hidden" id="post-id" name="id" value={post?.id || '0'}>
+            
+            <div class="editor-form-group editor-title-group">
+                <input type="text" id="title" name="title" value={post?.title || '未命名标题'} required>
+                <input type="text" id="published_at" name="published_at" value={post?.published_at ? new Date(post.published_at).toISOString().slice(0, 16).replace('T', ' ') : now}>
+            </div>
+            
+            <div class="editor-form-group">
+                <textarea id="content" name="content" rows="20">{post?.content || '\n\n<!--more-->\n'}</textarea>
+            </div>
+
+            <div id="ai-cover-prompt-container" class="editor-form-group" style="display: none;">
+                <textarea id="ai_cover_prompt" name="ai_cover_prompt" rows="2" placeholder="AI封面提示词（留空则根据文章内容自动生成）"></textarea>
+            </div>
+            
+            <div class="editor-options">
+                <div class="form-group-inline">
+                    <input type="checkbox" id="ai_summary" name="ai_summary">
+                    <label for="ai_summary">AI摘要</label>
+                </div>
+                <div class="form-group-inline">
+                    <input type="checkbox" id="ai_cover" name="ai_cover">
+                    <label for="ai_cover">AI封面</label>
+                </div>
+                <div class="form-group-inline">
+                    <input type="checkbox" id="is_private" name="is_private" checked={post?.is_private}>
+                    <label for="is_private">私密</label>
+                </div>
+            </div>
+
+            <div class="editor-actions">
+                <button type="button" id="save-btn" class="btn btn-editor-action">💾 保存文章</button>
+                <a href={post ? `/post/${post.slug}` : '#'} class="btn btn-editor-action open-post-link">🔗 打开文章</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        import '../../scripts/editor.ts';
+    </script>
+</BaseLayout>

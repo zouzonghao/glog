@@ -1,0 +1,38 @@
+---
+import type { Post } from '../services/api';
+
+export interface Props {
+  posts: Post[];
+}
+
+const { posts } = Astro.props;
+---
+<div id="home-page" class="cards-view">
+    <h2 class="group-title">全部文章</h2>
+    <div class="post-cards-container">
+        {posts.length > 0 ? (
+            posts.map(post => (
+                <a href={`/post/${post.slug}`} class="post-card" data-title={post.title}>
+                    <div class="card-cover">
+                        {post.cover ? (
+                            <img src={post.cover} alt={post.title} loading="lazy" />
+                        ) : (
+                            <div class="pseudo-cover">
+                                {/* JS can generate a pseudo-image here if needed */}
+                            </div>
+                        )}
+                    </div>
+                    <div class="card-info">
+                        <h3 class="card-title">
+                            {post.title}
+                            {post.is_private && <span class="private-icon"></span>}
+                        </h3>
+                    </div>
+                </a>
+            ))
+        ) : (
+            <p>还没有文章。</p>
+        )}
+    </div>
+    {/* Infinite scroll can be added later */}
+</div>

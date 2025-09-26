@@ -1,0 +1,66 @@
+---
+import type { PaginatedPostsResponse } from '../services/api';
+
+interface Props {
+    pagination: PaginatedPostsResponse['pagination'];
+    baseUrl: string;
+    query?: string;
+}
+
+const { pagination, baseUrl, query } = Astro.props;
+
+const { currentPage, totalPages, hasPrev, hasNext } = pagination;
+
+function generatePageUrl(page: number) {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    if (query) {
+        params.set('q', query);
+    }
+    // Keep other params from the current URL, like 'view'
+    const currentParams = new URL(Astro.request.url).searchParams;
+    if (currentParams.has('view')) {
+        params.set('view', currentParams.get('view')!);
+    }
+    return `${baseUrl}?${params.toString()}`;
+}
+
+// Logic to generate the list of page numbers (e.g., 1 ... 4 5 6 ... 10)
+// This is a simplified version for now.
+interface Page {
+    number: number;
+    isLink: boolean;
+}
+
+const pages: Page[] = [];
+for (let i = 1; i <= totalPages; i++) {
+    pages.push({
+        number: i,
+        isLink: i !== currentPage,
+    });
+}
+---
+
+{totalPages > 1 && (
+    <nav class="pagination-new">
+        {hasPrev && (
+            <a href={generatePageUrl(currentPage - 1)} class="prev-next">上一页</a>
+        )}
+
+        <div class="pagination-center">
+            <div class="page-numbers">
+                {pages.map(page => (
+                    page.isLink ? (
+                        <a href={generatePageUrl(page.number)} class="page-number">{page.number}</a>
+                    ) : (
+                        <span class="page-number current">{page.number}</span>
+                    )
+                ))}
+            </div>
+        </div>
+
+        {hasNext && (
+            <a href={generatePageUrl(currentPage + 1)} class="prev-next">下一页</a>
+        )}
+    </nav>
+)}

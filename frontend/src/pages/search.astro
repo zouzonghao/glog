@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from '../components/PostList.astro';
+import PostCards from '../components/PostCards.astro';
+import Pagination from '../components/Pagination.astro';
+import { searchPosts } from '../services/api';
+import type { Post } from '../services/api';
+
+const query = Astro.url.searchParams.get('q');
+const view = Astro.url.searchParams.get('view') || 'list';
+const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
+
+import type { PaginatedPostsResponse } from '../services/api';
+
+let posts: Post[] = [];
+let pagination: PaginatedPostsResponse['pagination'] | null = null;
+
+if (query) {
+    const data = await searchPosts(query, page);
+    posts = data?.posts || [];
+    pagination = data?.pagination;
+}
+
+const title = `搜索结果: "${query}"`;
+---
+
+<BaseLayout title={title}>
+    <div class="posts-group">
+        <h2 class="group-title">搜索结果: "{query}"</h2>
+        
+        {posts.length === 0 && query ? (
+            <p>没有找到与 "{query}" 相关的文章。</p>
+        ) : (
+            view === 'list' ? (
+                <PostList posts={posts} />
+            ) : (
+                <PostCards posts={posts} />
+            )
+        )}
+    </div>
+
+    {pagination && (
+        <Pagination pagination={pagination} baseUrl="/search" query={query || ''} />
+    )}
+</BaseLayout>
