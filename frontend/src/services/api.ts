@@ -6,13 +6,17 @@ export interface Post {
     cover: string;
     excerpt: string;
     is_private: boolean;
-    content?: string; // content is optional for list items
+}
+
+// For single post responses, we get the full post object from the backend
+export interface PostDetail extends Post {
+	content_html: string;
 }
 
 export interface PaginatedPostsResponse {
     posts: Post[];
     pagination: {
-        currentPage: number;
+    	currentPage: number;
         totalPages: number;
         totalRecords: number;
         pageSize: number;
@@ -43,13 +47,13 @@ export async function getPosts(page: number = 1, pageSize: number = 10): Promise
  * @param slug - The slug of the post to fetch.
  * @returns A promise that resolves to the post detail.
  */
-export async function getPostBySlug(slug: string): Promise<Post> {
-    const response = await fetch(`${API_BASE_URL}/api/posts/${slug}`);
-    if (!response.ok) {
-        throw new Error('Post not found');
-    }
-    const data = await response.json();
-    return data;
+export async function getPostBySlug(slug: string): Promise<PostDetail> {
+	const response = await fetch(`${API_BASE_URL}/api/posts/${slug}`);
+	if (!response.ok) {
+		throw new Error('Post not found');
+	}
+	const data = await response.json();
+	return data;
 }
 
 /**

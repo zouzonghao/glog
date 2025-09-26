@@ -7,7 +7,6 @@ import (
 	"glog/internal/models"
 	"glog/internal/repository"
 	"glog/internal/utils"
-	"html/template"
 	"io"
 	"regexp"
 	"strings"
@@ -331,17 +330,13 @@ func (s *PostService) GetPostByID(id uint) (*models.Post, error) {
 	return s.repo.FindByID(id)
 }
 
-func (s *PostService) GetPostBySlug(slug string, isLoggedIn bool) (*models.RenderedPost, error) {
+func (s *PostService) GetPostBySlug(slug string, isLoggedIn bool) (*models.Post, error) {
 	post, err := s.repo.FindBySlug(slug, isLoggedIn)
 	if err != nil {
 		return nil, err
 	}
-	renderedPost, err := s.renderPost(post)
-	if err != nil {
-		return nil, err
-	}
-	s.applyCoverPrefix(renderedPost)
-	return renderedPost, nil
+	// For single post, we return the full Post object which includes ContentHTML
+	return post, nil
 }
 
 func (s *PostService) GetPostsPage(page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
@@ -433,7 +428,6 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		Title:       post.Title,
 		Slug:        post.Slug,
 		Cover:       post.Cover,
-		Body:        template.HTML(post.ContentHTML),
 		Excerpt:     post.Excerpt,
 		IsPrivate:   post.IsPrivate,
 	}

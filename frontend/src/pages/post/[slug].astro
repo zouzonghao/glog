@@ -1,19 +1,18 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPostBySlug, getPosts, type PostDetail } from '../../services/api';
-import { marked } from 'marked'; // We'll need to install this library
-
-// This function tells Astro which pages to build.
 // For now, we'll fetch all posts to generate paths.
 // In a larger blog, you might want to fetch only slugs.
 export async function getStaticPaths() {
   const { posts } = await getPosts(1, 1000); // Fetch a large number of posts
   return posts.map(post => ({
-    params: { slug: post.Slug },
+    params: { slug: post.slug },
   }));
 }
 
 const { slug } = Astro.params;
+const { isLoggedIn } = Astro.locals;
+
 if (!slug) {
     return new Response('Not Found', { status: 404 });
 }
@@ -27,45 +26,38 @@ try {
     console.error(e);
 }
 
-// Parse markdown content to HTML
-const contentHtml = post ? marked.parse(post.Content) : '';
+function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 ---
 
-<BaseLayout title={post ? post.Title : '文章详情'} description={post ? post.Excerpt : ''}>
-    <article class="post-content">
+<BaseLayout title={post ? post.title : '文章详情'} description={post ? post.excerpt : ''}>
+    <article class="post">
         {post ? (
             <>
                 <header class="post-header">
-                    <h1>{post.Title}</h1>
-                    <div class="post-meta">
-                        <span>发布于 {new Date(post.PublishedAt).toLocaleDateString('zh-CN')}</span>
+                    <h1>
+                        {post.title}
+                        {post.is_private && <span class="private-icon"></span>}
+                    </h1>
+                    <div class="meta">
+                        <span>{formatDate(post.published_at)}</span>
+                        {isLoggedIn && (
+                            <span class="edit-link" style="margin-left: 10px; gap: 5px;">
+                                {'| '}<a href={`/admin/editor?id=${post.id}`} style="margin-left: 8px;">编辑此文章</a>
+                            </span>
+                        )}
                     </div>
                 </header>
-                <div class="prose" set:html={contentHtml} />
+                <div class="post-content" set:html={post.content_html} />
             </>
         ) : (
             <p>{error || '文章未找到。'}</p>
         )}
     </article>
 </BaseLayout>
-
-<style>
-/* Basic styling for the post page */
-.post-content {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-}
-.post-header {
-    margin-bottom: 2rem;
-    text-align: center;
-}
-.post-meta {
-    color: #666;
-    font-size: 0.9rem;
-}
-.prose {
-    line-height: 1.7;
-}
-/* Add more styles as needed */
-</style>

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"html/template"
 	"time"
 )
 
@@ -21,17 +20,15 @@ type Post struct {
 
 // RenderedPost is a view model for displaying a post with rendered HTML content.
 type RenderedPost struct {
-	ID          uint          `json:"id"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
-	PublishedAt time.Time     `json:"published_at"`
-	Title       string        `json:"title"`
-	Slug        string        `json:"slug"`
-	Cover       string        `json:"cover"`
-	Summary     template.HTML `json:"summary,omitempty"`
-	Body        template.HTML `json:"body,omitempty"`
-	Excerpt     string        `json:"excerpt"`
-	IsPrivate   bool          `json:"is_private"`
+	ID          uint      `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	PublishedAt time.Time `json:"published_at"`
+	Title       string    `json:"title"`
+	Slug        string    `json:"slug"`
+	Cover       string    `json:"cover"`
+	Excerpt     string    `json:"excerpt"`
+	IsPrivate   bool      `json:"is_private"`
 }
 
 // PostBackup is a simplified struct for backup and restore operations.
