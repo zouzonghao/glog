@@ -3,9 +3,10 @@ import type { Post } from '../services/api';
 
 export interface Props {
   posts: Post[];
+  title?: string;
 }
 
-const { posts } = Astro.props;
+const { posts, title = "全部文章" } = Astro.props;
 
 function formatDate(dateString: string) {
   if (!dateString || dateString.startsWith('0001-01-01')) {
@@ -26,7 +27,7 @@ function formatDate(dateString: string) {
 }
 ---
 <div id="home-page">
-    <h2 class="group-title">全部文章</h2>
+    <h2 class="group-title">{title}</h2>
     <ul class="post-list-minimal">
         {posts.length > 0 ? (
             posts.map(post => (

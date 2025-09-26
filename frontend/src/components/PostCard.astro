@@ -1,17 +1,17 @@
 ---
-import type { PostListResponse } from '../services/api';
+import type { Post } from '../services/api';
 
 export interface Props {
-    post: PostListResponse;
+    post: Post;
 }
 
 const { post } = Astro.props;
 ---
 
-<a href={`/post/${post.Slug}`} class="post-card" data-title={post.Title}>
+<a href={`/post/${post.slug}`} class="post-card" data-title={post.title}>
     <div class="card-cover">
-        {post.Cover ? (
-            <img src={post.Cover} alt={post.Title} loading="lazy" />
+        {post.cover ? (
+            <img src={post.cover} alt={post.title} loading="lazy" />
         ) : (
             <div class="pseudo-cover">
                 {/* You can add a placeholder SVG or keep it empty for JS to handle */}
@@ -19,9 +19,9 @@ const { post } = Astro.props;
         )}
     </div>
     <div class="card-info">
-        <h3 class="card-title">
-            {post.Title}
-            {post.IsPrivate && <span class="private-icon"></span>}
+        <h3 class="card-title" style={`view-transition-name: post-${post.slug}`}>
+            {post.title}
+            {post.is_private && <span class="private-icon"></span>}
         </h3>
     </div>
 </a>

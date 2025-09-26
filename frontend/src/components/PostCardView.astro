@@ -1,0 +1,24 @@
+---
+import type { Post } from '../services/api';
+import PostCard from './PostCard.astro';
+
+export interface Props {
+  posts: Post[];
+  title?: string;
+}
+
+const { posts, title = "全部文章" } = Astro.props;
+---
+<div id="home-page" class="cards-view">
+    <h2 class="group-title">{title}</h2>
+    <div class="post-cards-container">
+        {posts.length > 0 ? (
+            posts.map(post => (
+                <PostCard post={post} />
+            ))
+        ) : (
+            <p>还没有文章。</p>
+        )}
+    </div>
+    {/* Infinite scroll can be added later */}
+</div>

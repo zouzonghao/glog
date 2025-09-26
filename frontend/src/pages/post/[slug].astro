@@ -41,7 +41,7 @@ function formatDate(dateString: string) {
         {post ? (
             <>
                 <header class="post-header">
-                    <h1>
+                    <h1 style={`view-transition-name: post-${slug}`}>
                         {post.title}
                         {post.is_private && <span class="private-icon"></span>}
                     </h1>

@@ -39,16 +39,24 @@ function showNotification(message: string, type: 'info' | 'success' | 'error' = 
 }
 
 // --- DOMContentLoaded Logic ---
-document.addEventListener('DOMContentLoaded', function() {
+function initializePage() {
     // --- Logout Link ---
     const logoutLink = document.getElementById('logout-link');
     if (logoutLink) {
+        // To prevent multiple listeners, we can remove it before adding it,
+        // though for a simple logout, it might not be strictly necessary.
+        logoutLink.removeEventListener('click', handleLogout);
         logoutLink.addEventListener('click', handleLogout);
     }
 
     // --- Theme Toggle ---
     const themeToggle = document.getElementById("theme-toggle");
     const htmlEl = document.documentElement;
+
+    // Ensure the correct theme is applied visually on load/swap
+    const savedTheme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    htmlEl.classList.remove("light", "dark");
+    htmlEl.classList.add(savedTheme);
 
     const setTheme = (theme: string) => {
         htmlEl.classList.remove("light", "dark");
@@ -57,7 +65,12 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     if (themeToggle) {
-        themeToggle.addEventListener("click", () => {
+        // A simple way to avoid multiple listeners is to replace the element
+        // This is a bit of a hack, but effective for this case.
+        const newToggle = themeToggle.cloneNode(true);
+        themeToggle.parentNode?.replaceChild(newToggle, themeToggle);
+        
+        newToggle.addEventListener("click", () => {
             const currentTheme = htmlEl.classList.contains("dark") ? "dark" : "light";
             const newTheme = currentTheme === "dark" ? "light" : "dark";
             setTheme(newTheme);
@@ -67,12 +80,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Back to Top Button ---
     const backToTopButton = document.getElementById('back-to-top');
     if (backToTopButton) {
-        window.addEventListener('scroll', function() {
-            if (window.pageYOffset > 200) {
-                backToTopButton.classList.add('show');
-            } else {
-                backToTopButton.classList.remove('show');
-            }
-        });
+        // The scroll listener is on window, so we don't need to re-add it
+        // if it's already there. A simple flag can handle this.
+        if (!(window as any).scrollListenerAttached) {
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 200) {
+                    backToTopButton.classList.add('show');
+                } else {
+                    backToTopButton.classList.remove('show');
+                }
+            });
+            (window as any).scrollListenerAttached = true;
+        }
     }
-});
+}
+
+// --- Event Listeners ---
+// Run on initial page load
+document.addEventListener('DOMContentLoaded', initializePage);
+// Run after every Astro view transition
+document.addEventListener('astro:after-swap', initializePage);
