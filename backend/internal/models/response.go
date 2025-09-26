@@ -29,3 +29,13 @@ type PostDetailResponse struct {
 	Body        template.HTML `json:"body,omitempty"`    // For rendered view
 	IsPrivate   bool          `json:"isPrivate"`
 }
+
+// Pagination defines the structure for pagination information in API responses.
+type Pagination struct {
+	CurrentPage  int  `json:"currentPage"`
+	TotalPages   int  `json:"totalPages"`
+	TotalRecords int  `json:"totalRecords"`
+	PageSize     int  `json:"pageSize"`
+	HasPrev      bool `json:"hasPrev"`
+	HasNext      bool `json:"hasNext"`
+}

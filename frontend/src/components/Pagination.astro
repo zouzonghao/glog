@@ -5,15 +5,23 @@ interface Props {
     pagination: PaginatedPostsResponse['pagination'];
     baseUrl: string;
     query?: string;
+    pageSize?: number;
+    pageSizeOptions?: number[];
 }
 
-const { pagination, baseUrl, query } = Astro.props;
+const { pagination, baseUrl, query, pageSize, pageSizeOptions } = Astro.props;
 
 const { currentPage, totalPages, hasPrev, hasNext } = pagination;
 
-function generatePageUrl(page: number) {
+function generatePageUrl(page: number, newPageSize?: number) {
     const params = new URLSearchParams();
     params.set('page', page.toString());
+    
+    const size = newPageSize || pageSize;
+    if (size) {
+        params.set('pageSize', size.toString());
+    }
+
     if (query) {
         params.set('q', query);
     }
@@ -25,19 +33,53 @@ function generatePageUrl(page: number) {
     return `${baseUrl}?${params.toString()}`;
 }
 
-// Logic to generate the list of page numbers (e.g., 1 ... 4 5 6 ... 10)
-// This is a simplified version for now.
+// Logic to generate the list of page numbers with ellipses
 interface Page {
-    number: number;
+    number?: number;
     isLink: boolean;
+    isEllipsis?: boolean;
 }
 
 const pages: Page[] = [];
-for (let i = 1; i <= totalPages; i++) {
-    pages.push({
-        number: i,
-        isLink: i !== currentPage,
-    });
+const sideWidth = 1; // How many pages to show on each side of the current page
+const windowWidth = sideWidth * 2 + 1; // Total number of pages in the sliding window
+
+if (totalPages <= windowWidth + 2) {
+    // Show all pages if there are not too many
+    for (let i = 1; i <= totalPages; i++) {
+        pages.push({ number: i, isLink: i !== currentPage });
+    }
+} else {
+    // Add first page
+    pages.push({ number: 1, isLink: 1 !== currentPage });
+
+    // Add ellipsis or second page
+    if (currentPage > sideWidth + 2) {
+        pages.push({ isLink: false, isEllipsis: true });
+    } else if (totalPages > 2 && 2 < currentPage - sideWidth) {
+         pages.push({ number: 2, isLink: 2 !== currentPage });
+    }
+
+
+    // Add pages around current page
+    const start = Math.max(2, currentPage - sideWidth);
+    const end = Math.min(totalPages - 1, currentPage + sideWidth);
+
+    for (let i = start; i <= end; i++) {
+        if (i > 1 && i < totalPages) {
+            pages.push({ number: i, isLink: i !== currentPage });
+        }
+    }
+
+    // Add ellipsis or second to last page
+    if (currentPage < totalPages - sideWidth - 1) {
+        pages.push({ isLink: false, isEllipsis: true });
+    } else if (totalPages > 2 && totalPages -1 > currentPage + sideWidth) {
+        pages.push({ number: totalPages - 1, isLink: totalPages - 1 !== currentPage });
+    }
+    
+    // Add last page
+    pages.push({ number: totalPages, isLink: totalPages !== currentPage });
 }
 ---
 
@@ -49,14 +91,31 @@ for (let i = 1; i <= totalPages; i++) {
 
         <div class="pagination-center">
             <div class="page-numbers">
-                {pages.map(page => (
-                    page.isLink ? (
-                        <a href={generatePageUrl(page.number)} class="page-number">{page.number}</a>
-                    ) : (
-                        <span class="page-number current">{page.number}</span>
-                    )
-                ))}
+                {pages.map(page => {
+                    if (page.isEllipsis) {
+                        return <span class="ellipsis">…</span>;
+                    }
+                    if (page.isLink) {
+                        return <a href={generatePageUrl(page.number!)} class="page-number">{page.number}</a>;
+                    }
+                    return <span class="page-number current">{page.number}</span>;
+                })}
             </div>
+
+            {pageSizeOptions && pageSize && (
+                <div class="page-size-selector">
+                    <select id="page-size-select" onchange={`location.href = this.value`}>
+                        {pageSizeOptions.map(size => (
+                            <option
+                                value={generatePageUrl(1, size)}
+                                selected={size === pageSize}
+                            >
+                                {size} / 页
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
         </div>
 
         {hasNext && (

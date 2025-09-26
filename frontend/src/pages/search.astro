@@ -9,6 +9,7 @@ import type { Post } from '../services/api';
 const query = Astro.url.searchParams.get('q');
 const view = Astro.url.searchParams.get('view') || 'list';
 const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const pageSize = 10; // Hardcode page size to 10
 
 import type { PaginatedPostsResponse } from '../services/api';
 
@@ -16,7 +17,7 @@ let posts: Post[] = [];
 let pagination: PaginatedPostsResponse['pagination'] | null = null;
 
 if (query) {
-    const data = await searchPosts(query, page);
+    const data = await searchPosts(query, page, pageSize);
     posts = data?.posts || [];
     pagination = data?.pagination;
 }

@@ -4,12 +4,22 @@ import Pagination from '../../components/Pagination.astro';
 import type { Post } from '../../services/api';
 import { getPosts } from '../../services/api';
 
+import { searchPosts } from '../../services/api';
+
 // Fetch posts for admin view
 const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
-const data = await getPosts(page);
+const pageSize = parseInt(Astro.url.searchParams.get('pageSize') || '10', 10);
+const pageSizeOptions = [10, 20, 50];
+const query = Astro.url.searchParams.get('q') || '';
+
+let data;
+if (query) {
+    data = await searchPosts(query, page, pageSize);
+} else {
+    data = await getPosts(page, pageSize);
+}
 const posts: Post[] = data?.posts || [];
 const pagination = data?.pagination;
-const query = Astro.url.searchParams.get('q') || '';
 
 function formatDate(dateString: string) {
   if (!dateString || dateString.startsWith('0001-01-01')) {
@@ -87,7 +97,7 @@ function formatDate(dateString: string) {
     </div>
 
     {pagination && (
-        <Pagination pagination={pagination} baseUrl="/admin" query={query} />
+        <Pagination pagination={pagination} baseUrl="/admin" query={query} pageSize={pageSize} pageSizeOptions={pageSizeOptions} />
     )}
     
     <script>

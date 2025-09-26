@@ -2,9 +2,8 @@ package handlers
 
 import (
 	"glog/internal/constants"
+	"glog/internal/models"
 	"glog/internal/services"
-	"glog/internal/utils"
-	"math"
 	"net/http"
 	"strconv"
 
@@ -22,7 +21,7 @@ func NewBlogHandler(postService *services.PostService) *BlogHandler {
 // GetPosts handles the request to get a paginated list of posts.
 func (h *BlogHandler) GetPosts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize := 10 // Or get from query param
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
 	isLoggedInValue, exists := c.Get(constants.ContextKeyIsLoggedIn)
 	isLoggedIn := exists && isLoggedInValue.(bool)
@@ -33,16 +32,23 @@ func (h *BlogHandler) GetPosts(c *gin.Context) {
 		return
 	}
 
-	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
-	pagination := utils.GeneratePagination(page, totalPages)
+	totalPages := 0
+	if total > 0 {
+		totalPages = (total + pageSize - 1) / pageSize
+	}
+
+	pagination := models.Pagination{
+		CurrentPage:  page,
+		TotalPages:   totalPages,
+		TotalRecords: total,
+		PageSize:     pageSize,
+		HasPrev:      page > 1,
+		HasNext:      page < totalPages,
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"posts":      posts,
 		"pagination": pagination,
-		"total":      total,
-		"page":       page,
-		"pageSize":   pageSize,
-		"totalPages": totalPages,
 	})
 }
 

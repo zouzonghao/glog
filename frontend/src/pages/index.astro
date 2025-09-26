@@ -12,9 +12,10 @@ const view = Astro.url.searchParams.get('view') || 'list';
 
 // Get page from URL for pagination
 const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const pageSize = 10; // Hardcode page size to 10
 
 // Fetch posts from your Go backend
-const data = await getPosts(page);
+const data = await getPosts(page, pageSize);
 const posts: Post[] = data?.posts || [];
 const pagination = data?.pagination;
 

@@ -67,7 +67,6 @@ func main() {
 	adminHandler := handlers.NewAdminHandler(postService, settingService, aiService, backupService, scheduler)
 	searchHandler := handlers.NewSearchHandler(postService)
 	authHandler := handlers.NewAuthHandler(settingService)
-	apiHandler := handlers.NewAPIHandler(postService)
 
 	r := gin.Default()
 
@@ -162,13 +161,6 @@ func main() {
 			}
 		}
 
-		// Legacy API for external tools
-		v1 := api.Group("/v1")
-		v1.Use(handlers.APIAuthMiddleware(settingService))
-		{
-			v1.POST("/posts", apiHandler.CreatePost)
-			v1.GET("/posts", apiHandler.FindPosts)
-		}
 	}
 
 	r.NoRoute(func(c *gin.Context) {
