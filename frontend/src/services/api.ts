@@ -33,6 +33,20 @@ export interface PaginatedPostsResponse {
 const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
 /**
+ * Custom error class for API fetch errors.
+ * Contains the HTTP status code for more specific error handling.
+ */
+export class ApiError extends Error {
+    status: number;
+
+    constructor(message: string, status: number) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+    }
+}
+
+/**
  * A wrapper for the native fetch function that includes credentials,
  * handles API errors, and automatically redirects to the login page
  * on 401 Unauthorized responses.
@@ -64,18 +78,22 @@ async function apiFetch(url: string, options: RequestInit = {}, cookies?: any): 
     const response = await fetch(url, defaultOptions);
 
     if (response.status === 401) {
+        // If we are on the server, we can't redirect. Throwing an error is enough.
+        if (import.meta.env.SSR) {
+            throw new ApiError('Unauthorized', 401);
+        }
         // If we are already on the login page, don't redirect.
         if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             window.location.href = '/login';
         }
         // Throw an error to stop the current execution chain.
-        throw new Error('Unauthorized');
+        throw new ApiError('Unauthorized', 401);
     }
 
     // For other errors, try to parse the JSON body for a message.
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
-        throw new Error(errorData.message || 'An unknown error occurred');
+        throw new ApiError(errorData.message || 'An unknown error occurred', response.status);
     }
 
     // If the response is successful, parse and return the JSON.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func InitDatabase() (*gorm.DB, error) {
@@ -18,7 +19,9 @@ func InitDatabase() (*gorm.DB, error) {
 		}
 		dbPath = filepath.Join(filepath.Dir(exePath), "glog.db")
 	}
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		return nil, err
 	}
