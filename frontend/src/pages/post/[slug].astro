@@ -1,6 +1,28 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPostBySlug, getPosts, type PostDetail, ApiError } from '../../services/api';
+// old 是控制淡出，new 是控制淡入，淡出和淡入不重合导致残影，所以取消一个
+const anim = {
+  old: {
+    name: "zero",
+    duration: "0.45s",
+    easing: "linear",
+    direction: "normal",
+    fillMode: "both",
+  },
+  new: {
+    name: "fadeIn",
+    duration: "0.45s",
+    easing: "linear",
+    direction: "normal",
+    fillMode: "both",
+  }
+};
+
+const customFade = {
+  forwards: anim,
+  backwards: anim,
+};
 
 // This function is for SSG, but since we are in SSR mode, it might not be fully utilized
 // as intended for every single post. Keeping it might be useful if you switch modes.
@@ -56,7 +78,7 @@ function formatDate(dateString: string) {
 
     <article class="post">
         <header class="post-header">
-            <h1 style={`view-transition-name: post-${slug}`}>
+            <h1 transition:name={`post-${slug}`} transition:animate={customFade}>
                 {post.title}
                 {post.is_private && <span class="private-icon"></span>}
             </h1>

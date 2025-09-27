@@ -1,5 +1,7 @@
 ---
+import type { onPageLoad } from 'astro/virtual-modules/transitions-events.js';
 import type { Post } from '../services/api';
+import { slide } from "astro:transitions";
 
 export interface Props {
   posts: Post[];
@@ -7,6 +9,28 @@ export interface Props {
 }
 
 const { posts, title = "全部文章" } = Astro.props;
+
+const slideAnim = {
+  old: {
+    name: "zero",
+    duration: "0.55s",
+    easing: "linear",
+    direction: "normal",
+    fillMode: "both",
+  },
+  new: {
+    name: "slideInFromRight",
+    duration: "0.55s",
+    easing: "ease-in-out",
+    direction: "normal",
+    fillMode: "both",
+  },
+};
+
+const customSlide = {
+  forwards: slideAnim,
+  backwards: slideAnim,
+};
 
 function formatDate(dateString: string) {
   if (!dateString || dateString.startsWith('0001-01-01')) {
@@ -33,7 +57,7 @@ function formatDate(dateString: string) {
             posts.map(post => (
                 <li>
                     <span class="date">{formatDate(post.published_at)}</span>
-                    <a href={`/post/${post.slug}`} class="title">
+                    <a href={`/post/${post.slug}`} class="title" transition:name={`post-${post.slug}`} transition:animate={customSlide}>
                         {post.title}
                         {post.is_private && <span class="private-icon"></span>}
                     </a>

@@ -154,3 +154,40 @@ const currentView = Astro.url.searchParams.get('view') || 'list';
   // Run on subsequent page navigations (Astro View Transitions)
   document.addEventListener('astro:after-swap', showSessionNotification);
 </script>
+
+<style is:global>
+  ::view-transition-group(*) {
+    animation-duration: 0.45s;
+  }
+  @keyframes zero {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 0;
+    }      
+}
+
+  @keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    40% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 1;
+    }
+  }
+
+  @keyframes slideInFromRight {
+    from {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+</style>
