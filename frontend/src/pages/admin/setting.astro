@@ -1,24 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Modal from '../../components/Modal.astro';
+import { getSettings } from '../../services/api';
 
-// In a real app, you'd fetch these settings from your API
-const settings = {
-    favicon: '/pic/favicon.ico',
-    site_title: 'My Glog Site',
-    site_description: 'A blog powered by Glog and Astro',
-    cover_prefix: '',
-    openai_base_url: '',
-    openai_model: '',
-    imageapi_url: '',
-    imageapi_model: '',
-    github_repo: '',
-    github_branch: '',
-    github_interval: 0,
-    webdav_url: '',
-    webdav_user: '',
-    webdav_interval: 0,
-};
+// Fetch settings from the backend API
+const settings = await getSettings(Astro.cookies);
 ---
 <BaseLayout title="站点设置">
     <div class="setting-header">
@@ -55,17 +41,17 @@ const settings = {
         <h2 class="group-title">AI 集成</h2>
     </div>
     <div class="backup-actions settings-form-group-spaced">
-        <button type="button" data-modal-target="ai-modal" class="btn">🔧 基本模型</button>
-        <button type="button" data-modal-target="imageapi-modal" class="btn">🎨 AI 封面模型</button>
-        <button type="button" data-modal-target="ai-logs-modal" class="btn">📜 AI 日志</button>
+        <button type="button" id="ai-settings-btn" data-modal-target="ai-modal" class="btn">🔧 基本模型</button>
+        <button type="button" id="imageapi-settings-btn" data-modal-target="imageapi-modal" class="btn">🎨 AI 封面模型</button>
+        <button type="button" id="ai-logs-btn" data-modal-target="ai-logs-modal" class="btn">📜 AI 日志</button>
     </div>
 
     <div class="setting-header setting-header-separated">
         <h2 class="group-title">备份与恢复</h2>
     </div>
     <div class="backup-actions settings-form-group-spaced">
-        <button type="button" data-modal-target="github-modal" class="btn">🔧 GitHub 备份</button>
-        <button type="button" data-modal-target="webdav-modal" class="btn">🔧 WebDAV 备份</button>
+        <button type="button" id="github-settings-btn" data-modal-target="github-modal" class="btn">🔧 GitHub 备份</button>
+        <button type="button" id="webdav-settings-btn" data-modal-target="webdav-modal" class="btn">🔧 WebDAV 备份</button>
         <a href="/admin/setting/backup" id="backup-btn" class="btn">💾 下载备份</a>
         <form id="upload-form" class="upload-form-wrapper">
             <input type="file" id="backup-file" name="backup" accept=".zip,.json" class="hidden-file-input">
@@ -116,7 +102,4 @@ const settings = {
         <p>WebDAV backup settings form goes here...</p>
     </Modal>
 
-    <script>
-        import '../../scripts/settings.ts';
-    </script>
 </BaseLayout>

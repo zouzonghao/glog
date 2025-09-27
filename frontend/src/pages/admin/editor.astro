@@ -1,14 +1,14 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPostById } from '../../services/api';
-import type { Post } from '../../services/api';
+import type { PostForEditor } from '../../services/api';
 
 const postId = Astro.url.searchParams.get('id');
-let post: Post | null = null;
+let post: PostForEditor | null = null;
 
 if (postId) {
     try {
-        post = await getPostById(postId);
+        post = await getPostById(postId, Astro.cookies);
     } catch (error) {
         // Post not found, treat as new post
         console.error(error);

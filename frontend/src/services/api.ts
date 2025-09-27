@@ -13,6 +13,11 @@ export interface PostDetail extends Post {
 	content_html: string;
 }
 
+// For editor, we need the raw markdown content
+export interface PostForEditor extends Post {
+    content: string;
+}
+
 export interface PaginatedPostsResponse {
     posts: Post[];
     pagination: {
@@ -31,19 +36,30 @@ const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
  * A wrapper for the native fetch function that includes credentials,
  * handles API errors, and automatically redirects to the login page
  * on 401 Unauthorized responses.
+ *
+ * It also handles passing cookies during Server-Side Rendering (SSR).
  * @param url - The URL to fetch.
  * @param options - The options for the fetch request.
+ * @param cookies - Optional Astro.cookies object for SSR requests.
  * @returns A promise that resolves to the JSON response.
  */
-async function apiFetch(url: string, options: RequestInit = {}): Promise<any> {
+async function apiFetch(url: string, options: RequestInit = {}, cookies?: any): Promise<any> {
     const defaultOptions: RequestInit = {
-        credentials: 'include', // Always send cookies
+        credentials: 'include', // Always send cookies in browser
         headers: {
             'Content-Type': 'application/json',
             ...options.headers,
         },
         ...options,
     };
+
+    // If running on the server (SSR) and cookies are provided, forward them.
+    if (import.meta.env.SSR && cookies) {
+        const sessionCookie = cookies.get('glog_session')?.value;
+        if (sessionCookie) {
+            (defaultOptions.headers as Record<string, string>)['Cookie'] = `glog_session=${sessionCookie}`;
+        }
+    }
 
     const response = await fetch(url, defaultOptions);
 
@@ -91,8 +107,9 @@ export async function getPostBySlug(slug: string): Promise<PostDetail> {
  * @param id - The ID of the post to fetch.
  * @returns A promise that resolves to the post detail.
  */
-export async function getPostById(id: string): Promise<Post> {
-    return apiFetch(`${API_BASE_URL}/api/admin/posts/${id}`);
+export async function getPostById(id: string, cookies?: any): Promise<PostForEditor> {
+    const response = await apiFetch(`${API_BASE_URL}/api/admin/posts/${id}`, {}, cookies);
+    return response.post;
 }
 
 /**
@@ -159,4 +176,14 @@ export async function login(password: string): Promise<any> {
     }
 
     return data;
+}
+
+/**
+ * Fetches the site settings. Requires authentication.
+ * @param cookies - The Astro.cookies object for SSR.
+ * @returns A promise that resolves to the site settings.
+ */
+export async function getSettings(cookies?: any): Promise<any> {
+    const response = await apiFetch(`${API_BASE_URL}/api/settings`, {}, cookies);
+    return response.settings;
 }

@@ -119,6 +119,7 @@ func main() {
 		api.GET("/posts", blogHandler.GetPosts)
 		api.GET("/posts/:slug", blogHandler.GetPostBySlug)
 		api.GET("/search", searchHandler.Search)
+		api.GET("/public-settings", adminHandler.GetPublicSettings)
 
 		// Admin required
 		admin := api.Group("/")

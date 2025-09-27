@@ -15,44 +15,6 @@ const { id, title } = Astro.props;
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Find all buttons that are supposed to open a modal
-        const modalTriggers = document.querySelectorAll('[data-modal-target]');
-
-        modalTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const modalId = trigger.getAttribute('data-modal-target');
-                if (modalId) {
-                    const modal = document.getElementById(modalId);
-                    if (modal) {
-                        (modal as HTMLElement).style.display = 'flex';
-                    }
-                }
-            });
-        });
-
-        // Find all modals and set up their close logic
-        const modals = document.querySelectorAll('.modal-container');
-        modals.forEach(modal => {
-            const closeButton = modal.querySelector('.modal-close-btn');
-
-            // Close with the 'x' button
-            if (closeButton) {
-                closeButton.addEventListener('click', () => {
-                    (modal as HTMLElement).style.display = 'none';
-                });
-            }
-
-            // Close by clicking on the background overlay
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    (modal as HTMLElement).style.display = 'none';
-                }
-            });
-        });
-    });
-</script>
 
 <style>
     .modal-container {

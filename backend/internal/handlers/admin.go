@@ -610,3 +610,22 @@ func (h *AdminHandler) ClearAILogs(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "AI 日志已成功清除！"})
 }
+
+func (h *AdminHandler) GetPublicSettings(c *gin.Context) {
+	settings, err := h.settingService.GetAllSettings()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "无法加载设置"})
+		return
+	}
+
+	publicSettings := map[string]string{
+		"site_title":       settings["site_title"],
+		"site_description": settings["site_description"],
+		"favicon":          settings["favicon"],
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "success",
+		"settings": publicSettings,
+	})
+}

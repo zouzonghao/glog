@@ -11,13 +11,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // 从浏览器请求中获取 cookie
   const sessionCookie = context.request.headers.get("cookie");
 
-  // 如果没有 cookie，直接进入下一个中间件或页面渲染
-  if (!sessionCookie) {
-    return next();
-  }
-
-  // 如果有 cookie，将其转发到后端 API 进行验证
-  try {
+  // 如果有 cookie，才需要去后端验证，否则保持默认的未登录状态
+  if (sessionCookie) {
+    try {
     const response = await fetch(`${API_BASE_URL}/api/auth/status`, {
       method: "GET",
       headers: {
@@ -34,7 +30,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   } catch (error) {
     // 如果后端 API 请求失败，保持未登录状态
     console.error("Auth status check failed:", error);
-    context.locals.isLoggedIn = false;
+      context.locals.isLoggedIn = false;
+    }
   }
 
   // 路由保护逻辑

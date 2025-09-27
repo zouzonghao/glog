@@ -12,13 +12,23 @@ export interface Props {
 const { title, description } = Astro.props;
 const { isLoggedIn } = Astro.locals;
 
-// Fetch site settings from the backend API
-const settingsResponse = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/settings`);
-const siteSettings = await settingsResponse.json();
+// Fetch public site settings for all pages
+let siteTitle = 'Glog';
+let siteDescription = description || 'A Glog site';
+let favicon = '/pic/favicon.ico'; // Default favicon
 
-const siteTitle = siteSettings.data?.site_title || 'Glog';
-const siteDescription = description || siteSettings.data?.site_description || 'A Glog site';
-const favicon = siteSettings.data?.favicon || '/pic/favicon.ico';
+try {
+    const settingsResponse = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/public-settings`);
+    if (settingsResponse.ok) {
+        const settingsData = await settingsResponse.json();
+        const settings = settingsData.settings;
+        siteTitle = settings.site_title || siteTitle;
+        siteDescription = description || settings.site_description || siteDescription;
+        favicon = settings.favicon || favicon;
+    }
+} catch (error) {
+    console.error("Could not fetch public settings:", error);
+}
 
 const isIndexOrSearchPage = Astro.url.pathname === '/' || Astro.url.pathname === '/search';
 const currentView = Astro.url.searchParams.get('view') || 'list';
