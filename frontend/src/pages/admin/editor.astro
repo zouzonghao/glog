@@ -54,7 +54,7 @@ const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
             <div class="editor-actions">
                 <button type="button" id="save-btn" class="btn btn-editor-action">💾 保存文章</button>
-                <a href={post ? `/post/${post.slug}` : '#'} class="btn btn-editor-action open-post-link">🔗 打开文章</a>
+                <a href={post ? `/post/${post.slug}` : '#'} class="btn btn-editor-action open-post-link" style={!post && 'display: none;'}>🔗 打开文章</a>
             </div>
         </form>
     </div>

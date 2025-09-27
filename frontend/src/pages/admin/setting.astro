@@ -82,7 +82,24 @@ const settings = await getSettings(Astro.cookies);
     </Modal>
 
     <Modal id="imageapi-modal" title="AI 封面功能设置 (ImageAPI)">
-        <p>ImageAPI settings form goes here...</p>
+        <form id="imageapi-settings-form" class="app-form" autocomplete="off">
+            <div class="settings-form-group">
+                <label for="imageapi_url">ImageAPI URL</label>
+                <input type="text" id="imageapi_url" name="imageapi_url" value={settings.imageapi_url} autocomplete="off">
+            </div>
+            <div class="settings-form-group">
+                <label for="imageapi_token">ImageAPI Token</label>
+                <input type="password" id="imageapi_token" name="imageapi_token" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group" id="imageapi-model-container">
+                <label for="imageapi_model">ImageAPI 模型</label>
+                <input type="text" id="imageapi_model" name="imageapi_model" value={settings.imageapi_model} autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="test-imageapi-btn" class="btn">🔄 获取模型</button>
+                <button type="button" id="save-imageapi-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
     </Modal>
 
     <Modal id="ai-logs-modal" title="AI 任务日志">
@@ -95,11 +112,58 @@ const settings = await getSettings(Astro.cookies);
     </Modal>
 
     <Modal id="github-modal" title="GitHub 备份设置">
-        <p>GitHub backup settings form goes here...</p>
+        <form id="github-settings-form" class="app-form" autocomplete="off">
+            <div class="settings-form-group">
+                <label for="github_repo">仓库名 (格式: user/repo)</label>
+                <input type="text" id="github_repo" name="github_repo" value={settings.github_repo} autocomplete="off">
+            </div>
+            <div class="settings-form-group">
+                <label for="github_branch">分支名</label>
+                <input type="text" id="github_branch" name="github_branch" value={settings.github_branch} autocomplete="off">
+            </div>
+            <div class="settings-form-group">
+                <label for="github_token">Personal Access Token</label>
+                <input type="password" id="github_token" name="github_token" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group">
+                <label for="github_interval">备份间隔（小时），0 表示不启用</label>
+                <input type="number" id="github_interval" name="github_interval" value={settings.github_interval} min="0" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="backup-github-now-btn" class="btn">⚡ 立即备份</button>
+                <button type="button" id="test-github-btn" class="btn">🚀 测试连接</button>
+                <button type="button" id="save-github-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
     </Modal>
 
     <Modal id="webdav-modal" title="WebDAV 备份设置">
-        <p>WebDAV backup settings form goes here...</p>
+        <form id="webdav-settings-form" class="app-form" autocomplete="off">
+            <div class="settings-form-group">
+                <label for="webdav_url">服务器地址</label>
+                <input type="text" id="webdav_url" name="webdav_url" value={settings.webdav_url} autocomplete="off">
+            </div>
+            <div class="settings-form-group">
+                <label for="webdav_user">账号</label>
+                <input type="text" id="webdav_user" name="webdav_user" value={settings.webdav_user} autocomplete="off">
+            </div>
+            <div class="settings-form-group">
+                <label for="webdav_password">密码</label>
+                <input type="password" id="webdav_password" name="webdav_password" placeholder="留空则不修改" autocomplete="new-password">
+            </div>
+            <div class="settings-form-group">
+                <label for="webdav_interval">备份间隔（小时），0 表示不启用</label>
+                <input type="number" id="webdav_interval" name="webdav_interval" value={settings.webdav_interval} min="0" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="backup-webdav-now-btn" class="btn">⚡ 立即备份</button>
+                <button type="button" id="test-webdav-btn" class="btn">🚀 测试连接</button>
+                <button type="button" id="save-webdav-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
     </Modal>
 
+    <script>
+        import '../../scripts/settings.ts';
+    </script>
 </BaseLayout>

@@ -47,7 +47,14 @@ const currentView = Astro.url.searchParams.get('view') || 'list';
             const savedTheme = localStorage.getItem("theme");
             const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
             let theme = savedTheme || (prefersDark ? "dark" : "light");
-            if (!savedTheme) localStorage.setItem("theme", theme);
+            
+            // If there's no saved theme, save the determined theme to localStorage.
+            if (!savedTheme) {
+                localStorage.setItem("theme", theme);
+            }
+
+            // Explicitly add the correct theme class.
+            document.documentElement.classList.remove('light', 'dark');
             document.documentElement.classList.add(theme);
         })();
     </script>
@@ -124,5 +131,6 @@ const currentView = Astro.url.searchParams.get('view') || 'list';
     
     <slot name="scripts" />
     <script src="../scripts/main.ts"></script>
+    <script src="../scripts/theme-toggle.ts"></script>
 </body>
 </html>
