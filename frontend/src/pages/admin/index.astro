@@ -2,9 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Pagination from '../../components/Pagination.astro';
 import type { Post } from '../../services/api';
-import { getPosts } from '../../services/api';
-
-import { searchPosts } from '../../services/api';
+import { getAdminPosts } from '../../services/api';
+import AdminManager from '../../components/AdminManager.svelte';
 
 // Fetch posts for admin view
 const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
@@ -12,29 +11,9 @@ const pageSize = parseInt(Astro.url.searchParams.get('pageSize') || '10', 10);
 const pageSizeOptions = [10, 20, 50];
 const query = Astro.url.searchParams.get('q') || '';
 
-let data;
-if (query) {
-    data = await searchPosts(query, page, pageSize);
-} else {
-    data = await getPosts(page, pageSize);
-}
+const data = await getAdminPosts(page, pageSize, query, Astro.cookies);
 const posts: Post[] = data?.posts || [];
 const pagination = data?.pagination;
-
-function formatDate(dateString: string) {
-  if (!dateString || dateString.startsWith('0001-01-01')) {
-    return '—';
-  }
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return '—';
-    }
-    return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-  } catch (e) {
-    return '—';
-  }
-}
 ---
 <BaseLayout title="后台管理">
     <div class="admin-header">
@@ -47,60 +26,10 @@ function formatDate(dateString: string) {
         </form>
     </div>
 
-    <div class="post-list-container">
-        <div class="post-list-header">
-            <div class="col-checkbox"><input type="checkbox" id="select-all-posts"></div>
-            <div class="col-title">标题</div>
-            <div class="col-private">私密</div>
-            <div class="col-date">发布日期</div>
-            <div class="col-actions">操作</div>
-        </div>
-        <div class="post-list-body">
-            {posts.length > 0 ? (
-                posts.map(post => (
-                    <div class="post-list-item">
-                        <div class="col-checkbox"><input type="checkbox" class="post-checkbox" data-id={post.id}></div>
-                        <div class="col-title" title={post.title}>
-                            <a href={`/post/${post.slug}`}>{post.title}</a>
-                        </div>
-                        <div class="col-private">
-                            {post.is_private ? '是' : '-'}
-                        </div>
-                        <div class="col-date">
-                            {formatDate(post.published_at)}
-                        </div>
-                        <div class="col-actions">
-                            <a href={`/admin/editor?id=${post.id}`}>[编辑]</a>
-                            <div class="delete-wrapper" tabindex="0">
-                                <span class="delete-init">[删除]</span>
-                                <span class="delete-confirm" data-id={post.id}>[确认]</span>
-                            </div>
-                        </div>
-                    </div>
-                ))
-            ) : (
-                <div class="empty-state">
-                    {query ? (
-                        <p>没有找到与 "{query}" 相关的文章。</p>
-                    ) : (
-                        <p>没有文章。</p>
-                    )}
-                </div>
-            )}
-        </div>
-    </div>
-
-    <div class="batch-actions-container">
-        <button id="batch-delete-btn" class="btn" disabled>批量删除</button>
-        <button id="batch-set-private-btn" class="btn" disabled>设为私密</button>
-        <button id="batch-set-public-btn" class="btn" disabled>设为公开</button>
-    </div>
+    <AdminManager client:load posts={posts} />
 
     {pagination && (
         <Pagination pagination={pagination} baseUrl="/admin" query={query} pageSize={pageSize} pageSizeOptions={pageSizeOptions} />
     )}
     
-    <script>
-        import '../../scripts/admin.ts';
-    </script>
 </BaseLayout>

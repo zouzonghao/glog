@@ -1,15 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Notification from '../components/Notification.astro';
+import LoginForm from '../components/LoginForm.svelte';
 ---
 <BaseLayout title="登录">
   <div class="editor-container login-container">
-    <form id="login-form" class="editor-form app-form">
-      <div class="form-group login-form-group">
-        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="请输入密码" class="login-password-input">
-        <button type="submit" id="login-btn" class="login-submit-btn">登录</button>
-      </div>
-    </form>
+    <LoginForm client:load />
   </div>
-  <Notification id="notification" message="" type="success" />
 </BaseLayout>

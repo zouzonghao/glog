@@ -124,6 +124,25 @@ export async function searchPosts(query: string, page: number = 1, pageSize: num
 }
 
 /**
+ * Fetches a paginated list of posts for the admin panel. Requires authentication.
+ * @param page - The page number to fetch.
+ * @param pageSize - The number of posts per page.
+ * @param query - Optional search query.
+ * @param cookies - The Astro.cookies object for SSR.
+ * @returns A promise that resolves to a paginated list of all posts.
+ */
+export async function getAdminPosts(page: number = 1, pageSize: number = 10, query: string = '', cookies?: any): Promise<PaginatedPostsResponse> {
+    const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+    });
+    if (query) {
+        params.set('q', query);
+    }
+    return apiFetch(`${API_BASE_URL}/api/admin/posts?${params.toString()}`, {}, cookies);
+}
+
+/**
  * Checks the authentication status of the user.
  * This function is a bit special as a 401 is an expected outcome.
  * @returns A promise that resolves to the authentication status.

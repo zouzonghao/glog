@@ -9,7 +9,6 @@ import (
 	"glog/internal/models"
 	"glog/internal/services"
 	"glog/internal/tasks"
-	"glog/internal/utils"
 	"io"
 	"math"
 	"net/http"
@@ -80,14 +79,41 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 		return
 	}
 
-	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
-	pagination := utils.GeneratePagination(page, totalPages)
+	// --- Start: Define structured and correctly cased JSON responses ---
+	type PostResponseForAdmin struct {
+		ID          uint   `json:"id"`
+		PublishedAt string `json:"published_at"`
+		Title       string `json:"title"`
+		Slug        string `json:"slug"`
+		Cover       string `json:"cover"`
+		Excerpt     string `json:"excerpt"`
+		IsPrivate   bool   `json:"is_private"`
+	}
 
-	postResponses := make([]models.PostListResponse, len(posts))
+	type PaginationResponse struct {
+		CurrentPage  int  `json:"currentPage"`
+		TotalPages   int  `json:"totalPages"`
+		TotalRecords int  `json:"totalRecords"`
+		PageSize     int  `json:"pageSize"`
+		HasPrev      bool `json:"hasPrev"`
+		HasNext      bool `json:"hasNext"`
+	}
+
+	type AdminPostsResponse struct {
+		Posts      []PostResponseForAdmin `json:"posts"`
+		Pagination PaginationResponse     `json:"pagination"`
+	}
+	// --- End: Define structured JSON responses ---
+
+	postResponses := make([]PostResponseForAdmin, len(posts))
 	for i, post := range posts {
-		postResponses[i] = models.PostListResponse{
+		var publishedAtStr string
+		if !post.PublishedAt.IsZero() {
+			publishedAtStr = post.PublishedAt.Format(time.RFC3339)
+		}
+		postResponses[i] = PostResponseForAdmin{
 			ID:          post.ID,
-			PublishedAt: post.PublishedAt,
+			PublishedAt: publishedAtStr,
 			Title:       post.Title,
 			Slug:        post.Slug,
 			Cover:       post.Cover,
@@ -96,16 +122,21 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":     "success",
-		"posts":      postResponses,
-		"pagination": pagination,
-		"query":      query,
-		"total":      total,
-		"page":       page,
-		"pageSize":   pageSize,
-		"totalPages": totalPages,
-	})
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	response := AdminPostsResponse{
+		Posts: postResponses,
+		Pagination: PaginationResponse{
+			CurrentPage:  page,
+			TotalPages:   totalPages,
+			TotalRecords: int(total),
+			PageSize:     pageSize,
+			HasPrev:      page > 1,
+			HasNext:      page < totalPages,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (h *AdminHandler) SavePost(c *gin.Context) {

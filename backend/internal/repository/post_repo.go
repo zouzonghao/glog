@@ -76,7 +76,7 @@ func (r *PostRepository) FindAllByAdmin(page, pageSize int, query, status string
 	dbQuery := r.db.Order("published_at desc")
 
 	if query != "" {
-		dbQuery = dbQuery.Where("title LIKE ?", "%"+query+"%")
+		dbQuery = applySearchConditions(dbQuery, query)
 	}
 
 	now := time.Now().In(shanghaiLocation)
@@ -142,18 +142,24 @@ func (r *PostRepository) DeleteByIDs(ids []uint) error {
 }
 
 func (r *PostRepository) UpdatePrivacyByIDs(ids []uint, isPrivate bool) error {
-	return r.db.Model(&models.Post{}).Where("id IN ?", ids).Update("is_private", isPrivate).Error
+	// Use Debug() to print the raw SQL statement to the console
+	return r.db.Debug().Model(&models.Post{}).Where("id IN ?", ids).Update("is_private", isPrivate).Error
 }
 
 // --- LIKE Search Methods ---
+
+// applySearchConditions is a helper function to apply the title/content search logic.
+func applySearchConditions(db *gorm.DB, query string) *gorm.DB {
+	likeQuery := "%" + query + "%"
+	return db.Where("title LIKE ? OR content LIKE ?", likeQuery, likeQuery)
+}
 
 func (r *PostRepository) SearchPageByLike(keywords []string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
 	dbQuery := r.db.Order("published_at desc")
 
 	for _, keyword := range keywords {
-		likeQuery := "%" + keyword + "%"
-		dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", likeQuery, likeQuery)
+		dbQuery = applySearchConditions(dbQuery, keyword)
 	}
 
 	if !isLoggedIn {
@@ -169,8 +175,7 @@ func (r *PostRepository) CountByQueryByLike(keywords []string, isLoggedIn bool) 
 	dbQuery := r.db.Model(&models.Post{})
 
 	for _, keyword := range keywords {
-		likeQuery := "%" + keyword + "%"
-		dbQuery = dbQuery.Where("title LIKE ? OR content LIKE ?", likeQuery, likeQuery)
+		dbQuery = applySearchConditions(dbQuery, keyword)
 	}
 
 	if !isLoggedIn {

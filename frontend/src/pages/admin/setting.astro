@@ -1,169 +1,68 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Modal from '../../components/Modal.astro';
 import { getSettings } from '../../services/api';
+import SettingsForm from '../../components/SettingsForm.svelte';
+import BackupManager from '../../components/BackupManager.svelte';
+import SettingsModal from '../../components/SettingsModal.svelte';
+import AiLogsModal from '../../components/AiLogsModal.svelte';
 
-// Fetch settings from the backend API
 const settings = await getSettings(Astro.cookies);
+
+const aiFields = [
+  { name: 'openai_base_url', label: 'OpenAI Compatible Base URL', type: 'text' },
+  { name: 'openai_token', label: 'OpenAI Compatible Token', type: 'password', placeholder: '留空则不修改' },
+  { name: 'openai_model', label: 'OpenAI Compatible 模型', type: 'text' },
+];
+
+const imageApiFields = [
+    { name: 'imageapi_url', label: 'ImageAPI URL', type: 'text' },
+    { name: 'imageapi_token', label: 'ImageAPI Token', type: 'password', placeholder: '留空则不修改' },
+    { name: 'imageapi_model', label: 'ImageAPI 模型', type: 'text' },
+];
+
+const githubFields = [
+    { name: 'github_repo', label: '仓库名 (格式: user/repo)', type: 'text' },
+    { name: 'github_branch', label: '分支名', type: 'text' },
+    { name: 'github_token', label: 'Personal Access Token', type: 'password', placeholder: '留空则不修改' },
+    { name: 'github_interval', label: '备份间隔（小时），0 表示不启用', type: 'number', min: 0 },
+];
+
+const webdavFields = [
+    { name: 'webdav_url', label: '服务器地址', type: 'text' },
+    { name: 'webdav_user', label: '账号', type: 'text' },
+    { name: 'webdav_password', label: '密码', type: 'password', placeholder: '留空则不修改' },
+    { name: 'webdav_interval', label: '备份间隔（小时），0 表示不启用', type: 'number', min: 0 },
+];
 ---
 <BaseLayout title="站点设置">
     <div class="setting-header">
         <h2 class="group-title">站点信息</h2>
     </div>
-
-    <form id="settings-form" class="app-form" autocomplete="off">
-        <div class="settings-form-group settings-form-group-spaced">
-            <label for="password">管理员密码</label>
-            <input type="password" id="password" name="password" placeholder="留空则不修改" autocomplete="new-password">
-        </div>
-        <div class="settings-form-group">
-            <label for="favicon">浏览器标签页图标（url）</label>
-            <input type="text" id="favicon" name="favicon" value={settings.favicon} autocomplete="off">
-        </div>
-        <div class="settings-form-group">
-            <label for="site_title">站点标题</label>
-            <input type="text" id="site_title" name="site_title" value={settings.site_title} autocomplete="off">
-        </div>
-        <div class="settings-form-group">
-            <label for="site_description">站点描述</label>
-            <input type="text" id="site_description" name="site_description" value={settings.site_description} autocomplete="off">
-        </div>
-        <div class="settings-form-group">
-            <label for="cover_prefix">封面前缀</label>
-            <input type="text" id="cover_prefix" name="cover_prefix" value={settings.cover_prefix} autocomplete="off">
-        </div>
-        <div class="settings-actions settings-form-group-spaced">
-            <button type="button" id="save-settings-btn" class="btn">💾 保存站点信息</button>
-        </div>
-    </form>
+    <SettingsForm client:load settings={settings} />
 
     <div class="setting-header setting-header-separated">
         <h2 class="group-title">AI 集成</h2>
     </div>
     <div class="backup-actions settings-form-group-spaced">
-        <button type="button" id="ai-settings-btn" data-modal-target="ai-modal" class="btn">🔧 基本模型</button>
-        <button type="button" id="imageapi-settings-btn" data-modal-target="imageapi-modal" class="btn">🎨 AI 封面模型</button>
-        <button type="button" id="ai-logs-btn" data-modal-target="ai-logs-modal" class="btn">📜 AI 日志</button>
+        <SettingsModal client:visible title="AI 功能设置" formId="ai-settings-form" settings={settings} fields={aiFields} testEndpoint="/api/settings/test-ai">
+            🔧 基本模型
+        </SettingsModal>
+        <SettingsModal client:visible title="AI 封面功能设置 (ImageAPI)" formId="imageapi-settings-form" settings={settings} fields={imageApiFields} testEndpoint="/api/settings/test-imageapi">
+            🎨 AI 封面模型
+        </SettingsModal>
+        <AiLogsModal client:visible />
     </div>
 
     <div class="setting-header setting-header-separated">
         <h2 class="group-title">备份与恢复</h2>
     </div>
     <div class="backup-actions settings-form-group-spaced">
-        <button type="button" id="github-settings-btn" data-modal-target="github-modal" class="btn">🔧 GitHub 备份</button>
-        <button type="button" id="webdav-settings-btn" data-modal-target="webdav-modal" class="btn">🔧 WebDAV 备份</button>
-        <a href="/admin/setting/backup" id="backup-btn" class="btn">💾 下载备份</a>
-        <form id="upload-form" class="upload-form-wrapper">
-            <input type="file" id="backup-file" name="backup" accept=".zip,.json" class="hidden-file-input">
-            <button type="button" id="upload-btn" class="btn">📤 上传恢复</button>
-        </form>
+        <SettingsModal client:visible title="GitHub 备份设置" formId="github-settings-form" settings={settings} fields={githubFields} testEndpoint="/api/settings/test-github" backupEndpoint="/api/backup/github-now">
+            🔧 GitHub 备份
+        </SettingsModal>
+        <SettingsModal client:visible title="WebDAV 备份设置" formId="webdav-settings-form" settings={settings} fields={webdavFields} testEndpoint="/api/settings/test-webdav" backupEndpoint="/api/backup/webdav-now">
+            🔧 WebDAV 备份
+        </SettingsModal>
+        <BackupManager client:load />
     </div>
-
-    <!-- Modals -->
-    <Modal id="ai-modal" title="AI 功能设置">
-        <form id="ai-settings-form" class="app-form" autocomplete="off">
-            <div class="settings-form-group">
-                <label for="openai_base_url">OpenAI Compatible Base URL</label>
-                <input type="text" id="openai_base_url" name="openai_base_url" value={settings.openai_base_url} autocomplete="off">
-            </div>
-            <div class="settings-form-group">
-                <label for="openai_token">OpenAI Compatible Token</label>
-                <input type="password" id="openai_token" name="openai_token" placeholder="留空则不修改" autocomplete="new-password">
-            </div>
-            <div class="settings-form-group">
-                <label for="openai_model">OpenAI Compatible 模型</label>
-                <input type="text" id="openai_model" name="openai_model" value={settings.openai_model} autocomplete="off">
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="test-ai-btn" class="btn">🚀 测试连接</button>
-                <button type="button" id="save-ai-btn" class="btn">💾 保存设置</button>
-            </div>
-        </form>
-    </Modal>
-
-    <Modal id="imageapi-modal" title="AI 封面功能设置 (ImageAPI)">
-        <form id="imageapi-settings-form" class="app-form" autocomplete="off">
-            <div class="settings-form-group">
-                <label for="imageapi_url">ImageAPI URL</label>
-                <input type="text" id="imageapi_url" name="imageapi_url" value={settings.imageapi_url} autocomplete="off">
-            </div>
-            <div class="settings-form-group">
-                <label for="imageapi_token">ImageAPI Token</label>
-                <input type="password" id="imageapi_token" name="imageapi_token" placeholder="留空则不修改" autocomplete="new-password">
-            </div>
-            <div class="settings-form-group" id="imageapi-model-container">
-                <label for="imageapi_model">ImageAPI 模型</label>
-                <input type="text" id="imageapi_model" name="imageapi_model" value={settings.imageapi_model} autocomplete="off">
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="test-imageapi-btn" class="btn">🔄 获取模型</button>
-                <button type="button" id="save-imageapi-btn" class="btn">💾 保存设置</button>
-            </div>
-        </form>
-    </Modal>
-
-    <Modal id="ai-logs-modal" title="AI 任务日志">
-        <div class="logs-container">
-            <pre id="ai-logs-content">正在加载日志...</pre>
-        </div>
-        <div class="modal-actions">
-            <button type="button" id="clear-ai-logs-btn" class="btn">🗑️ 清除日志</button>
-        </div>
-    </Modal>
-
-    <Modal id="github-modal" title="GitHub 备份设置">
-        <form id="github-settings-form" class="app-form" autocomplete="off">
-            <div class="settings-form-group">
-                <label for="github_repo">仓库名 (格式: user/repo)</label>
-                <input type="text" id="github_repo" name="github_repo" value={settings.github_repo} autocomplete="off">
-            </div>
-            <div class="settings-form-group">
-                <label for="github_branch">分支名</label>
-                <input type="text" id="github_branch" name="github_branch" value={settings.github_branch} autocomplete="off">
-            </div>
-            <div class="settings-form-group">
-                <label for="github_token">Personal Access Token</label>
-                <input type="password" id="github_token" name="github_token" placeholder="留空则不修改" autocomplete="new-password">
-            </div>
-            <div class="settings-form-group">
-                <label for="github_interval">备份间隔（小时），0 表示不启用</label>
-                <input type="number" id="github_interval" name="github_interval" value={settings.github_interval} min="0" autocomplete="off">
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="backup-github-now-btn" class="btn">⚡ 立即备份</button>
-                <button type="button" id="test-github-btn" class="btn">🚀 测试连接</button>
-                <button type="button" id="save-github-btn" class="btn">💾 保存设置</button>
-            </div>
-        </form>
-    </Modal>
-
-    <Modal id="webdav-modal" title="WebDAV 备份设置">
-        <form id="webdav-settings-form" class="app-form" autocomplete="off">
-            <div class="settings-form-group">
-                <label for="webdav_url">服务器地址</label>
-                <input type="text" id="webdav_url" name="webdav_url" value={settings.webdav_url} autocomplete="off">
-            </div>
-            <div class="settings-form-group">
-                <label for="webdav_user">账号</label>
-                <input type="text" id="webdav_user" name="webdav_user" value={settings.webdav_user} autocomplete="off">
-            </div>
-            <div class="settings-form-group">
-                <label for="webdav_password">密码</label>
-                <input type="password" id="webdav_password" name="webdav_password" placeholder="留空则不修改" autocomplete="new-password">
-            </div>
-            <div class="settings-form-group">
-                <label for="webdav_interval">备份间隔（小时），0 表示不启用</label>
-                <input type="number" id="webdav_interval" name="webdav_interval" value={settings.webdav_interval} min="0" autocomplete="off">
-            </div>
-            <div class="modal-actions">
-                <button type="button" id="backup-webdav-now-btn" class="btn">⚡ 立即备份</button>
-                <button type="button" id="test-webdav-btn" class="btn">🚀 测试连接</button>
-                <button type="button" id="save-webdav-btn" class="btn">💾 保存设置</button>
-            </div>
-        </form>
-    </Modal>
-
-    <script>
-        import '../../scripts/settings.ts';
-    </script>
 </BaseLayout>

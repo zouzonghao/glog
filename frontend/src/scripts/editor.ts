@@ -29,8 +29,15 @@ async function savePost(form: HTMLFormElement) {
     const postId = (form.querySelector('#post-id') as HTMLInputElement).value;
     const isNewPost = postId === '0';
 
-    const url = isNewPost ? `${apiBaseUrl}/api/posts` : `${apiBaseUrl}/api/posts/${postId}`;
-    const method = isNewPost ? 'POST' : 'PUT';
+    // Convert id to number before sending to backend
+    if (data.id) {
+        data.id = parseInt(data.id, 10);
+    }
+
+    // For new posts, always use POST. For existing, use PUT.
+    // The backend handler for /api/posts can handle both creation and updates based on the presence of an ID in the body.
+    const url = `${apiBaseUrl}/api/posts`;
+    const method = 'POST';
 
     try {
         const response = await fetch(url, {
@@ -45,25 +52,28 @@ async function savePost(form: HTMLFormElement) {
             throw new Error(result.message || '保存失败');
         }
 
-        showNotification({ message: '文章保存成功！', type: 'success' });
-        
-        const newPostId = result.data.id;
-        const newSlug = result.data.slug;
+        const newPostId = result.post_id;
+        const newSlug = result.slug;
 
-        // Update form and URL for subsequent saves
-        (document.getElementById('post-id') as HTMLInputElement).value = newPostId;
-        const openPostLink = document.querySelector('.open-post-link') as HTMLAnchorElement;
-        if (openPostLink) {
-            openPostLink.href = `/post/${newSlug}`;
-            openPostLink.style.display = 'inline-block'; // Show the link
+        // If it was a new post, store notification and navigate to the new edit page.
+        if (isNewPost) {
+            sessionStorage.setItem('glog_notification', JSON.stringify({ message: result.message || '文章已创建！', type: 'success' }));
+            
+            if ((window as any).Astro && (window as any).Astro.navigate) {
+                (window as any).Astro.navigate(`/admin/editor?id=${newPostId}`);
+            } else {
+                window.location.href = `/admin/editor?id=${newPostId}`;
+            }
+            return; // Stop execution to allow navigation to complete
         }
-        
-        // Update browser URL without a full reload
-        history.pushState(null, '', `/admin/editor/${newPostId}`);
-        
-        // If it was a new post, navigate to the new edit page to fully reload state if needed
-        if (isNewPost && (window as any).Astro) {
-            (window as any).Astro.navigate(`/admin/editor/${newPostId}`);
+
+        // For existing posts, show notification directly as there is no navigation.
+        showNotification({ message: result.message || '文章已更新！', type: 'success' });
+
+        const openPostLink = document.querySelector('.open-post-link') as HTMLAnchorElement;
+        if (openPostLink && newSlug) {
+            openPostLink.href = `/post/${newSlug}`;
+            openPostLink.style.display = 'inline-block';
         }
 
     } catch (error: any) {

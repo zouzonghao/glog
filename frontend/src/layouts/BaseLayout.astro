@@ -134,3 +134,24 @@ const currentView = Astro.url.searchParams.get('view') || 'list';
     <script src="../scripts/theme-toggle.ts"></script>
 </body>
 </html>
+<script is:inline>
+  function showSessionNotification() {
+    const notificationJSON = sessionStorage.getItem('glog_notification');
+    if (notificationJSON) {
+      try {
+        const notification = JSON.parse(notificationJSON);
+        const event = new CustomEvent('show-notification', { detail: notification });
+        document.dispatchEvent(event);
+      } catch (e) {
+        console.error("Could not parse notification from sessionStorage", e);
+      } finally {
+        sessionStorage.removeItem('glog_notification');
+      }
+    }
+  }
+
+  // Run on initial page load
+  document.addEventListener('DOMContentLoaded', showSessionNotification);
+  // Run on subsequent page navigations (Astro View Transitions)
+  document.addEventListener('astro:after-swap', showSessionNotification);
+</script>

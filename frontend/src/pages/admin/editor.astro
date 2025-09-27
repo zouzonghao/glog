@@ -16,7 +16,14 @@ if (postId) {
 }
 
 const pageTitle = post ? '编辑文章' : '写新文章';
-const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+// Helper function to format a date object into 'YYYY-MM-DD HH:mm' format in the local timezone
+function getLocalISOString(date: Date) {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().slice(0, 16).replace('T', ' ');
+}
+
+const now = getLocalISOString(new Date());
 ---
 <BaseLayout title={pageTitle}>
     <h2 class="group-title">{post ? '文章编辑' : '文章新建'}</h2>
