@@ -15,7 +15,7 @@ const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
 const pageSize = 10; // Hardcode page size to 10
 
 // Fetch posts from your Go backend
-const data = await getPosts(page, pageSize);
+const data = await getPosts(page, pageSize, Astro.cookies);
 const posts: Post[] = data?.posts || [];
 const pagination = data?.pagination;
 

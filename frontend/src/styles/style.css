@@ -809,10 +809,10 @@ html.dark .post-content th {
     margin-left: 5px;
 }
 html.light .private-icon {
-    content: url(/static/pic/lock.svg);
+    content: url(/pic/lock.svg);
 }
 html.dark .private-icon {
-    content: url(/static/pic/lock-w.svg);
+    content: url(/pic/lock-w.svg);
 }
 
 /* 两步删除确认 */

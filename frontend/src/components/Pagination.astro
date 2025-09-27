@@ -11,7 +11,7 @@ interface Props {
 
 const { pagination, baseUrl, query, pageSize, pageSizeOptions } = Astro.props;
 
-const { currentPage, totalPages, hasPrev, hasNext } = pagination;
+const { current_page: currentPage, total_pages: totalPages, has_prev: hasPrev, has_next: hasNext } = pagination;
 
 function generatePageUrl(page: number, newPageSize?: number) {
     const params = new URLSearchParams();

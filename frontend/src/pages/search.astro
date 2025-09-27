@@ -17,7 +17,7 @@ let posts: Post[] = [];
 let pagination: PaginatedPostsResponse['pagination'] | null = null;
 
 if (query) {
-    const data = await searchPosts(query, page, pageSize);
+    const data = await searchPosts(query, page, pageSize, Astro.cookies);
     posts = data?.posts || [];
     pagination = data?.pagination;
 }

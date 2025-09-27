@@ -21,12 +21,12 @@ export interface PostForEditor extends Post {
 export interface PaginatedPostsResponse {
     posts: Post[];
     pagination: {
-    	currentPage: number;
-        totalPages: number;
-        totalRecords: number;
-        pageSize: number;
-        hasPrev: boolean;
-        hasNext: boolean;
+    	current_page: number;
+    	   total_pages: number;
+    	   total_records: number;
+    	   page_size: number;
+    	   has_prev: boolean;
+    	   has_next: boolean;
     };
 }
 
@@ -89,8 +89,8 @@ async function apiFetch(url: string, options: RequestInit = {}, cookies?: any): 
  * @param pageSize - The number of posts per page.
  * @returns A promise that resolves to a paginated list of posts.
  */
-export async function getPosts(page: number = 1, pageSize: number = 10): Promise<PaginatedPostsResponse> {
-    return apiFetch(`${API_BASE_URL}/api/posts?page=${page}&pageSize=${pageSize}`);
+export async function getPosts(page: number = 1, pageSize: number = 10, cookies?: any): Promise<PaginatedPostsResponse> {
+    return apiFetch(`${API_BASE_URL}/api/posts?page=${page}&pageSize=${pageSize}`, {}, cookies);
 }
 
 /**
@@ -98,8 +98,8 @@ export async function getPosts(page: number = 1, pageSize: number = 10): Promise
  * @param slug - The slug of the post to fetch.
  * @returns A promise that resolves to the post detail.
  */
-export async function getPostBySlug(slug: string): Promise<PostDetail> {
-	return apiFetch(`${API_BASE_URL}/api/posts/${slug}`);
+export async function getPostBySlug(slug: string, cookies?: any): Promise<PostDetail> {
+	return apiFetch(`${API_BASE_URL}/api/posts/${slug}`, {}, cookies);
 }
 
 /**
@@ -119,8 +119,8 @@ export async function getPostById(id: string, cookies?: any): Promise<PostForEdi
  * @param pageSize - The number of posts per page.
  * @returns A promise that resolves to a paginated list of posts.
  */
-export async function searchPosts(query: string, page: number = 1, pageSize: number = 10): Promise<PaginatedPostsResponse> {
-    return apiFetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`);
+export async function searchPosts(query: string, page: number = 1, pageSize: number = 10, cookies?: any): Promise<PaginatedPostsResponse> {
+    return apiFetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`, {}, cookies);
 }
 
 /**

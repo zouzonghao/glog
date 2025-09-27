@@ -20,7 +20,7 @@ if (!slug) {
 let post: PostDetail | null = null;
 let error: string | null = null;
 try {
-    post = await getPostBySlug(slug);
+    post = await getPostBySlug(slug, Astro.cookies);
 } catch (e) {
     error = '文章加载失败。';
     console.error(e);
