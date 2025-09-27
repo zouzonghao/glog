@@ -28,18 +28,53 @@ export interface PaginatedPostsResponse {
 const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
 /**
+ * A wrapper for the native fetch function that includes credentials,
+ * handles API errors, and automatically redirects to the login page
+ * on 401 Unauthorized responses.
+ * @param url - The URL to fetch.
+ * @param options - The options for the fetch request.
+ * @returns A promise that resolves to the JSON response.
+ */
+async function apiFetch(url: string, options: RequestInit = {}): Promise<any> {
+    const defaultOptions: RequestInit = {
+        credentials: 'include', // Always send cookies
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+        ...options,
+    };
+
+    const response = await fetch(url, defaultOptions);
+
+    if (response.status === 401) {
+        // If we are already on the login page, don't redirect.
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+        }
+        // Throw an error to stop the current execution chain.
+        throw new Error('Unauthorized');
+    }
+
+    // For other errors, try to parse the JSON body for a message.
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+        throw new Error(errorData.message || 'An unknown error occurred');
+    }
+
+    // If the response is successful, parse and return the JSON.
+    return response.json();
+}
+
+
+/**
  * Fetches a paginated list of posts from the API.
  * @param page - The page number to fetch.
  * @param pageSize - The number of posts per page.
  * @returns A promise that resolves to a paginated list of posts.
  */
 export async function getPosts(page: number = 1, pageSize: number = 10): Promise<PaginatedPostsResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/posts?page=${page}&pageSize=${pageSize}`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch posts');
-    }
-    const data = await response.json();
-    return data;
+    return apiFetch(`${API_BASE_URL}/api/posts?page=${page}&pageSize=${pageSize}`);
 }
 
 /**
@@ -48,12 +83,7 @@ export async function getPosts(page: number = 1, pageSize: number = 10): Promise
  * @returns A promise that resolves to the post detail.
  */
 export async function getPostBySlug(slug: string): Promise<PostDetail> {
-	const response = await fetch(`${API_BASE_URL}/api/posts/${slug}`);
-	if (!response.ok) {
-		throw new Error('Post not found');
-	}
-	const data = await response.json();
-	return data;
+	return apiFetch(`${API_BASE_URL}/api/posts/${slug}`);
 }
 
 /**
@@ -62,12 +92,7 @@ export async function getPostBySlug(slug: string): Promise<PostDetail> {
  * @returns A promise that resolves to the post detail.
  */
 export async function getPostById(id: string): Promise<Post> {
-    const response = await fetch(`${API_BASE_URL}/api/admin/posts/${id}`);
-    if (!response.ok) {
-        throw new Error('Post not found');
-    }
-    const data = await response.json();
-    return data;
+    return apiFetch(`${API_BASE_URL}/api/admin/posts/${id}`);
 }
 
 /**
@@ -78,28 +103,28 @@ export async function getPostById(id: string): Promise<Post> {
  * @returns A promise that resolves to a paginated list of posts.
  */
 export async function searchPosts(query: string, page: number = 1, pageSize: number = 10): Promise<PaginatedPostsResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`);
-    if (!response.ok) {
-        throw new Error('Failed to search posts');
-    }
-    const data = await response.json();
-    return data;
+    return apiFetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`);
 }
 
 /**
  * Checks the authentication status of the user.
+ * This function is a bit special as a 401 is an expected outcome.
  * @returns A promise that resolves to the authentication status.
  */
 export async function getAuthStatus(): Promise<{ isLoggedIn: boolean }> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/status`, {
-        // Include credentials to send session cookies
-        credentials: 'include',
-    });
-    if (!response.ok) {
-        // If the request fails, assume the user is not logged in
+    try {
+        // We don't use apiFetch here because a 401 is not an exception in this case.
+        const response = await fetch(`${API_BASE_URL}/api/auth/status`, {
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            return { isLoggedIn: false };
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Auth status check failed:", error);
         return { isLoggedIn: false };
     }
-    return response.json();
 }
 
 /**
@@ -107,14 +132,9 @@ export async function getAuthStatus(): Promise<{ isLoggedIn: boolean }> {
  * @returns A promise that resolves on successful logout.
  */
 export async function logout(): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/api/logout`, {
-        method: 'POST', // Use POST for logout as a good practice
-        credentials: 'include',
+    return apiFetch(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
     });
-    if (!response.ok) {
-        throw new Error('Logout failed');
-    }
-    return response.json();
 }
 /**
  * Logs in a user.
@@ -122,6 +142,7 @@ export async function logout(): Promise<any> {
  * @returns A promise that resolves on successful login.
  */
 export async function login(password: string): Promise<any> {
+    // This call doesn't need the 401 redirect logic from apiFetch.
     const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {

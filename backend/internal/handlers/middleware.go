@@ -63,8 +63,9 @@ func AuthMiddleware() gin.HandlerFunc {
 		authenticated := session.Get(constants.SessionKeyAuthenticated)
 
 		if authenticated == nil || !authenticated.(bool) {
-			// User is not logged in, redirect to login page.
-			c.Redirect(http.StatusFound, "/login")
+			// For API calls, if the user is not logged in, return a 401 Unauthorized error.
+			// The frontend will handle the redirect.
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized", "message": "需要认证"})
 			c.Abort() // Prevent further processing
 			return
 		}

@@ -103,8 +103,8 @@ func main() {
 
 	r.Use(handlers.SettingsMiddleware(settingService))
 
-	// Serve frontend static assets
-	r.StaticFS("/assets", http.Dir("./static/assets"))
+	// The Go backend is now a pure API server.
+	// Frontend assets are served by the Astro dev server or a static host.
 
 	// API Routes
 	api := r.Group("/api")
@@ -164,26 +164,9 @@ func main() {
 	}
 
 	r.NoRoute(func(c *gin.Context) {
-		// For any route not matched by the API, try to serve a corresponding HTML file from Astro's build.
-		// This supports Astro's file-based routing for pages like /post/some-slug -> /post/some-slug.html
-		// We must check if the file exists to avoid breaking API routes.
-		filePath := "./static" + c.Request.URL.Path
-		if c.Request.URL.Path == "/" {
-			filePath = "./static/index.html"
-		} else if _, err := os.Stat(filePath + ".html"); err == nil {
-			filePath = filePath + ".html"
-		} else {
-			// Fallback to index.html for client-side routing or 404.
-			filePath = "./static/index.html"
-		}
-
-		// Check if the file exists before serving
-		if _, err := os.Stat(filePath); err == nil {
-			c.File(filePath)
-		} else {
-			// If no file matches, it's a true 404 for the API.
-			c.JSON(http.StatusNotFound, gin.H{"error": "Not Found"})
-		}
+		// All valid routes are now under the /api group.
+		// Any other route is a 404.
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not Found", "message": "Invalid API endpoint"})
 	})
 
 	go scheduler.Start()
