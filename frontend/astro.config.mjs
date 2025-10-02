@@ -9,7 +9,7 @@ export default defineConfig({
   output: 'server',
 
   adapter: vercel({
-    edgeMiddleware: true,
+    edgeMiddleware: false,
   }),
   // adapter: node({
   //   mode: "standalone"
