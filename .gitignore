@@ -19,3 +19,4 @@ mem.prof*
 # Ignore environment files
 .env
 **/.env
+frontend/.vercel

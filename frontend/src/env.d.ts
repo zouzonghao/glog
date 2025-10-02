@@ -5,6 +5,12 @@ declare namespace App {
     interface Locals {
         isLoggedIn: boolean;
         view: 'list' | 'cards';
+        publicSettings: {
+            site_title?: string;
+            site_description?: string;
+            favicon?: string;
+            [key: string]: any; // Allow other settings
+        };
     }
 }
 

@@ -1,5 +1,6 @@
 // src/middleware.ts
 import { defineMiddleware } from "astro:middleware";
+import { get as getFromCache, set as setInCache } from './utils/cache';
 
 const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
@@ -33,34 +34,46 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // --- 认证和路由保护逻辑 ---
   // 默认设置 isLoggedIn 为 false
   context.locals.isLoggedIn = false;
+  context.locals.publicSettings = {};
 
-  // 从浏览器请求中获取 cookie
+  // --- 全局数据获取 ---
+  // 1. 检查认证状态
   const sessionCookie = context.request.headers.get("cookie");
-
-  // 如果有 cookie，才需要去后端验证，否则保持默认的未登录状态
   if (sessionCookie) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/status`, {
         method: "GET",
-        headers: {
-          // 将浏览器发送的 cookie 原样转发给后端
-          "Cookie": sessionCookie,
-        },
+        headers: { "Cookie": sessionCookie },
       });
-
       if (response.ok) {
         const data = await response.json();
-        // 根据后端的响应更新 isLoggedIn 状态
         context.locals.isLoggedIn = data.isLoggedIn === true;
       }
     } catch (error) {
-      // 如果后端 API 请求失败，保持未登录状态
       console.error("Auth status check failed:", error);
-      context.locals.isLoggedIn = false;
     }
   }
 
-  // 如果用户未登录但试图访问 /admin/ 路径
+  // 2. 获取公共设置 (带缓存)
+  const CACHE_KEY = 'public_settings';
+  const CACHE_TTL_SECONDS = 600; // 10 minutes
+
+  let settings = getFromCache(CACHE_KEY);
+  if (!settings) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/public-settings`);
+      if (response.ok) {
+        const data = await response.json();
+        settings = data.settings;
+        setInCache(CACHE_KEY, settings, CACHE_TTL_SECONDS);
+      }
+    } catch (error) {
+      console.error("Failed to fetch public settings:", error);
+    }
+  }
+  context.locals.publicSettings = settings || {};
+
+  // --- 路由保护 ---
   if (!context.locals.isLoggedIn && context.url.pathname.startsWith('/admin')) {
     // 重定向到登录页面
     return context.redirect('/login');
