@@ -80,53 +80,18 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 	}
 
 	// --- Start: Define structured and correctly cased JSON responses ---
-	type PostResponseForAdmin struct {
-		ID          uint   `json:"id"`
-		PublishedAt string `json:"published_at"`
-		Title       string `json:"title"`
-		Slug        string `json:"slug"`
-		Cover       string `json:"cover"`
-		Excerpt     string `json:"excerpt"`
-		IsPrivate   bool   `json:"is_private"`
-	}
-
-	type PaginationResponse struct {
-		CurrentPage  int  `json:"currentPage"`
-		TotalPages   int  `json:"totalPages"`
-		TotalRecords int  `json:"totalRecords"`
-		PageSize     int  `json:"pageSize"`
-		HasPrev      bool `json:"hasPrev"`
-		HasNext      bool `json:"hasNext"`
-	}
-
+	// --- Start: Define structured and correctly cased JSON responses ---
 	type AdminPostsResponse struct {
-		Posts      []PostResponseForAdmin `json:"posts"`
-		Pagination PaginationResponse     `json:"pagination"`
+		Posts      []models.Post     `json:"posts"`
+		Pagination models.Pagination `json:"pagination"`
 	}
 	// --- End: Define structured JSON responses ---
-
-	postResponses := make([]PostResponseForAdmin, len(posts))
-	for i, post := range posts {
-		var publishedAtStr string
-		if !post.PublishedAt.IsZero() {
-			publishedAtStr = post.PublishedAt.Format(time.RFC3339)
-		}
-		postResponses[i] = PostResponseForAdmin{
-			ID:          post.ID,
-			PublishedAt: publishedAtStr,
-			Title:       post.Title,
-			Slug:        post.Slug,
-			Cover:       post.Cover,
-			Excerpt:     post.Excerpt,
-			IsPrivate:   post.IsPrivate,
-		}
-	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
 
 	response := AdminPostsResponse{
-		Posts: postResponses,
-		Pagination: PaginationResponse{
+		Posts: posts,
+		Pagination: models.Pagination{
 			CurrentPage:  page,
 			TotalPages:   totalPages,
 			TotalRecords: int(total),

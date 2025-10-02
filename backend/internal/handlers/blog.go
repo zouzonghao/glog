@@ -4,6 +4,7 @@ import (
 	"glog/internal/constants"
 	"glog/internal/models"
 	"glog/internal/services"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -36,6 +37,7 @@ func (h *BlogHandler) GetPosts(c *gin.Context) {
 	if total > 0 {
 		totalPages = (total + pageSize - 1) / pageSize
 	}
+	log.Printf("[Pagination Debug] TotalRecords: %d, PageSize: %d, TotalPages: %d", total, pageSize, totalPages)
 
 	pagination := models.Pagination{
 		CurrentPage:  page,

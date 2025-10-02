@@ -7,7 +7,7 @@ import { searchPosts } from '../services/api';
 import type { Post } from '../services/api';
 
 const query = Astro.url.searchParams.get('q');
-const view = Astro.url.searchParams.get('view') || 'list';
+const { view } = Astro.locals;
 const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
 const pageSize = 10; // Hardcode page size to 10
 
@@ -36,12 +36,12 @@ const title = `搜索结果: "${query}"`;
             view === 'list' ? (
                 <PostListView posts={posts} title={`搜索结果: "${query}"`} />
             ) : (
-                <PostCardView posts={posts} title={`搜索结果: "${query}"`} />
+                pagination && <PostCardView posts={posts} pagination={pagination} title={`搜索结果: "${query}"`} searchQuery={query} />
             )
         )}
     </div>
 
-    {pagination && (
+    {view === 'list' && pagination && (
         <Pagination pagination={pagination} baseUrl="/search" query={query || ''} />
     )}
 </BaseLayout>

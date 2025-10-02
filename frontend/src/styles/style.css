@@ -815,39 +815,6 @@ html.dark .private-icon {
     content: url(/pic/lock-w.svg);
 }
 
-/* 两步删除确认 */
-.delete-wrapper {
-    position: relative;
-    display: inline-block;
-    outline: none;
-}
-.delete-init:hover {
-    color: var(--color-accent-primary);
-    border-bottom-color: var(--color-accent-primary);
-}
-.delete-init,
-.delete-confirm {
-    cursor: pointer;
-    transition: opacity 0.2s ease-in-out;
-}
-.delete-confirm {
-    display: none;
-}
-.delete-wrapper:focus-within .delete-init {
-    display: none;
-}
-.delete-wrapper:focus-within .delete-confirm {
-    display: inline-block;
-}
-.delete-confirm {
-    color: var(--color-accent-primary);
-    transition: opacity 0.3s ease;
-}
-.delete-confirm.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-}
 
 /* 返回顶部按钮 */
 .back-to-top {
@@ -942,8 +909,7 @@ html.dark .notification.info {
 
 /* 18. 模态框 (Modal)
 ---------------------------------------------------------------------------------------------------- */
-/* All modal styles are now encapsulated within the SettingsModal.svelte component. */
-/* This section can be safely removed. */
+/* All modal styles are encapsulated within their respective Svelte components. */
 
 
 
@@ -1079,9 +1045,6 @@ html.dark .table-wrapper {
     padding-top: 1.5rem;
 }
 
-.upload-form-wrapper {
-    display: contents;
-}
 
 .hidden-file-input {
     display: none;

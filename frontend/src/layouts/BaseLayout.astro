@@ -30,7 +30,7 @@ try {
 }
 
 const isIndexOrSearchPage = Astro.url.pathname === '/' || Astro.url.pathname === '/search';
-const currentView = Astro.url.searchParams.get('view') || 'list';
+const { view: currentView } = Astro.locals;
 ---
 
 <!DOCTYPE html>

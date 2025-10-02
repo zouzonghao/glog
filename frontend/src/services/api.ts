@@ -18,16 +18,18 @@ export interface PostForEditor extends Post {
     content: string;
 }
 
+export interface Pagination {
+    current_page: number;
+    total_pages: number;
+    total_records: number;
+    page_size: number;
+    has_prev: boolean;
+    has_next: boolean;
+}
+
 export interface PaginatedPostsResponse {
     posts: Post[];
-    pagination: {
-    	current_page: number;
-    	   total_pages: number;
-    	   total_records: number;
-    	   page_size: number;
-    	   has_prev: boolean;
-    	   has_next: boolean;
-    };
+    pagination: Pagination;
 }
 
 const API_BASE_URL = import.meta.env.PUBLIC_API_URL;

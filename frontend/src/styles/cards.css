@@ -122,3 +122,70 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+/* --- Load More Button Styles --- */
+.load-more-container {
+    text-align: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.load-more-button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.load-more-button:hover:not(:disabled) {
+    background-color: #555;
+}
+
+.load-more-button:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.no-more-posts {
+    color: #888;
+    font-size: 1rem;
+}
+/* --- Infinite Scroll Status --- */
+.infinite-scroll-status {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 0;
+    gap: 10px;
+    width: 100%;
+    grid-column: 1 / -1; /* Span across all columns in a grid layout */
+    color: var(--text-color-secondary);
+}
+
+.infinite-scroll-status .spinner {
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
+
+.no-more-posts {
+    font-style: italic;
+}
+
+.sentinel {
+    height: 50px; /* An invisible area to trigger the observer */
+    width: 100%;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

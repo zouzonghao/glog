@@ -7,8 +7,8 @@ import { getPosts } from '../services/api';
 import type { Post } from '../services/api';
 import '../styles/cards.css';
 
-// Get view from URL, default to 'list'
-const view = Astro.url.searchParams.get('view') || 'list';
+// Get view from middleware, which has the correct logic
+const { view } = Astro.locals;
 
 // Get page from URL for pagination
 const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
@@ -26,10 +26,10 @@ const title = "主页";
     {view === 'list' ? (
         <PostListView posts={posts} />
     ) : (
-        <PostCardView posts={posts} />
+        <PostCardView posts={posts} pagination={pagination} />
     )}
 
-    {pagination && (
+    {view === 'list' && pagination && (
         <Pagination pagination={pagination} baseUrl="/" />
     )}
 </BaseLayout>
