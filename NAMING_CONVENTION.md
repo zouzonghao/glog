@@ -68,17 +68,3 @@
   - **备注**: GORM 会自动将 Go 结构体的 `PascalCase` 字段映射为 `snake_case` 的列名，因此只要遵循 Go 的规范即可。
 
 ---
-
-## 重构清单
-
-以下是根据此规范需要进行重构的关键点：
-
-1.  **`backend/internal/handlers/admin.go`**:
-    -   **目标**: 将 `ListPosts` 处理器中所有本地定义的、使用 `camelCase` JSON 标签的结构体，全部替换为 `models` 包中已有的、使用 `snake_case` 标签的全局模型。
-    -   **具体修改**:
-        -   移除本地的 `PostResponseForAdmin` 结构体，直接使用 `models.Post` 或 `models.RenderedPost`。
-        -   移除本地的 `PaginationResponse` 结构体，直接使用 `models.Pagination`。
-        -   调整 `AdminPostsResponse` 以引用正确的模型。
-
-2.  **前端 Admin 相关组件 (例如 `AdminManager.svelte`)**:
-    -   **目标**: 在前端，所有调用 `/api/admin/posts` 接口并处理其数据的地方，都需要将对 `camelCase` 字段（如 `currentPage`）的引用，修改为对 `snake_case` 字段（如 `current_page`）的引用。

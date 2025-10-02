@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { showNotification } from '../utils/notifications';
+  import { getImageApiModels, type ImageApiModelGroup } from '../services/api';
 
   export let title: string;
   export let settings: Record<string, any>;
@@ -14,6 +15,7 @@
   let isTesting = false;
   let isBackingUp = false;
   let localSettings = { ...settings };
+  let imageApiModels: ImageApiModelGroup[] = [];
 
   const dispatch = createEventDispatcher();
   const apiBaseUrl = import.meta.env.PUBLIC_API_URL || '';
@@ -25,7 +27,9 @@
 
   function closeModal() {
     isOpen = false;
+    imageApiModels = []; // Reset models when closing
   }
+
 
   async function handleSave() {
     isLoading = true;
@@ -73,19 +77,35 @@
         }
     });
 
+    // Special handling for ImageAPI test to fetch models
+    if (formId === 'imageapi-settings-form') {
+        try {
+            const { response, models } = await getImageApiModels(localSettings['imageapi_url'], localSettings['imageapi_token']);
+            showNotification({ message: response.message || 'Error', type: response.status === 'success' ? 'success' : 'error' });
+            imageApiModels = models;
+        } catch (error) {
+            showNotification({ message: (error as Error).message, type: 'error' });
+            imageApiModels = [];
+        } finally {
+            isTesting = false;
+        }
+        return;
+    }
+
+    // Generic test connection for other forms
     try {
-      const response = await fetch(`${apiBaseUrl}${testEndpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        credentials: 'include',
-        body: formData.toString(),
-      });
-      const result = await response.json();
-      showNotification({ message: result.message || 'Error', type: response.ok ? 'success' : 'error' });
+        const response = await fetch(`${apiBaseUrl}${testEndpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            credentials: 'include',
+            body: formData.toString(),
+        });
+        const result = await response.json();
+        showNotification({ message: result.message || 'Error', type: response.ok ? 'success' : 'error' });
     } catch (error) {
-      showNotification({ message: (error as Error).message, type: 'error' });
+        showNotification({ message: (error as Error).message, type: 'error' });
     } finally {
-      isTesting = false;
+        isTesting = false;
     }
   }
 
@@ -130,16 +150,33 @@
         {#each fields as field}
           <div class="settings-form-group">
             <label for={field.name}>{field.label}</label>
-            <input 
-              type={field.type} 
-              id={field.name} 
-              name={field.name}
-              bind:value={localSettings[field.name]}
-              placeholder={field.placeholder || ''}
-              min={field.min}
-              autocomplete={field.type === 'password' ? 'new-password' : 'off'}
-              disabled={isLoading}
-            >
+            {#if field.name === 'imageapi_model' && imageApiModels.length > 0}
+              <select
+                id={field.name}
+                name={field.name}
+                bind:value={localSettings[field.name]}
+                disabled={isLoading}
+              >
+                {#each imageApiModels as group}
+                  <optgroup label={group.provider}>
+                    {#each group.models as model}
+                      <option value={model.name}>{model.name}</option>
+                    {/each}
+                  </optgroup>
+                {/each}
+              </select>
+            {:else}
+              <input
+                type={field.type}
+                id={field.name}
+                name={field.name}
+                bind:value={localSettings[field.name]}
+                placeholder={field.placeholder || ''}
+                min={field.min}
+                autocomplete={field.type === 'password' ? 'new-password' : 'off'}
+                disabled={isLoading}
+              >
+            {/if}
           </div>
         {/each}
       </form>

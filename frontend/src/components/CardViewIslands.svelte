@@ -45,41 +45,32 @@
      * Fetches the next page of posts.
      */
     async function loadMorePosts() {
-        console.log('[Debug] loadMorePosts called. isLoading:', isLoading, 'hasMore:', hasMore);
         if (isLoading || !hasMore) return;
         isLoading = true;
 
         const nextPage = currentPage + 1;
         try {
-            console.log(`[Debug] Fetching page ${nextPage}...`);
             const data = searchQuery
                 ? await searchPosts(searchQuery, nextPage, pagination.page_size)
                 : await getPosts(nextPage, pagination.page_size || 10);
-            
-            console.log('[Debug] API response received:', data);
 
             if (data && data.posts.length > 0) {
                 appendPostsToColumns(data.posts);
                 currentPage = data.pagination.current_page;
                 hasMore = data.pagination.has_next;
-                console.log('[Debug] Posts appended. New currentPage:', currentPage, 'New hasMore:', hasMore);
                 if (!hasMore && observer) {
                     observer.disconnect();
-                    console.log('[Debug] No more posts. Observer disconnected.');
                 }
             } else {
                 hasMore = false;
-                console.log('[Debug] No more posts returned from API. Setting hasMore to false.');
                 if (observer) {
                     observer.disconnect();
-                    console.log('[Debug] Observer disconnected.');
                 }
             }
         } catch (error) {
-            console.error("[Debug] Failed to load more posts:", error);
+            console.error("Failed to load more posts:", error);
         } finally {
             isLoading = false;
-            console.log('[Debug] isLoading set to false.');
         }
     }
 
@@ -112,12 +103,9 @@
 
     // --- Lifecycle ---
     onMount(() => {
-        console.log('[Debug] CardViewIslands component mounted.');
         appendPostsToColumns(initialPosts);
-        console.log('[Debug] Initial posts distributed.');
 
         observer = new IntersectionObserver(entries => {
-            console.log('[Debug] IntersectionObserver triggered. isIntersecting:', entries[0].isIntersecting);
             if (entries[0].isIntersecting) {
                 loadMorePosts();
             }
@@ -127,16 +115,12 @@
         // We only start observing if there are more posts to load initially.
         if (hasMore) {
             observer.observe(sentinel);
-            console.log('[Debug] Observer is now watching the sentinel.');
-        } else {
-            console.log('[Debug] Initial data has no more pages. Observer not started.');
         }
     });
 
     onDestroy(() => {
         if (observer) {
             observer.disconnect();
-            console.log('[Debug] Observer disconnected on component destroy.');
         }
     });
 </script>

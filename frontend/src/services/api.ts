@@ -8,6 +8,11 @@ export interface Post {
     is_private: boolean;
 }
 
+export interface ImageApiModelGroup {
+    provider: string;
+    models: { name: string }[];
+}
+
 // For single post responses, we get the full post object from the backend
 export interface PostDetail extends Post {
 	content_html: string;
@@ -225,4 +230,40 @@ export async function login(password: string): Promise<any> {
 export async function getSettings(cookies?: any): Promise<any> {
     const response = await apiFetch(`${API_BASE_URL}/api/settings`, {}, cookies);
     return response.settings;
+}
+
+/**
+ * Fetches the available ImageAPI models by testing the connection.
+ * @param apiUrl The URL of the ImageAPI service.
+ * @param apiToken The token for the ImageAPI service.
+ * @returns A promise that resolves to an array of model names.
+ */
+export async function getImageApiModels(apiUrl: string, apiToken: string): Promise<{ response: any, models: ImageApiModelGroup[] }> {
+    const formData = new URLSearchParams();
+    formData.append('imageapi_url', apiUrl);
+    // Only append token if it's provided, otherwise the backend will use the saved one.
+    if (apiToken) {
+        formData.append('imageapi_token', apiToken);
+    }
+
+    // We don't use apiFetch here because we want to handle the response directly
+    // to extract the models list, and a non-200 response is an expected outcome
+    // (e.g., connection failed) that shouldn't trigger a global redirect.
+    const response = await fetch(`${API_BASE_URL}/api/settings/test-imageapi`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        credentials: 'include',
+        body: formData.toString(),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        // Throw an error with the message from the backend if the request fails.
+        throw new Error(result.message || '获取 ImageAPI 模型列表失败');
+    }
+    
+    const models = (result.models && Array.isArray(result.models)) ? result.models : [];
+
+    return { response: result, models: models };
 }
