@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPostBySlug, getPosts, type PostDetail, ApiError } from '../../services/api';
+
+
 // old 是控制淡出，new 是控制淡入，淡出和淡入不重合导致残影，所以取消一个
 const anim = {
   old: {

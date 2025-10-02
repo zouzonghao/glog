@@ -39,22 +39,29 @@ document.addEventListener('submit', async (e) => {
 /**
  * Handles page-specific setup that can't be purely delegated.
  */
+// Define the scroll handler at a higher scope so it can be referenced for removal.
+let scrollHandler: () => void;
+
 function initializePage() {
     // --- Back to Top Button ---
     const backToTopButton = document.getElementById('back-to-top');
+
+    // Clean up the old listener before attaching a new one.
+    if (scrollHandler) {
+        window.removeEventListener('scroll', scrollHandler);
+    }
+
     if (backToTopButton) {
-        const scrollHandler = () => {
+        scrollHandler = () => {
             if (window.pageYOffset > 200) {
                 backToTopButton.classList.add('show');
             } else {
                 backToTopButton.classList.remove('show');
             }
         };
-        // Attach listener only once
-        if (!(window as any).scrollListenerAttached) {
-            window.addEventListener('scroll', scrollHandler);
-            (window as any).scrollListenerAttached = true;
-        }
+        window.addEventListener('scroll', scrollHandler);
+        // Also, trigger it once on load to set the initial state.
+        scrollHandler();
     }
 }
 

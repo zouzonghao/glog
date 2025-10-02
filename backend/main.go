@@ -68,7 +68,9 @@ func main() {
 	searchHandler := handlers.NewSearchHandler(postService)
 	authHandler := handlers.NewAuthHandler(settingService)
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(handlers.JSONLoggerMiddleware())
 
 	// CORS Middleware
 	config := cors.DefaultConfig()
