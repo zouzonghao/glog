@@ -191,3 +191,17 @@ const { view: currentView } = Astro.locals;
   }
 
 </style>
+<script>
+  function setSearchInputValue() {
+    const searchInput = document.querySelector('.search-input') as HTMLInputElement;
+    if (!searchInput) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = urlParams.get('q');
+
+    searchInput.value = query || '';
+  }
+
+  // Run on initial page load
+  document.addEventListener('astro:page-load', setSearchInputValue);
+</script>

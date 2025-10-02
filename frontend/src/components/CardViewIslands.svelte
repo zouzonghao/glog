@@ -47,28 +47,35 @@
     async function loadMorePosts() {
         if (isLoading || !hasMore) return;
         isLoading = true;
-
+    
         const nextPage = currentPage + 1;
+        const pageSize = pagination.page_size || 10; // Default to 10 if not provided
+    
         try {
+            // Unified API call logic
             const data = searchQuery
-                ? await searchPosts(searchQuery, nextPage, pagination.page_size)
-                : await getPosts(nextPage, pagination.page_size || 10);
-
+                ? await searchPosts(searchQuery, nextPage, pageSize)
+                : await getPosts(nextPage, pageSize);
+    
             if (data && data.posts.length > 0) {
                 appendPostsToColumns(data.posts);
                 currentPage = data.pagination.current_page;
                 hasMore = data.pagination.has_next;
-                if (!hasMore && observer) {
-                    observer.disconnect();
-                }
             } else {
                 hasMore = false;
-                if (observer) {
-                    observer.disconnect();
-                }
+            }
+    
+            // Disconnect observer if there are no more posts
+            if (!hasMore && observer) {
+                observer.disconnect();
             }
         } catch (error) {
             console.error("Failed to load more posts:", error);
+            // Optional: Stop trying on error to prevent infinite loops
+            hasMore = false;
+            if (observer) {
+                observer.disconnect();
+            }
         } finally {
             isLoading = false;
         }

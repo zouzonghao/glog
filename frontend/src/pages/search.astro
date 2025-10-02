@@ -5,6 +5,7 @@ import PostCardView from '../components/PostCardView.astro';
 import Pagination from '../components/Pagination.astro';
 import { searchPosts } from '../services/api';
 import type { Post } from '../services/api';
+import '../styles/cards.css';
 
 const query = Astro.url.searchParams.get('q');
 const { view } = Astro.locals;
