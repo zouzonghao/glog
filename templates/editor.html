@@ -19,7 +19,7 @@
             </div>
 
             <div id="ai-cover-prompt-container" class="editor-form-group" style="display: none;">
-                <textarea id="ai_cover_prompt" name="ai_cover_prompt" rows="2" placeholder="AI封面提示词（留空则根据文章内容自动生成）"></textarea>
+                <input type="text" id="ai_cover_prompt" name="ai_cover_prompt" value="{{ if .post }}{{ .post.Cover }}{{ end }}" placeholder="AI封面提示词或图片链接（留空则根据文章内容自动生成）">
             </div>
             
             <div class="editor-options">
@@ -28,7 +28,7 @@
                     <label for="ai_summary">AI摘要</label>
                 </div>
                 <div class="form-group-inline">
-                    <input type="checkbox" id="ai_cover" name="ai_cover">
+                    <input type="checkbox" id="ai_cover" name="ai_cover" {{ if .post }}{{ if .post.Cover }}checked{{ end }}{{ end }}>
                     <label for="ai_cover">AI封面</label>
                 </div>
                 <div class="form-group-inline">

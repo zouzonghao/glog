@@ -180,12 +180,11 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, aiSummar
 			}
 
 			if aiCover {
-				newCoverURL, err := s.aiService.GenerateCover(aiCoverPrompt, post.Content, baseURL, token, model, imageAPIURL, imageAPIToken, imageAPIModel)
+				newCoverURL, err := s.aiService.GenerateCover(post.Title, aiCoverPrompt, post.Content, baseURL, token, model, imageAPIURL, imageAPIToken, imageAPIModel)
 				if err != nil {
 					utils.AILog("文章 '%s': AI封面生成失败: %v", post.Title, err)
 				} else if newCoverURL != "" {
 					updateMap["cover"] = newCoverURL
-					utils.AILog("文章 '%s': AI封面生成成功", post.Title)
 				}
 			}
 
@@ -303,12 +302,11 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 			}
 
 			if aiCover {
-				newCoverURL, err := s.aiService.GenerateCover(aiCoverPrompt, post.Content, baseURL, token, model, imageAPIURL, imageAPIToken, imageAPIModel)
+				newCoverURL, err := s.aiService.GenerateCover(post.Title, aiCoverPrompt, post.Content, baseURL, token, model, imageAPIURL, imageAPIToken, imageAPIModel)
 				if err != nil {
 					utils.AILog("文章 '%s': AI封面生成失败: %v", post.Title, err)
 				} else if newCoverURL != "" {
 					updateMap["cover"] = newCoverURL
-					utils.AILog("文章 '%s': AI封面生成成功", post.Title)
 				}
 			}
 

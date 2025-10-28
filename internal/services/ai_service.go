@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"glog/internal/utils"
 )
 
 type ImagePromptResponse struct {
@@ -153,10 +155,11 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 	return &aiResp, nil
 }
 
-func (s *AIService) GenerateCover(prompt, content, openAIBaseURL, openAIToken, openAIModel, imageAPIURL, imageAPIToken, imageAPIModel string) (string, error) {
+func (s *AIService) GenerateCover(postTitle, prompt, content, openAIBaseURL, openAIToken, openAIModel, imageAPIURL, imageAPIToken, imageAPIModel string) (string, error) {
 	trimmedPrompt := strings.TrimSpace(prompt)
 	if strings.HasPrefix(trimmedPrompt, "http://") || strings.HasPrefix(trimmedPrompt, "https://") {
-		return trimmedPrompt, nil // Directly return the URL
+		utils.AILog("文章 '%s': 已直接使用提供的链接作为封面", postTitle)
+		return trimmedPrompt, nil
 	}
 
 	var englishPrompt string
@@ -181,7 +184,12 @@ func (s *AIService) GenerateCover(prompt, content, openAIBaseURL, openAIToken, o
 		return "", errors.New("生成的英文提示词为空")
 	}
 
-	return s.generateImageFromAPI(englishPrompt, imageAPIURL, imageAPIToken, imageAPIModel)
+	imageURL, err := s.generateImageFromAPI(englishPrompt, imageAPIURL, imageAPIToken, imageAPIModel)
+	if err != nil {
+		return "", err
+	}
+	utils.AILog("文章 '%s': AI封面生成成功", postTitle)
+	return imageURL, nil
 }
 
 func (s *AIService) generateImageFromAPI(prompt, apiURL, apiToken, apiModel string) (string, error) {
