@@ -130,6 +130,37 @@ document.addEventListener('DOMContentLoaded', function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
+
+    // 页码控制栏显示逻辑 - 鼠标靠近时显示
+    const pagination = document.querySelector('.pagination-new');
+    if (pagination) {
+        let mouseHandler = null;
+        const proximityThreshold = 300; // 鼠标靠近150px时触发
+
+        const handleMouseMove = (e) => {
+            const rect = pagination.getBoundingClientRect();
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            // 计算鼠标到页码控制栏的距离
+            const distanceX = Math.max(0, Math.max(rect.left - mouseX, mouseX - rect.right));
+            const distanceY = Math.max(0, Math.max(rect.top - mouseY, mouseY - rect.bottom));
+            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+            
+            // 当鼠标靠近时显示
+            if (distance < proximityThreshold) {
+                pagination.classList.add('visible');
+                // 显示后移除监听器
+                window.removeEventListener('mousemove', mouseHandler);
+            }
+        };
+
+        // 保存监听器引用以便移除
+        mouseHandler = handleMouseMove;
+        
+        // 监听鼠标移动事件
+        window.addEventListener('mousemove', mouseHandler);
+    }
 });
 // 全局可用的模态框设置函数
 function setupGlobalModal(modalId, openTriggerId, closeTriggers = []) {
