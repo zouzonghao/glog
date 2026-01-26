@@ -4,7 +4,6 @@
 
 {{ define "description" }}<meta name="description" content="{{ if .post.Excerpt }}{{ .post.Excerpt }}{{ else }}{{ .site_description }}{{ end }}">{{ end }}
 {{ define "head" }}
-    <link rel="stylesheet" href="/static/css/prism.css">
 {{ end }}
 
 {{ define "content" }}
@@ -30,8 +29,4 @@
             {{ .post.Body }}
         </div>
     </article>
-{{ end }}
-
-{{ define "scripts" }}
-    <script src="/static/js/prism.js"></script>
 {{ end }}

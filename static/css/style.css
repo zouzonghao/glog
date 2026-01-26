@@ -310,19 +310,40 @@ html.dark .post-list-item:hover {
     padding: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
     color: var(--color-text-primary);
+    overflow: hidden;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+    position: relative;
+    width: 32px; /* 给一个固定宽度便于绝对定位居中 */
+    height: 32px;
 }
 .theme-toggle:hover {
-    opacity: 0.7;
+    background-color: rgba(128, 128, 128, 0.1);
 }
 .sun-icon, .moon-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+    position: absolute; /* 绝对定位实现重叠过渡 */
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s ease;
 }
-.dark .sun-icon { display: block; }
-.dark .moon-icon { display: none; }
-.light .sun-icon { display: none; }
-.light .moon-icon { display: block; }
+.dark .sun-icon {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+}
+.dark .moon-icon {
+    transform: rotate(90deg) scale(0.5);
+    opacity: 0;
+}
+.light .sun-icon {
+    transform: rotate(-90deg) scale(0.5);
+    opacity: 0;
+}
+.light .moon-icon {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+}
 
 /* 9. 搜索表单
 ---------------------------------------------------------------------------------------------------- */
@@ -674,16 +695,28 @@ html.dark .post-list-item:hover {
     color: var(--color-text-primary);
     border-radius: 4px;
     cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     display: inline-block;
     text-align: center;
     font-size: 0.9rem; /* 统一字体大小 */
     line-height: 1.4; /* 统一高度 */
+    user-select: none;
 }
 .btn:hover:not(:disabled) {
     color: var(--color-accent-primary);
     border: 1px solid var(--color-accent-primary);
+    background-color: rgba(128, 128, 128, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    box-shadow: none;
+}
+.btn:focus-visible {
+    outline: 2px solid var(--color-accent-primary);
+    outline-offset: 2px;
 }
 .btn:disabled {
     opacity: 0.5;
@@ -713,6 +746,38 @@ html.dark .post-list-item:hover {
     overflow-x: auto;
     border-radius: 0.3em;
     font-size: 0.85em;
+    font-family: var(--font-mono);
+    line-height: 1.5;
+}
+.post-content .code-wrapper {
+    position: relative;
+    margin: .5em 0;
+}
+.post-content .code-wrapper .copy-btn {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+    padding: 0.4em 0.8em;
+    font-size: 0.85em;
+    background-color: #4a4a4a;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 0.3em;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    font-family: var(--font-sans);
+    z-index: 10;
+}
+.post-content .code-wrapper:hover .copy-btn {
+    opacity: 1;
+}
+.post-content .code-wrapper .copy-btn:hover {
+    background-color: #666;
+}
+.post-content .code-wrapper .copy-btn.copied {
+    background-color: #4caf50;
+    border-color: #66bb6a;
 }
 .post-content code {
     word-break: break-all;

@@ -57,15 +57,77 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 返回顶部按钮逻辑
+    // 代码块复制功能
+    const codeBlocks = document.querySelectorAll('.post-content pre');
+    codeBlocks.forEach(pre => {
+        const code = pre.querySelector('code');
+        if (!code) return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-wrapper';
+        pre.parentNode.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = '复制';
+        copyBtn.setAttribute('type', 'button');
+        wrapper.appendChild(copyBtn);
+
+        copyBtn.addEventListener('click', async () => {
+            const text = code.textContent;
+            try {
+                await navigator.clipboard.writeText(text);
+                copyBtn.textContent = '已复制';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.textContent = '复制';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                console.error('复制失败:', err);
+                copyBtn.textContent = '失败';
+                setTimeout(() => {
+                    copyBtn.textContent = '复制';
+                }, 2000);
+            }
+        });
+
+        const classList = Array.from(pre.classList);
+        const langClass = classList.find(cls => cls.startsWith('language-'));
+        if (langClass) {
+            const lang = langClass.replace('language-', '');
+            pre.setAttribute('data-lang', lang);
+        } else {
+            pre.setAttribute('data-lang', 'Code');
+        }
+    });
+
+    // 返回顶部按钮逻辑 (使用 IntersectionObserver 优化性能)
     const backToTopButton = document.getElementById('back-to-top');
+    const topSentinel = document.getElementById('top-sentinel') || document.body; // 优先使用哨兵，降级使用 body
+
     if (backToTopButton) {
-        window.addEventListener('scroll', function() {
-            if (window.pageYOffset > 200) { // 滚动200px后显示
+        const observer = new IntersectionObserver((entries) => {
+            // 当顶部元素(header/body)离开视口时，entries[0].isIntersecting 变为 false
+            // 此时应该显示返回顶部按钮
+            if (!entries[0].isIntersecting) {
                 backToTopButton.classList.add('show');
             } else {
                 backToTopButton.classList.remove('show');
             }
+        }, {
+            root: null,
+            threshold: 0,
+            rootMargin: "200px 0px 0px 0px" // 向下偏移200px才触发，模拟之前的 scroll > 200
+        });
+
+        observer.observe(topSentinel);
+        
+        // 点击平滑滚动回顶部
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
 });

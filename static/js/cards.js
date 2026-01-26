@@ -41,19 +41,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // A robust function to distribute cards based on the number of children in each column
     function distributeCards(cards) {
+        const frag1 = document.createDocumentFragment();
+        const frag2 = document.createDocumentFragment();
+        let count1 = column1.children.length;
+        let count2 = column2.children.length;
+
         cards.forEach(card => {
-            if (column1.children.length <= column2.children.length) {
-                column1.appendChild(card);
+            if (count1 <= count2) {
+                frag1.appendChild(card);
+                count1++;
             } else {
-                column2.appendChild(card);
+                frag2.appendChild(card);
+                count2++;
             }
         });
+
+        if (frag1.childElementCount > 0) column1.appendChild(frag1);
+        if (frag2.childElementCount > 0) column2.appendChild(frag2);
     }
 
     // Generate covers for initial cards before distributing them
     initialCards.forEach(generatePseudoCover);
-    // Distribute initial cards
-    distributeCards(initialCards);
+    
+    // Distribute initial cards using requestAnimationFrame to prevent blocking paint
+    requestAnimationFrame(() => {
+        distributeCards(initialCards);
+        container.style.opacity = '1'; // Fade in nicely if we added opacity:0 in CSS
+    });
 
     // --- Logic for handling cover image errors using event delegation ---
     container.addEventListener('error', (event) => {

@@ -6,7 +6,7 @@
     {{ block "description" . }}<meta name="description" content="{{ .site_description }}">{{ end }}
     <title>{{ block "title" . }}{{ if .site_title }}{{ .site_title }}{{ else }}Glog{{ end }}{{ end }}</title>
     
-<script>
+    <script>
         (function() {
             const savedTheme = localStorage.getItem("theme");
             const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -27,13 +27,15 @@
             document.documentElement.classList.add(theme);
         })();
     </script>
-    <link rel="preload" href="/static/css/style.css" as="style">
-    <link rel="preload" href="/static/js/main.js" as="script">
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Deferred Scripts for Performance -->
+    <script src="/static/js/main.js" defer></script>
     {{ if eq .View "cards" }}
     <link rel="preload" href="/static/css/cards.css" as="style">
-    <link rel="preload" href="/static/js/cards.js" as="script">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <script src="/static/js/cards.js" defer></script>
     {{ end }}
-    <link rel="stylesheet" href="/static/css/style.css">
     
     {{ if .favicon }}
     <link rel="icon" href="{{ .favicon }}" type="image/x-icon">
@@ -42,11 +44,9 @@
     {{ end }}
     
     {{ block "head" . }}{{ end }}
-    {{ if eq .View "cards" }}
-    <link rel="stylesheet" href="/static/css/cards.css">
-    {{ end }}
 </head>
 <body id="top">
+    <div id="top-sentinel" style="position: absolute; top: 0; height: 1px; width: 1px; pointer-events: none; opacity: 0;"></div>
     <div class="main-wrapper">
         <header class="main-header">
             <div class="header-left">
@@ -107,10 +107,7 @@
 <a href="#top" id="back-to-top" class="back-to-top" title="Back to top">&uarr;</a>
     
 <div id="notification-container"></div>
-    <script src="/static/js/main.js"></script>
+    <!-- Scripts are loaded in head with defer -->
     {{ block "scripts" . }}{{ end }}
-    {{ if eq .View "cards" }}
-    <script src="/static/js/cards.js"></script>
-    {{ end }}
 </body>
 </html>

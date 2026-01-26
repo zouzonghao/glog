@@ -6,6 +6,15 @@
     gap: 15px; /* Space between columns */
     padding: 0;
     margin: 20px 0;
+    
+    /* 
+     * 优化 CLS (累积布局偏移) 和视觉体验：
+     * 初始设置透明度为 0，允许 JS 在后台进行瀑布流布局重排。
+     * 当 JS (cards.js) 完成布局计算后，会将 opacity 设置为 1。
+     * 配合 transition 属性，这会产生一个平滑的淡入效果，而不是生硬的布局跳动。
+     */
+    opacity: 0; 
+    transition: opacity 0.3s ease-in;
 }
 
 .card-column {
