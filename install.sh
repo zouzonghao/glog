@@ -53,15 +53,25 @@ check_os() {
 
 # 安装或更新函数
 install_service() {
+    local VERSION_PREFIX="v"
+    
+    # 检查是否安装 beta 版本
+    if [ "$2" = "beta" ]; then
+        VERSION_PREFIX="b"
+        info "将安装最新的测试版本 (b*)..."
+    else
+        info "将安装最新的正式版本 (v*)..."
+    fi
+
     info "开始安装或更新 ${SERVICE_NAME} 服务..."
 
     # -- 动态获取最新版本信息 --
     info "正在获取最新版本信息..."
-    LATEST_VERSION=$(curl -s https://api.github.com/repos/zouzonghao/glog/releases | grep '"tag_name":' | grep '"v[0-9]' | head -n 1 | cut -d '"' -f 4)
+    LATEST_VERSION=$(curl -s https://api.github.com/repos/zouzonghao/glog/releases | grep '"tag_name":' | grep "\"${VERSION_PREFIX}[0-9]" | head -n 1 | cut -d '"' -f 4)
     if [ -z "$LATEST_VERSION" ]; then
-        die "无法获取最新的正式版本号 (v*.*.*)。"
+        die "无法获取最新的${VERSION_PREFIX}版本号。"
     fi
-    info "找到最新的正式版本: ${LATEST_VERSION}"
+    info "找到最新的${VERSION_PREFIX}版本: ${LATEST_VERSION}"
     API_RESPONSE=$(curl -s "https://api.github.com/repos/zouzonghao/glog/releases/tags/${LATEST_VERSION}")
     DOWNLOAD_URL=$(echo "$API_RESPONSE" | grep "browser_download_url" | grep "glog-linux-amd64.tar.gz" | cut -d '"' -f 4)
 
@@ -221,13 +231,13 @@ main() {
     
     case "$1" in
         install)
-            install_service
+            install_service "$@"
             ;;
         uninstall)
             uninstall_service
             ;;
         *)
-            printf "用法: %s {install|uninstall}\n" "$0"
+            printf "用法: %s {install|install beta|uninstall}\n" "$0"
             exit 1
             ;;
     esac
