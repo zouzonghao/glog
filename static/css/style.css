@@ -40,6 +40,20 @@
     /* 强调色 */
     --color-accent-primary: #cb2a42; /* 主要强调色，用于标题、关键链接等 */
     --color-border-primary: #bfc1c2bb; /* 主要边框颜色 */
+    --color-bg-list-header: #d4d6d848;
+    --color-bg-list-hover: #d4d6d848;
+
+    /* Console Colors */
+    --color-bg-console: #1a1a1a;
+    --color-text-console: #e0e0e0;
+
+    /* 代码块颜色 */
+    --color-code-bg: #f0f0f0;
+    --color-code-text: #333333;
+    --color-code-btn-bg: #ffffff;
+    --color-code-btn-text: #57606a;
+    --color-code-btn-border: #d0d7de;
+    --color-code-btn-hover-bg: #f3f4f6;
 
     /* --- 字体 --- */
     --font-sans: ui-sans-serif, system-ui, sans-serif;
@@ -62,6 +76,16 @@ html.dark {
     /* 强调色 */
     --color-accent-primary: #29bc89;
     --color-border-primary: #444;
+    --color-bg-list-header: #374151;
+    --color-bg-list-hover: #374151;
+
+    /* 代码块颜色 */
+    --color-code-bg: #2d2d2d;
+    --color-code-text: #cccccc;
+    --color-code-btn-bg: #4a4a4a;
+    --color-code-btn-text: #ffffff;
+    --color-code-btn-border: #666666;
+    --color-code-btn-hover-bg: #666666;
 }
 
 /* 2. 基础与全局样式
@@ -79,7 +103,7 @@ body {
     background-color: var(--color-background);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
-    font-size: 18px;
+    font-size: 15px;
     line-height: 1.6;
     margin: 0;
     padding: 0;
@@ -106,8 +130,8 @@ h1, h2, h3, h4 {
     color: var(--color-accent-primary);
 }
 h1 { font-size: 1.5rem; font-weight: 500; margin-top: 0; margin-bottom: 0.25em; }
-h2 { font-size: 1.4rem; font-weight: 380; margin-top: 1.5em; margin-bottom: 1em; }
-h3 { font-size: 1.2rem; font-weight: 350; margin-top: 1.25em; margin-bottom: 0.5em; }
+h2 { font-size: 1.4rem; font-weight: 380; margin-top: 2em; margin-bottom: 1em; }
+h3 { font-size: 1.2rem; font-weight: 350; margin-top: 1.25em; margin-bottom: 0.75em; }
 h4 { font-size: 1.1rem; font-weight: 300; margin-top: 0.5em; margin-bottom: 0.5em; }
 
 .group-title {
@@ -172,7 +196,7 @@ header.main-header::after {
 }
 .site-title {
     font-size: 1.8rem;
-    font-weight: 300;
+    font-weight: 350;
     margin-bottom: 0.25rem;
     border-bottom: none;
     color: var(--color-accent-primary);
@@ -188,8 +212,8 @@ nav.main-nav ul {
     display: flex;
     flex-wrap: wrap;
     gap: 0.8rem;
-    font-weight: 300;
-
+    font-weight: 350;
+    font-size: 16px;
 }
 nav.main-nav a {
     letter-spacing: 1px;
@@ -226,10 +250,11 @@ footer.main-footer {
     list-style: none;
     padding: 0;
     margin: 0;
+    font-size: 18px;
 }
 .post-list-minimal li {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     margin-bottom: 1rem;
     gap: 0.5rem;
 }
@@ -256,10 +281,7 @@ footer.main-footer {
     font-weight: 600;
     font-size: 0.9rem;
     border-bottom: 1px solid var(--color-border-primary);
-    background-color: #d4d6d848;
-}
-html.dark .post-list-header {
-    background-color: #374151;
+    background-color: var(--color-bg-list-header);
 }
 .post-list-item {
     border-bottom: 1px solid var(--color-border-primary);
@@ -269,10 +291,7 @@ html.dark .post-list-header {
     border-bottom: none;
 }
 .post-list-item:hover {
-    background-color: #d4d6d848;
-}
-html.dark .post-list-item:hover {
-    background-color: #374151;
+    background-color: var(--color-bg-list-hover);
 }
 .col-checkbox { display: flex; justify-content: center; width: 40px; flex-shrink: 0; text-align: center; }
 .col-title { width: 400px; flex-shrink: 0; padding-right: 0rem; }
@@ -569,6 +588,12 @@ html.dark .post-list-item:hover {
     .post-list-item .col-title {
         width: calc(100% - 150px);
     }
+    
+    /* 移动端直接显示分页，不需要鼠标靠近 */
+    .pagination-new {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
 /* 13. 汉堡菜单动画
@@ -740,6 +765,18 @@ html.dark .post-list-item:hover {
 .post-content {
     line-height: 1.35;
 }
+.post-content ul,
+.post-content ol {
+    margin: 0; /* 取消 ul 的垂直 margin */
+    padding-left: 2em;
+}
+.post-content li {
+    margin: 0.4em 0; /* 统一由 li 来控制上下间距 */
+}
+/* 如果是嵌套列表，通常需要消除第一个和最后一个 li 的冗余间距 */
+.post-content li ul {
+    margin-top: 0.4em; 
+}
 .post-content img {
     max-width: 100%;
     height: auto;
@@ -748,13 +785,13 @@ html.dark .post-list-item:hover {
     border-radius: 8px;
 }
 .post-content pre {
-    background-color: #2d2d2d;
-    color: #cccccc;
+    background-color: var(--color-code-bg);
+    color: var(--color-code-text);
     padding: 0.75em;
     margin: .5em 0;
     overflow-x: auto;
     border-radius: 0.3em;
-    font-size: 0.85em;
+    font-size: 0.9em;
     font-family: var(--font-mono);
     line-height: 1.5;
 }
@@ -767,10 +804,10 @@ html.dark .post-list-item:hover {
     top: 0.5em;
     right: 0.5em;
     padding: 0.4em 0.8em;
-    font-size: 0.85em;
-    background-color: #4a4a4a;
-    color: #fff;
-    border: 1px solid #666;
+    font-size: 0.9em;
+    background-color: var(--color-code-btn-bg);
+    color: var(--color-code-btn-text);
+    border: 1px solid var(--color-code-btn-border);
     border-radius: 0.3em;
     cursor: pointer;
     opacity: 0;
@@ -782,7 +819,7 @@ html.dark .post-list-item:hover {
     opacity: 1;
 }
 .post-content .code-wrapper .copy-btn:hover {
-    background-color: #666;
+    background-color: var(--color-code-btn-hover-bg);
 }
 .post-content .code-wrapper .copy-btn.copied {
     background-color: #4caf50;
@@ -868,6 +905,78 @@ html.dark .post-content td {
 html.dark .post-content th {
     background-color: rgba(255, 255, 255, 0.05); /* 暗模式下表头背景色 */
 }
+
+/* --- 表格对齐最终解决方案 --- */
+
+/* 1. 为所有单元格设置默认居中对齐 */
+.post-content td,
+.post-content th {
+    text-align: center;
+}
+
+/* 2. 使用属性选择器覆盖 Markdown 生成的特定对齐方式 */
+/* 使用 !important 确保这些规则的优先级最高，覆盖所有默认设置 */
+.post-content [align="left"] {
+    text-align: left !important;
+}
+
+.post-content [align="center"] {
+    text-align: center !important;
+}
+
+.post-content [align="right"] {
+    text-align: right !important;
+}
+
+/* --- 响应式表格包裹容器 --- */
+.table-wrapper {
+    overflow-x: auto; /* 核心：在容器上启用水平滚动 */
+    width: max-content; /* 关键：让容器宽度适应表格内容 */
+    max-width: 100%; /* 确保容器不会超过页面宽度 */
+    -webkit-overflow-scrolling: touch; /* 在 iOS 上启用平滑滚动 */
+    margin: 1.8em auto; /* 修改外边距，实现水平居中 */
+    border-radius: 8px; /* 匹配表格的圆角 */
+    /* 为亮色模式添加柔和的阴影 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease-in-out; /* 添加过渡效果 */
+}
+
+/* 为暗色模式定制更深的阴影 */
+html.dark .table-wrapper {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+.table-wrapper table {
+    margin: 0; /* 移除 table 自身的外边距 */
+}
+
+/* --- 自定义滚动条样式 (表格和代码块) --- */
+/* 适用于 Webkit 内核浏览器，如 Chrome, Safari, Edge */
+.table-wrapper::-webkit-scrollbar,
+.post-content pre::-webkit-scrollbar {
+    height: 8px; /* 水平滚动条高度 */
+    width: 8px;  /* 垂直滚动条宽度 */
+}
+
+.table-wrapper::-webkit-scrollbar-track,
+.post-content pre::-webkit-scrollbar-track {
+    background: transparent; /* 轨道背景透明 */
+}
+
+.table-wrapper::-webkit-scrollbar-thumb,
+.post-content pre::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-primary); /* 滑块颜色使用次要强调色 */
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover,
+.post-content pre::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-accent-primary); /* 鼠标悬浮时使用主要强调色 */
+}
+
+
 
 /* 16. 特殊组件
 ---------------------------------------------------------------------------------------------------- */
@@ -1026,8 +1135,6 @@ html.dark .notification.info {
     z-index: 2000;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-}
-.modal-container {
     display: none; /* Default hidden */
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -1045,6 +1152,7 @@ html.dark .notification.info {
     text-align: center;
     max-width: 400px;
     width: 90%;
+    position: relative;
 }
 .modal-content p {
     margin-top: 0;
@@ -1118,82 +1226,6 @@ html.dark .notification.info {
     color: var(--color-text-primary);
 }
 
-.modal-content {
-    position: relative;
-}
-
-
-
-/* --- 表格对齐最终解决方案 --- */
-
-/* 1. 为所有单元格设置默认居中对齐 */
-.post-content td,
-.post-content th {
-    text-align: center;
-}
-
-/* 2. 使用属性选择器覆盖 Markdown 生成的特定对齐方式 */
-/* 使用 !important 确保这些规则的优先级最高，覆盖所有默认设置 */
-.post-content [align="left"] {
-    text-align: left !important;
-}
-
-.post-content [align="center"] {
-    text-align: center !important;
-}
-
-.post-content [align="right"] {
-    text-align: right !important;
-}
-
-/* --- 响应式表格包裹容器 --- */
-.table-wrapper {
-    overflow-x: auto; /* 核心：在容器上启用水平滚动 */
-    width: max-content; /* 关键：让容器宽度适应表格内容 */
-    max-width: 100%; /* 确保容器不会超过页面宽度 */
-    -webkit-overflow-scrolling: touch; /* 在 iOS 上启用平滑滚动 */
-    margin: 1.8em auto; /* 修改外边距，实现水平居中 */
-    border-radius: 8px; /* 匹配表格的圆角 */
-    /* 为亮色模式添加柔和的阴影 */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.3s ease-in-out; /* 添加过渡效果 */
-}
-
-/* 为暗色模式定制更深的阴影 */
-html.dark .table-wrapper {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-}
-
-.table-wrapper table {
-    margin: 0; /* 移除 table 自身的外边距 */
-}
-
-/* --- 自定义滚动条样式 (表格和代码块) --- */
-/* 适用于 Webkit 内核浏览器，如 Chrome, Safari, Edge */
-.table-wrapper::-webkit-scrollbar,
-.post-content pre::-webkit-scrollbar {
-    height: 8px; /* 水平滚动条高度 */
-    width: 8px;  /* 垂直滚动条宽度 */
-}
-
-.table-wrapper::-webkit-scrollbar-track,
-.post-content pre::-webkit-scrollbar-track {
-    background: transparent; /* 轨道背景透明 */
-}
-
-.table-wrapper::-webkit-scrollbar-thumb,
-.post-content pre::-webkit-scrollbar-thumb {
-    background-color: var(--color-border-primary); /* 滑块颜色使用次要强调色 */
-    border-radius: 4px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb:hover,
-.post-content pre::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-accent-primary); /* 鼠标悬浮时使用主要强调色 */
-}
-
 .backup-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1232,8 +1264,8 @@ html.dark .table-wrapper {
     border: none;
     background: none;
     cursor: pointer;
-    color: var(--textColor);
-    border-bottom: 1px solid var(--textColor);
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-text-primary);
     padding: 0;
 }
 
@@ -1264,8 +1296,8 @@ html.dark .table-wrapper {
 /* AI Logs Modal Styles */
 .logs-container {
     margin-top: 1rem;
-    background-color: #1a1a1a; /* Dark background for the console look */
-    border: 1px solid #444;
+    background-color: var(--color-bg-console); /* Dark background for the console look */
+    border: 1px solid var(--color-border-primary);
     border-radius: 6px;
     padding: 1rem;
     height: 300px; /* Fixed height */
@@ -1276,7 +1308,7 @@ html.dark .table-wrapper {
 #ai-logs-content {
     font-family: var(--font-mono); /* Use monospaced font */
     font-size: 0.85rem;
-    color: #e0e0e0; /* Light grey text */
+    color: var(--color-text-console); /* Light grey text */
     white-space: pre-wrap; /* Ensure long lines wrap */
     word-wrap: break-word;
     margin: 0;
