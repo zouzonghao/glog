@@ -23,6 +23,9 @@ func NewSearchHandler(postService *services.PostService) *SearchHandler {
 func (h *SearchHandler) Search(c *gin.Context) {
 	query := c.Query("q")
 	if query == "" {
+		query = c.Query("query")
+	}
+	if query == "" {
 		c.Redirect(http.StatusFound, "/")
 		return
 	}
@@ -75,6 +78,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 	render(c, http.StatusOK, templateName, gin.H{
 		"posts":      posts,
 		"query":      query,
+		"Query":      query,
 		"Pagination": pagination,
 		"View":       view, // 将视图名称传递给模板
 	})

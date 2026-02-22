@@ -4,14 +4,14 @@
             <nav class="pagination-new">
                 {{/* Previous Page Link */}}
                 {{ if .HasPrev }}
-                    <a href="?page={{ .PrevPage }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">上一页</a>
+                    <a href="?page={{ .PrevPage }}{{ with $.Query }}&q={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">上一页</a>
                 {{ end }}
 
                 <div class="pagination-center">
                     <div class="page-numbers">
                         {{ range .Pages }}
                             {{ if .IsLink }}
-                                <a href="?page={{ .Number }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="page-number">{{ .Number }}</a>
+                                <a href="?page={{ .Number }}{{ with $.Query }}&q={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="page-number">{{ .Number }}</a>
                             {{ else if .Number }}
                                 <span class="page-number current">{{ .Number }}</span>
                             {{ else }}
@@ -24,7 +24,7 @@
                     <div class="page-size-selector">
                         <select id="page-size-select" onchange="location = this.value;">
                             {{ range $.PageSizeOptions }}
-                                <option value="?page=1{{ with $.Query }}&query={{ . }}{{ end }}&pageSize={{ . }}" {{ if eq . $.PageSize }}selected{{ end }}>
+                                <option value="?page=1{{ with $.Query }}&q={{ . }}{{ end }}&pageSize={{ . }}" {{ if eq . $.PageSize }}selected{{ end }}>
                                     {{ . }} / 页
                                 </option>
                             {{ end }}
@@ -35,7 +35,7 @@
 
                 {{/* Next Page Link */}}
                 {{ if .HasNext }}
-                    <a href="?page={{ .NextPage }}{{ with $.Query }}&query={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">下一页</a>
+                    <a href="?page={{ .NextPage }}{{ with $.Query }}&q={{ . }}{{ end }}{{ with $.PageSize }}&pageSize={{ . }}{{ end }}" class="prev-next">下一页</a>
                 {{ end }}
             </nav>
         {{ end }}
