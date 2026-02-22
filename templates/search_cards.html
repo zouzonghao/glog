@@ -5,9 +5,14 @@
         <h2 class="group-title">搜索结果: "{{ .query }}"</h2>
         <div class="post-cards-container" data-current-page="{{ .Pagination.CurrentPage }}" data-next-page="{{ .Pagination.NextPage }}" data-total-pages="{{ .Pagination.TotalPages }}" data-has-next="{{ .Pagination.HasNext }}">
             {{ range .posts }}
-                <a href="/post/{{ .Slug }}" class="post-card" data-title="{{ .Title }}">
+                <a href="/post/{{ .Slug }}" class="post-card" data-title="{{ .Title }}" data-cover-generating="{{ if .CoverGenerating }}true{{ else }}false{{ end }}">
                     <div class="card-cover">
-                        {{ if .Cover }}
+                        {{ if .CoverGenerating }}
+                            <div class="card-cover-loading">
+                                <div class="card-cover-loading-spinner" aria-hidden="true"></div>
+                                <p>封面生成中...</p>
+                            </div>
+                        {{ else if .Cover }}
                             <img src="{{ .Cover }}" alt="{{ .Title }}" loading="lazy">
                         {{ else }}
                             <div class="pseudo-cover">

@@ -19,29 +19,61 @@
             </div>
 
             <div id="ai-cover-prompt-container" class="editor-form-group" style="display: none;">
-                <input type="text" id="ai_cover_prompt" name="ai_cover_prompt" value="{{ if .post }}{{ .post.Cover }}{{ end }}" placeholder="AI封面提示词或图片链接（留空则根据文章内容自动生成）">
+                <input type="text" id="ai_cover_prompt" name="ai_cover_prompt" value="{{ .coverPrompt }}" placeholder="AI封面提示词或图片链接（留空则根据文章内容自动生成）">
             </div>
+            <input type="hidden" id="is-cover-generating" value="{{ if .isCoverGenerating }}1{{ else }}0{{ end }}">
             
-            <div class="editor-options">
-                <div class="form-group-inline">
-                    <input type="checkbox" id="ai_summary" name="ai_summary">
-                    <label for="ai_summary">AI摘要</label>
+            <div class="editor-toolbar">
+                <div class="editor-switches">
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="ai_summary" name="ai_summary">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <label for="ai_summary" class="toggle-label">AI摘要</label>
+                    </div>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="ai_cover" name="ai_cover" {{ if .post }}{{ if or .isCoverGenerating .post.Cover }}checked{{ end }}{{ end }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <label for="ai_cover" class="toggle-label">封面</label>
+                    </div>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="is_private" name="is_private" {{ if .post }}{{ if .post.IsPrivate }}checked{{ end }}{{ end }}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <label for="is_private" class="toggle-label">私密</label>
+                    </div>
                 </div>
-                <div class="form-group-inline">
-                    <input type="checkbox" id="ai_cover" name="ai_cover" {{ if .post }}{{ if .post.Cover }}checked{{ end }}{{ end }}>
-                    <label for="ai_cover">AI封面</label>
-                </div>
-                <div class="form-group-inline">
-                    <input type="checkbox" id="is_private" name="is_private" {{ if .post }}{{ if .post.IsPrivate }}checked{{ end }}{{ end }}>
-                    <label for="is_private">私密</label>
+
+                <div class="editor-actions">
+                    <a href="#" id="generate-cover-link" class="btn btn-editor-action" style="display: none;">✨ 生成图片</a>
+                    <button type="button" id="save-btn" class="btn btn-editor-action">💾 保存文章</button>
+                    <a href="{{ if .post }}/post/{{ .post.Slug }}{{ else }}#{{ end }}" class="btn btn-editor-action open-post-link">🔗 打开文章</a>
                 </div>
             </div>
 
-            <div class="editor-actions">
-                <button type="button" id="save-btn" class="btn btn-editor-action">💾 保存文章</button>
-                <a href="{{ if .post }}/post/{{ .post.Slug }}{{ else }}#{{ end }}" class="btn btn-editor-action open-post-link">🔗 打开文章</a>
+            <div id="ai-cover-preview-container" class="editor-form-group" style="display: none;">
+                <img id="ai-cover-preview-image" src="" alt="封面预览" class="ai-cover-preview-image">
+                <div id="ai-cover-loading" class="ai-cover-loading" style="display: none;">
+                    <div class="ai-cover-loading-spinner" aria-hidden="true"></div>
+                    <p class="ai-cover-loading-text">AI 封面正在生成中...</p>
+                </div>
             </div>
         </form>
+    </div>
+
+    <div id="editor-ai-modal" class="modal-container">
+        <div class="modal-content">
+            <span class="modal-close-btn">&times;</span>
+            <h3>AI 封面生成提示</h3>
+            <p id="editor-ai-modal-message"></p>
+            <div class="modal-actions">
+                <button type="button" id="editor-ai-modal-ok" class="btn">我知道了</button>
+            </div>
+        </div>
     </div>
 {{ end }}
 

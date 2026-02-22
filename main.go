@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"glog/internal/handlers"
 	"glog/internal/repository"
@@ -14,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
@@ -58,18 +61,6 @@ func main() {
 	unsafe := flag.Bool("unsafe", false, "allow insecure cookies")
 	flag.Parse()
 
-	utils.InitAILogger()
-	defer utils.CloseAILogger()
-
-	// Graceful shutdown
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		utils.CloseAILogger()
-		os.Exit(0)
-	}()
-
 	db, err := utils.InitDatabase()
 	if err != nil {
 		log.Fatal("初始化数据库失败：", err)
@@ -82,11 +73,15 @@ func main() {
 
 	aiService := services.NewAIService()
 	postService := services.NewPostService(postRepo, settingService, aiService)
+	coverTaskService := services.NewCoverTaskService(settingService, aiService, postService)
+	if err := coverTaskService.RecoverDanglingTasks(); err != nil {
+		log.Printf("修复遗留封面任务状态失败: %v", err)
+	}
 	backupService := services.NewBackupService(postService, settingService)
 	scheduler := tasks.NewScheduler(settingService, backupService)
 
 	blogHandler := handlers.NewBlogHandler(postService)
-	adminHandler := handlers.NewAdminHandler(postService, settingService, aiService, backupService, scheduler)
+	adminHandler := handlers.NewAdminHandler(postService, settingService, aiService, coverTaskService, backupService, scheduler)
 	searchHandler := handlers.NewSearchHandler(postService)
 	authHandler := handlers.NewAuthHandler(settingService)
 	apiHandler := handlers.NewAPIHandler(postService)
@@ -126,6 +121,7 @@ func main() {
 		admin.GET("/new", adminHandler.NewPost)
 		admin.GET("/editor", adminHandler.Editor)
 		admin.POST("/save", adminHandler.SavePost)
+		admin.POST("/cover/generate", adminHandler.GenerateCover)
 		admin.POST("/delete/:id", adminHandler.DeletePost)
 		admin.POST("/posts/batch-update", adminHandler.BatchUpdatePosts)
 	}
@@ -143,8 +139,6 @@ func main() {
 		settings.POST("/test-webdav", adminHandler.TestWebdavSettings)
 		settings.POST("/backup-github-now", adminHandler.BackupToGithubNow)
 		settings.POST("/backup-webdav-now", adminHandler.BackupToWebdavNow)
-		settings.GET("/ai-logs", adminHandler.GetAILogs)
-		settings.POST("/ai-logs/clear", adminHandler.ClearAILogs)
 	}
 	api := r.Group("/api/v1")
 	api.Use(handlers.APIAuthMiddleware(settingService))
@@ -157,6 +151,47 @@ func main() {
 
 	go scheduler.Start()
 
-	log.Println("服务器启动于 :37371")
-	r.Run(":37371")
+	log.Println("服务器启动于 http://localhost:37371")
+
+	server := &http.Server{
+		Addr:    ":37371",
+		Handler: r,
+	}
+
+	serverErr := make(chan error, 1)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+		}
+		close(serverErr)
+	}()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case sig := <-sigCh:
+		log.Printf("收到退出信号 %s，开始优雅关闭...", sig)
+	case err := <-serverErr:
+		if err != nil {
+			log.Fatalf("HTTP 服务异常退出: %v", err)
+		}
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP 服务关闭异常: %v", err)
+	}
+
+	if err := scheduler.Stop(shutdownCtx); err != nil {
+		log.Printf("定时任务调度器关闭异常: %v", err)
+	}
+	if err := coverTaskService.Shutdown(shutdownCtx); err != nil {
+		log.Printf("封面任务服务关闭异常: %v", err)
+	}
+	if err := postService.Shutdown(shutdownCtx); err != nil {
+		log.Printf("文章服务关闭异常: %v", err)
+	}
 }

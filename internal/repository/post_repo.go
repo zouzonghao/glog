@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"errors"
 	"glog/internal/models"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -31,6 +33,38 @@ func (r *PostRepository) UpdateFields(id uint, fields map[string]interface{}) er
 	return r.db.Model(&models.Post{}).Where("id = ?", id).Updates(fields).Error
 }
 
+func (r *PostRepository) UpdateFieldsByCoverTaskID(id uint, coverTaskID string, fields map[string]interface{}) (bool, error) {
+	if strings.TrimSpace(coverTaskID) == "" {
+		return false, errors.New("cover_task_id 不能为空")
+	}
+
+	result := r.db.Model(&models.Post{}).Where("id = ? AND COALESCE(cover_task_id, '') = ?", id, coverTaskID).Updates(fields)
+	return result.RowsAffected > 0, result.Error
+}
+
+func (r *PostRepository) ResolveDanglingCoverTasks(generatingStatus, failedStatus, errorMessage string) (int64, error) {
+	result := r.db.Model(&models.Post{}).
+		Where("cover_status = ?", generatingStatus).
+		Updates(map[string]interface{}{
+			"cover_status":  failedStatus,
+			"cover_task_id": "",
+			"cover_error":   errorMessage,
+		})
+	return result.RowsAffected, result.Error
+}
+
+func (r *PostRepository) ResolveLegacyCoverMarkers(markerPrefix, failedStatus, errorMessage string) (int64, error) {
+	result := r.db.Model(&models.Post{}).
+		Where("cover LIKE ?", markerPrefix+"%").
+		Updates(map[string]interface{}{
+			"cover":         "",
+			"cover_status":  failedStatus,
+			"cover_task_id": "",
+			"cover_error":   errorMessage,
+		})
+	return result.RowsAffected, result.Error
+}
+
 func (r *PostRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Post{}, id).Error
 }
@@ -57,7 +91,7 @@ func (r *PostRepository) FindPage(page, pageSize int, isLoggedIn bool) ([]models
 	if !isLoggedIn {
 		query = query.Where("is_private = ?", false).Where("published_at <= ?", time.Now().In(shanghaiLocation))
 	}
-	err := query.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
+	err := query.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "cover_status", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 
@@ -160,7 +194,7 @@ func (r *PostRepository) SearchPageByLike(keywords []string, page, pageSize int,
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, time.Now().In(shanghaiLocation))
 	}
 
-	err := dbQuery.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
+	err := dbQuery.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "cover_status", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
 }
 

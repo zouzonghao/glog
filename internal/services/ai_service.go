@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,8 +11,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"glog/internal/utils"
 )
 
 type ImagePromptResponse struct {
@@ -19,19 +18,25 @@ type ImagePromptResponse struct {
 	FullPrompt string   `json:"full_prompt"`
 }
 
-// AIService handles interactions with an OpenAI compatible API.
+// AI 服务配置常量
+const (
+	aiServiceDefaultTimeout = 3 * time.Minute  // 基础模型（摘要生成等）默认超时时间
+	aiServiceCoverTimeout   = 10 * time.Minute // 封面生成超时时间
+)
+
+// AIService 处理与 OpenAI 兼容 API 的交互。
 type AIService struct {
 	Client *http.Client
 }
 
-// NewAIService creates a new AIService.
+// NewAIService 创建新的 AIService 实例。
 func NewAIService() *AIService {
 	return &AIService{
-		Client: &http.Client{Timeout: 180 * time.Second}, // Increased timeout for AI generation
+		Client: &http.Client{Timeout: aiServiceDefaultTimeout},
 	}
 }
 
-// OpenAI API request structure
+// OpenAI API 请求结构
 type openAIRequest struct {
 	Model    string    `json:"model"`
 	Messages []message `json:"messages"`
@@ -42,7 +47,7 @@ type message struct {
 	Content string `json:"content"`
 }
 
-// OpenAI API response structure
+// OpenAI API 响应结构
 type openAIResponse struct {
 	Choices []choice `json:"choices"`
 }
@@ -51,13 +56,13 @@ type choice struct {
 	Message message `json:"message"`
 }
 
-// AIResponse defines the structure for the JSON response from the AI.
+// AIResponse 定义 AI JSON 响应的结构。
 type AIResponse struct {
 	Title   string `json:"title"`
 	Summary string `json:"summary"`
 }
 
-// ImageAPI request structure
+// ImageAPI 请求结构
 type imageAPIRequest struct {
 	Prompt   string `json:"prompt"`
 	Model    string `json:"model"`
@@ -68,26 +73,27 @@ type imageAPIRequest struct {
 	Steps    int    `json:"steps,omitempty"`
 }
 
-// ImageAPI response structure
+// ImageAPI 响应结构
 type imageAPIResponse struct {
 	Status   string `json:"status"`
 	ImageURL string `json:"image_url"`
 	Error    string `json:"error"`
 }
 
-// ImageAPIModelInfo defines the structure for a single model from the ImageAPI.
+// ImageAPIModelInfo 定义 ImageAPI 单个模型的结构。
 type ImageAPIModelInfo struct {
 	Name string `json:"name"`
 }
 
-// ImageAPIProviderInfo defines the structure for a provider and its models.
+// ImageAPIProviderInfo 定义提供商及其模型的结构。
 type ImageAPIProviderInfo struct {
 	Provider string              `json:"provider"`
 	Models   []ImageAPIModelInfo `json:"models"`
 }
 
-// GenerateSummaryAndTitle generates a summary and optionally a title for the given content.
-func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, baseURL, token, model string) (*AIResponse, error) {
+// GenerateSummaryAndTitle 为给定内容生成摘要，可选生成标题。
+func (s *AIService) GenerateSummaryAndTitle(ctx context.Context, content string, needsTitle bool, baseURL, token, model string) (*AIResponse, error) {
+	log.Printf("开始请求 AI 生成摘要和标题 (Model: %s)...", model)
 	if baseURL == "" || token == "" || model == "" {
 		return nil, errors.New("AI 接口未配置！")
 	}
@@ -113,7 +119,7 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 		return nil, fmt.Errorf("序列化请求体失败: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", baseURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
@@ -143,7 +149,7 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 
 	var aiResp AIResponse
 	rawJSON := apiResp.Choices[0].Message.Content
-	// It's possible the AI returns the JSON inside a code block, so we trim it.
+	// AI 可能将 JSON 放在代码块中返回，需要去除代码块标记
 	rawJSON = strings.TrimPrefix(rawJSON, "```json\n")
 	rawJSON = strings.TrimSuffix(rawJSON, "\n```")
 
@@ -152,13 +158,14 @@ func (s *AIService) GenerateSummaryAndTitle(content string, needsTitle bool, bas
 		return nil, fmt.Errorf("无法解析 AI 响应 JSON: %w", err)
 	}
 
+	log.Println("AI 摘要和标题生成成功")
 	return &aiResp, nil
 }
 
-func (s *AIService) GenerateCover(postTitle, prompt, content, openAIBaseURL, openAIToken, openAIModel, imageAPIURL, imageAPIToken, imageAPIModel string) (string, error) {
+func (s *AIService) GenerateCover(ctx context.Context, prompt, content, openAIBaseURL, openAIToken, openAIModel, imageAPIURL, imageAPIToken, imageAPIModel string) (string, error) {
+	log.Printf("开始生成 AI 封面 (Model: %s)...", imageAPIModel)
 	trimmedPrompt := strings.TrimSpace(prompt)
 	if strings.HasPrefix(trimmedPrompt, "http://") || strings.HasPrefix(trimmedPrompt, "https://") {
-		utils.AILog("文章 '%s': 已直接使用提供的链接作为封面", postTitle)
 		return trimmedPrompt, nil
 	}
 
@@ -166,14 +173,14 @@ func (s *AIService) GenerateCover(postTitle, prompt, content, openAIBaseURL, ope
 	var err error
 
 	if trimmedPrompt != "" {
-		// User provided a prompt, translate it
-		englishPrompt, err = s.translateToEnglish(trimmedPrompt, openAIBaseURL, openAIToken, openAIModel)
+		// 用户提供了提示词，翻译为英文
+		englishPrompt, err = s.translateToEnglish(ctx, trimmedPrompt, openAIBaseURL, openAIToken, openAIModel)
 		if err != nil {
 			return "", fmt.Errorf("翻译提示词失败: %w", err)
 		}
 	} else {
-		// Prompt is empty, generate prompt from article content
-		imagePrompt, err := s.generateImagePromptFromContent(content, openAIBaseURL, openAIToken, openAIModel)
+		// 提示词为空，根据文章内容生成
+		imagePrompt, err := s.generateImagePromptFromContent(ctx, content, openAIBaseURL, openAIToken, openAIModel)
 		if err != nil {
 			return "", fmt.Errorf("根据文章内容生成提示词失败: %w", err)
 		}
@@ -184,15 +191,17 @@ func (s *AIService) GenerateCover(postTitle, prompt, content, openAIBaseURL, ope
 		return "", errors.New("生成的英文提示词为空")
 	}
 
-	imageURL, err := s.generateImageFromAPI(englishPrompt, imageAPIURL, imageAPIToken, imageAPIModel)
+	imageURL, err := s.generateImageFromAPI(ctx, englishPrompt, imageAPIURL, imageAPIToken, imageAPIModel)
 	if err != nil {
+		log.Printf("AI 封面生成失败: %v", err)
 		return "", err
 	}
-	utils.AILog("文章 '%s': AI封面生成成功", postTitle)
+	log.Printf("AI 封面生成成功: %s", imageURL)
 	return imageURL, nil
 }
 
-func (s *AIService) generateImageFromAPI(prompt, apiURL, apiToken, apiModel string) (string, error) {
+func (s *AIService) generateImageFromAPI(ctx context.Context, prompt, apiURL, apiToken, apiModel string) (string, error) {
+	log.Printf("调用 ImageAPI 生成图片 (Model: %s, Prompt 长度: %d)", apiModel, len(prompt))
 	if apiURL == "" || apiToken == "" || apiModel == "" {
 		return "", errors.New("ImageAPI 未配置！")
 	}
@@ -210,7 +219,7 @@ func (s *AIService) generateImageFromAPI(prompt, apiURL, apiToken, apiModel stri
 	}
 
 	generateURL := strings.TrimSuffix(apiURL, "/") + "/api/v1/generate"
-	req, err := http.NewRequest("POST", generateURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", generateURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("创建 ImageAPI 请求失败: %w", err)
 	}
@@ -249,7 +258,8 @@ func (s *AIService) generateImageFromAPI(prompt, apiURL, apiToken, apiModel stri
 	return apiResp.ImageURL, nil
 }
 
-func (s *AIService) generateImagePromptFromContent(content, baseURL, token, model string) (*ImagePromptResponse, error) {
+func (s *AIService) generateImagePromptFromContent(ctx context.Context, content, baseURL, token, model string) (*ImagePromptResponse, error) {
+	log.Printf("正在根据文章内容生成 AI 绘图提示词 (Model: %s)...", model)
 	if baseURL == "" || token == "" || model == "" {
 		return nil, errors.New("AI 接口未配置！")
 	}
@@ -278,7 +288,7 @@ Now, please perform the above tasks for the following article:
 		return nil, fmt.Errorf("序列化请求体失败: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", baseURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
@@ -319,7 +329,8 @@ Now, please perform the above tasks for the following article:
 	return &promptResp, nil
 }
 
-func (s *AIService) translateToEnglish(text, baseURL, token, model string) (string, error) {
+func (s *AIService) translateToEnglish(ctx context.Context, text, baseURL, token, model string) (string, error) {
+	log.Printf("正在将提示词翻译为英文 (Model: %s)...", model)
 	if baseURL == "" || token == "" || model == "" {
 		return "", errors.New("AI 接口未配置！")
 	}
@@ -338,7 +349,7 @@ func (s *AIService) translateToEnglish(text, baseURL, token, model string) (stri
 		return "", fmt.Errorf("序列化请求体失败: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", baseURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %w", err)
 	}
@@ -369,16 +380,16 @@ func (s *AIService) translateToEnglish(text, baseURL, token, model string) (stri
 	return apiResp.Choices[0].Message.Content, nil
 }
 
-// TestImageAPI tests the connection to the ImageAPI by fetching the available models.
-func (s *AIService) TestImageAPI(apiURL, apiToken string) ([]ImageAPIProviderInfo, error) {
+// TestImageAPI 通过获取可用模型列表来测试 ImageAPI 连接。
+func (s *AIService) TestImageAPI(ctx context.Context, apiURL, apiToken string) ([]ImageAPIProviderInfo, error) {
 	if apiURL == "" || apiToken == "" {
 		return nil, errors.New("ImageAPI URL 或 Token 未配置！")
 	}
 
-	// Construct the request URL for fetching models
+	// 构建获取模型列表的请求 URL
 	modelsURL := strings.TrimSuffix(apiURL, "/") + "/api/v1/models"
 
-	req, err := http.NewRequest("GET", modelsURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", modelsURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("创建 ImageAPI 测试请求失败: %w", err)
 	}

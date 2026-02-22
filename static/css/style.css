@@ -701,26 +701,132 @@ footer.main-footer {
     width: 150px;
 
 }
-.editor-options {
+/* Editor Toolbar & Switches */
+.editor-toolbar {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
     flex-wrap: wrap;
-    gap: 1.5rem;
-    margin-top: 0.2rem;
+    gap: 1rem;
 }
-.editor-options .form-group-inline {
+
+.editor-switches {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.toggle-group {
     display: flex;
     align-items: center;
-    gap: 0.2rem;
+    gap: 0.5rem;
 }
-.editor-options input[type="checkbox"] {
-    width: 1.2em;
-    height: 1.2em;
+
+/* Modern Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
 }
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--color-border-primary);
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 22px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--color-accent-primary);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(18px);
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    user-select: none;
+}
+
 .editor-actions {
     display: flex;
-    align-items: flex-end; /* 保持子元素垂直底部对齐 */
+    align-items: center;
     gap: 0.5rem;
-    justify-content: flex-end; /* 靠右对齐的关键 */
+}
+.ai-cover-preview-image {
+    display: block;
+    max-width: 100%;
+    max-height: 320px;
+    margin: 0.5rem auto 0;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.ai-cover-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 220px;
+    margin-top: 0.5rem;
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    background: rgba(128, 128, 128, 0.06);
+}
+
+.ai-cover-loading-spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid rgba(0, 0, 0, 0.12);
+    border-left-color: var(--color-accent-primary);
+    animation: cover-spin 1s linear infinite;
+}
+
+.ai-cover-loading-text {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+@keyframes cover-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 .btn {
     padding: 0.25rem 0.5rem;
@@ -787,7 +893,7 @@ footer.main-footer {
 .post-content pre {
     background-color: var(--color-code-bg);
     color: var(--color-code-text);
-    padding: 0.75em;
+    padding: 1em;
     margin: .5em 0;
     overflow-x: auto;
     border-radius: 0.3em;

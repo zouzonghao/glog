@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"glog/internal/constants"
@@ -32,6 +33,23 @@ func (s *Scheduler) Start() {
 	log.Println("定时备份调度器正在初始化...")
 	s.ReloadTasks()
 	s.cron.Start()
+}
+
+func (s *Scheduler) Stop(ctx context.Context) error {
+	s.mu.Lock()
+	if s.cron == nil {
+		s.mu.Unlock()
+		return nil
+	}
+	stopCtx := s.cron.Stop()
+	s.mu.Unlock()
+
+	select {
+	case <-stopCtx.Done():
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (s *Scheduler) ReloadTasks() {

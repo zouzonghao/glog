@@ -5,6 +5,10 @@ const macaronColors = [
 ];
 
 function generatePseudoCover(card) {
+    if (card.dataset.coverGenerating === 'true') {
+        return;
+    }
+
     const cover = card.querySelector('.pseudo-cover');
     if (cover) {
         const randomColor = macaronColors[Math.floor(Math.random() * macaronColors.length)];
