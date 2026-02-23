@@ -173,8 +173,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const content = contentArea.value.trim();
-            if (!content) {
-                showAiModal('请先填写文章内容，再生成 AI 封面。');
+            const promptValue = aiCoverPromptInput ? aiCoverPromptInput.value.trim() : '';
+            if (!content && !promptValue) {
+                showAiModal('请先填写文章内容，或输入自定义提示词，再生成 AI 封面。');
                 return;
             }
 

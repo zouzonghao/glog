@@ -310,6 +310,20 @@ func (h *AdminHandler) ShowSettingsPage(c *gin.Context) {
 	for k, v := range settings {
 		data[k] = v
 	}
+
+	if strings.TrimSpace(settings[constants.SettingImagePromptTplByPost]) == "" {
+		data[constants.SettingImagePromptTplByPost] = h.aiService.DefaultCoverPromptTemplateByPost()
+	}
+	if strings.TrimSpace(settings[constants.SettingImagePromptTplByHint]) == "" {
+		data[constants.SettingImagePromptTplByHint] = h.aiService.DefaultCoverPromptTemplateByHint()
+	}
+	if strings.TrimSpace(settings[constants.SettingImageAPIStyle]) == "" {
+		data[constants.SettingImageAPIStyle] = h.aiService.DefaultCoverImageStyle()
+	}
+	data["imageapi_style_default"] = h.aiService.DefaultCoverImageStyle()
+	data["image_prompt_template_by_post_default"] = h.aiService.DefaultCoverPromptTemplateByPost()
+	data["image_prompt_template_by_hint_default"] = h.aiService.DefaultCoverPromptTemplateByHint()
+
 	render(c, http.StatusOK, "settings.html", data)
 }
 
@@ -366,8 +380,8 @@ func (h *AdminHandler) GenerateCover(c *gin.Context) {
 	content := strings.TrimSpace(c.PostForm("content"))
 	prompt := strings.TrimSpace(c.PostForm("ai_cover_prompt"))
 
-	if content == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "文章内容为空，无法生成封面"})
+	if content == "" && prompt == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "文章内容为空且未提供提示词，无法生成封面"})
 		return
 	}
 
@@ -390,6 +404,9 @@ func (h *AdminHandler) GenerateCover(c *gin.Context) {
 		settings[constants.SettingImageAPIURL],
 		settings[constants.SettingImageAPIToken],
 		settings[constants.SettingImageAPIModel],
+		settings[constants.SettingImageAPIStyle],
+		settings[constants.SettingImagePromptTplByPost],
+		settings[constants.SettingImagePromptTplByHint],
 	)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "AI 封面生成失败: " + err.Error()})

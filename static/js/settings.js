@@ -14,11 +14,14 @@ document.addEventListener('DOMContentLoaded', function() {
     setupGlobalModal('github-modal', 'github-backup-btn');
     setupGlobalModal('webdav-modal', 'webdav-backup-btn');
     setupGlobalModal('imageapi-modal', 'imageapi-settings-btn');
+    setupGlobalModal('image-style-modal', 'image-style-settings-btn');
     // Note: password-prompt-modal is now opened programmatically when needed.
 
     // --- Form-specific Logic inside Modals ---
     attachModalFormLogic('save-ai-btn', 'ai-settings-form', 'ai-modal');
     attachModalFormLogic('save-imageapi-btn', 'imageapi-settings-form', 'imageapi-modal');
+    attachModalFormLogic('save-image-style-btn', 'image-style-settings-form', 'image-style-modal');
+    attachImageStyleResetLogic();
     attachModalFormLogic('save-github-btn', 'github-settings-form', 'github-modal');
     attachModalFormLogic('save-webdav-btn', 'webdav-settings-form', 'webdav-modal');
 
@@ -180,8 +183,10 @@ function attachModalFormLogic(saveBtnId, formId, modalId) {
     if (saveBtn && form && modal) {
         saveBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            saveFormData(form, () => {
-                modal.classList.remove('show');
+            saveFormData(form, (data) => {
+                if (data.status === 'success') {
+                    modal.classList.remove('show');
+                }
             });
         });
     }
@@ -235,7 +240,62 @@ function attachBackupNowLogic(backupNowBtnId, backupNowUrl) {
     }
 }
 
-function saveFormData(formElement, callback) {
+function attachImageStyleResetLogic() {
+    const resetBtn = document.getElementById('reset-image-style-btn');
+    const form = document.getElementById('image-style-settings-form');
+    const modal = document.getElementById('image-style-modal');
+    if (!resetBtn || !form || !modal) {
+        console.error('图片风格恢复默认初始化失败：缺少必要 DOM 节点。');
+        return;
+    }
+
+    resetBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const confirmed = window.confirm('确定要恢复图片风格和提示词模板为默认值吗？');
+        if (!confirmed) {
+            return;
+        }
+
+        const styleInput = document.getElementById('imageapi_style');
+        const postTemplateInput = document.getElementById('image_prompt_template_by_post');
+        const hintTemplateInput = document.getElementById('image_prompt_template_by_hint');
+        const styleDefaultInput = document.getElementById('imageapi_style_default');
+        const postTemplateDefault = document.getElementById('image_prompt_template_by_post_default');
+        const hintTemplateDefault = document.getElementById('image_prompt_template_by_hint_default');
+
+        const requiredElements = {
+            imageapi_style: styleInput,
+            image_prompt_template_by_post: postTemplateInput,
+            image_prompt_template_by_hint: hintTemplateInput,
+            imageapi_style_default: styleDefaultInput,
+            image_prompt_template_by_post_default: postTemplateDefault,
+            image_prompt_template_by_hint_default: hintTemplateDefault
+        };
+        const missingIds = Object.keys(requiredElements).filter((id) => !requiredElements[id]);
+        if (missingIds.length > 0) {
+            console.error('恢复默认失败，缺少 DOM 节点:', missingIds.join(', '));
+            showNotification('恢复默认失败：页面结构异常，请刷新后重试。', 'error');
+            return;
+        }
+
+        styleInput.value = styleDefaultInput.value || '';
+        postTemplateInput.value = postTemplateDefault.value || '';
+        hintTemplateInput.value = hintTemplateDefault.value || '';
+
+        showNotification('已恢复默认，正在保存...', 'info');
+        saveFormData(form, (data) => {
+            if (data.status === 'success') {
+                showNotification('默认配置已恢复并保存。', 'success');
+                modal.classList.remove('show');
+                return;
+            }
+            showNotification(data.message || '恢复默认保存失败，请稍后重试。', 'error');
+        }, { notify: false });
+    });
+}
+
+function saveFormData(formElement, callback, options = {}) {
+    const shouldNotify = options.notify !== false;
     const formData = new FormData(formElement);
     fetch('/admin/setting', {
         method: 'POST',
@@ -243,15 +303,21 @@ function saveFormData(formElement, callback) {
     })
     .then(response => response.json())
     .then(data => {
-        showNotification(data.message, data.status);
+        if (shouldNotify) {
+            showNotification(data.message, data.status);
+        }
         if (data.status === 'success') {
             formElement.querySelectorAll('input[type="password"]').forEach(input => input.value = '');
-            if (callback) callback();
         }
+        if (callback) callback(data);
     })
     .catch(error => {
         console.error('表单提交错误：', error);
-        showNotification('保存时发生错误，请检查网络连接！', 'error');
+        const fallback = { status: 'error', message: '保存时发生错误，请检查网络连接！' };
+        if (shouldNotify) {
+            showNotification(fallback.message, 'error');
+        }
+        if (callback) callback(fallback);
     });
 }
 

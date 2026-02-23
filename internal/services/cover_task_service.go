@@ -320,6 +320,9 @@ func (s *CoverTaskService) runTask(ctx context.Context, taskID string, postID ui
 		settings[constants.SettingImageAPIURL],
 		settings[constants.SettingImageAPIToken],
 		settings[constants.SettingImageAPIModel],
+		settings[constants.SettingImageAPIStyle],
+		settings[constants.SettingImagePromptTplByPost],
+		settings[constants.SettingImagePromptTplByHint],
 	)
 	if err != nil {
 		if taskCtx.Err() == context.Canceled {

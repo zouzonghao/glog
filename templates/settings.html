@@ -42,7 +42,8 @@
 </div>
 <div class="backup-actions settings-form-group-spaced">
     <button type="button" id="ai-settings-btn" class="btn">🔧 基本模型</button>
-    <button type="button" id="imageapi-settings-btn" class="btn">🎨 AI 封面模型</button>
+    <button type="button" id="imageapi-settings-btn" class="btn">🎨 封面模型</button>
+    <button type="button" id="image-style-settings-btn" class="btn">🖌️ 图片风格</button>
 </div>
 
 <div class="setting-header setting-header-separated">
@@ -107,6 +108,35 @@
             <div class="modal-actions">
                 <button type="button" id="test-imageapi-btn" class="btn">🚀 测试连接</button>
                 <button type="button" id="save-imageapi-btn" class="btn">💾 保存设置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Image Style Settings Modal -->
+<div id="image-style-modal" class="modal-container">
+    <div class="modal-content">
+        <span class="modal-close-btn">&times;</span>
+        <h3>图片风格与提示词设置</h3>
+        <form id="image-style-settings-form" class="app-form" autocomplete="off">
+            <input type="hidden" id="imageapi_style_default" value="{{ .imageapi_style_default }}">
+            <textarea id="image_prompt_template_by_post_default" hidden>{{ .image_prompt_template_by_post_default }}</textarea>
+            <textarea id="image_prompt_template_by_hint_default" hidden>{{ .image_prompt_template_by_hint_default }}</textarea>
+            <div class="settings-form-group">
+                <label for="imageapi_style">图片风格</label>
+                <textarea id="imageapi_style" name="imageapi_style" rows="4" placeholder="例如：电影感写实、扁平插画、赛博朋克夜景" autocomplete="off">{{ .imageapi_style }}</textarea>
+            </div>
+            <div class="settings-form-group">
+                <label for="image_prompt_template_by_post">提示词模板（按文章内容生成）</label>
+                <textarea id="image_prompt_template_by_post" name="image_prompt_template_by_post" rows="4" autocomplete="off">{{ .image_prompt_template_by_post }}</textarea>
+            </div>
+            <div class="settings-form-group">
+                <label for="image_prompt_template_by_hint">提示词模板（按自定义提示词生成）</label>
+                <textarea id="image_prompt_template_by_hint" name="image_prompt_template_by_hint" rows="4" autocomplete="off">{{ .image_prompt_template_by_hint }}</textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="reset-image-style-btn" class="btn btn-secondary">↺ 恢复默认</button>
+                <button type="button" id="save-image-style-btn" class="btn">💾 保存设置</button>
             </div>
         </form>
     </div>
