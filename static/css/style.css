@@ -43,10 +43,6 @@
     --color-bg-list-header: #d4d6d848;
     --color-bg-list-hover: #d4d6d848;
 
-    /* Console Colors */
-    --color-bg-console: #1a1a1a;
-    --color-text-console: #e0e0e0;
-
     /* 代码块颜色 */
     --color-code-bg: #f0f0f0;
     --color-code-text: #333333;
@@ -183,11 +179,6 @@ header.main-header::after {
     display: flex;
     align-items: center;
     gap: 1rem;
-}
-.site-logo {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
 }
 .site-info {
     display: flex;
@@ -477,11 +468,6 @@ footer.main-footer {
 .pagination-new .prev-next {
     font-size: 0.9rem;
 }
-.pagination-new .prev-next.disabled {
-    color: var(--color-text-secondary);
-    opacity: 0.6;
-    pointer-events: none;
-}
 .pagination-new .ellipsis {
     color: var(--color-text-secondary);
 }
@@ -656,9 +642,6 @@ footer.main-footer {
     display: block;
     font-weight: 450;
 }
-.settings-form .app-form label{
-    margin-bottom: 0.25rem;
-}
 .app-form input[type="text"],
 .app-form input[type="password"],
 .app-form input[type="number"],
@@ -785,48 +768,6 @@ footer.main-footer {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
-.ai-cover-preview-image {
-    display: block;
-    max-width: 100%;
-    max-height: 320px;
-    margin: 0.5rem auto 0;
-    border: 1px solid var(--color-border-primary);
-    border-radius: 8px;
-    object-fit: contain;
-}
-
-.ai-cover-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 220px;
-    margin-top: 0.5rem;
-    border: 1px solid var(--color-border-primary);
-    border-radius: 8px;
-    background: rgba(128, 128, 128, 0.06);
-}
-
-.ai-cover-loading-spinner {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 3px solid rgba(0, 0, 0, 0.12);
-    border-left-color: var(--color-accent-primary);
-    animation: cover-spin 1s linear infinite;
-}
-
-.ai-cover-loading-text {
-    margin: 0;
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-}
-
-@keyframes cover-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 .btn {
     padding: 0.25rem 0.5rem;
@@ -1380,6 +1321,11 @@ html.dark .notification.info {
     font-size: 0.9rem;
 }
 
+.btn-secondary {
+    background-color: var(--color-border-primary);
+    color: var(--color-text-primary);
+}
+
 /* Settings Page Styles */
 .settings-form-group-spaced {
     margin-top: 1.5rem;
@@ -1397,25 +1343,4 @@ html.dark .notification.info {
 
 .hidden-file-input {
     display: none;
-}
-
-/* AI Logs Modal Styles */
-.logs-container {
-    margin-top: 1rem;
-    background-color: var(--color-bg-console); /* Dark background for the console look */
-    border: 1px solid var(--color-border-primary);
-    border-radius: 6px;
-    padding: 1rem;
-    height: 300px; /* Fixed height */
-    overflow-y: auto; /* Enable vertical scrolling */
-    text-align: left;
-}
-
-#ai-logs-content {
-    font-family: var(--font-mono); /* Use monospaced font */
-    font-size: 0.85rem;
-    color: var(--color-text-console); /* Light grey text */
-    white-space: pre-wrap; /* Ensure long lines wrap */
-    word-wrap: break-word;
-    margin: 0;
 }

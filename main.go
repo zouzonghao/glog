@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"flag"
 	"glog/internal/handlers"
@@ -22,6 +23,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	_ "time/tzdata"
 )
 
 var IsRelease bool
@@ -70,18 +72,12 @@ func main() {
 	settingRepo := repository.NewSettingRepository(db)
 
 	settingService := services.NewSettingService(settingRepo)
-
-	aiService := services.NewAIService()
-	postService := services.NewPostService(postRepo, settingService, aiService)
-	coverTaskService := services.NewCoverTaskService(settingService, aiService, postService)
-	if err := coverTaskService.RecoverDanglingTasks(); err != nil {
-		log.Printf("修复遗留封面任务状态失败: %v", err)
-	}
+	postService := services.NewPostService(postRepo, settingService)
 	backupService := services.NewBackupService(postService, settingService)
 	scheduler := tasks.NewScheduler(settingService, backupService)
 
 	blogHandler := handlers.NewBlogHandler(postService)
-	adminHandler := handlers.NewAdminHandler(postService, settingService, aiService, coverTaskService, backupService, scheduler)
+	adminHandler := handlers.NewAdminHandler(postService, settingService, backupService, scheduler)
 	searchHandler := handlers.NewSearchHandler(postService)
 	authHandler := handlers.NewAuthHandler(settingService)
 	apiHandler := handlers.NewAPIHandler(postService)
@@ -89,13 +85,18 @@ func main() {
 	r := gin.Default()
 	r.HTMLRender = createRenderer()
 
-	store := cookie.NewStore([]byte("secret-key-should-be-changed"))
+	password, err := settingService.GetSetting("password")
+	if err != nil || password == "" {
+		password = "default-secret-key"
+	}
+	sessionSecret := sha256.Sum256([]byte(password + "-glog-session"))
+	store := cookie.NewStore(sessionSecret[:])
 	store.Options(sessions.Options{
 		HttpOnly: true,
 		Secure:   !*unsafe,
 		SameSite: http.SameSiteLaxMode,
 	})
-	r.Use(sessions.Sessions("glog_session", store))
+	r.Use(sessions.Sessions("glog_sess", store))
 
 	r.Use(handlers.SettingsMiddleware(settingService))
 
@@ -121,7 +122,6 @@ func main() {
 		admin.GET("/new", adminHandler.NewPost)
 		admin.GET("/editor", adminHandler.Editor)
 		admin.POST("/save", adminHandler.SavePost)
-		admin.POST("/cover/generate", adminHandler.GenerateCover)
 		admin.POST("/delete/:id", adminHandler.DeletePost)
 		admin.POST("/posts/batch-update", adminHandler.BatchUpdatePosts)
 	}
@@ -131,8 +131,6 @@ func main() {
 	{
 		settings.GET("/", adminHandler.ShowSettingsPage)
 		settings.POST("/", adminHandler.UpdateSettings)
-		settings.POST("/test-ai", adminHandler.TestAISettings)
-		settings.POST("/test-imageapi", adminHandler.TestImageAPIHandler)
 		settings.GET("/backup", adminHandler.BackupSite)
 		settings.POST("/upload", adminHandler.UploadBackup)
 		settings.POST("/test-github", adminHandler.TestGithubSettings)
@@ -140,11 +138,14 @@ func main() {
 		settings.POST("/backup-github-now", adminHandler.BackupToGithubNow)
 		settings.POST("/backup-webdav-now", adminHandler.BackupToWebdavNow)
 	}
+
 	api := r.Group("/api/v1")
 	api.Use(handlers.APIAuthMiddleware(settingService))
 	{
-		api.POST("/posts", apiHandler.CreatePost)
-		api.GET("/posts", apiHandler.FindPosts)
+		api.GET("/posts", apiHandler.GetPosts)
+		api.GET("/posts/:id", apiHandler.GetPost)
+		api.PUT("/posts/:id/excerpt", apiHandler.UpdateExcerpt)
+		api.PUT("/posts/:id/cover", apiHandler.UpdateCover)
 	}
 
 	r.NoRoute(blogHandler.NotFound)
@@ -187,11 +188,5 @@ func main() {
 
 	if err := scheduler.Stop(shutdownCtx); err != nil {
 		log.Printf("定时任务调度器关闭异常: %v", err)
-	}
-	if err := coverTaskService.Shutdown(shutdownCtx); err != nil {
-		log.Printf("封面任务服务关闭异常: %v", err)
-	}
-	if err := postService.Shutdown(shutdownCtx); err != nil {
-		log.Printf("文章服务关闭异常: %v", err)
 	}
 }

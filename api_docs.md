@@ -16,57 +16,17 @@ Authorization: Bearer your_site_password
 
 ## API 端点
 
-### 文章
+### 1. 获取文章列表
 
-#### 1. 创建文章
-
-创建一个新的文章。
-
-*   **URL**: `/api/v1/posts`
-*   **Method**: `POST`
-*   **Headers**:
-    *   `Authorization: Bearer <token>`
-    *   `Content-Type: application/json`
-*   **Body**:
-
-    ```json
-    {
-      "title": "文章标题",
-      "content": "文章内容",
-      "is_private": false,
-      "with_ai": false,
-      "published_at": "2025-08-25T16:00:00+08:00"
-    }
-    ```
-
-*   **成功响应 (201 Created)**:
-
-    ```json
-    {
-        "ID": 1,
-        "CreatedAt": "2025-08-25T08:00:00Z",
-        "UpdatedAt": "2025-08-25T08:00:00Z",
-        "title": "文章标题",
-        "slug": "article-title",
-        "content": "文章内容",
-        "excerpt": "文章摘要",
-        "is_private": false,
-        "published_at": "2025-08-25T08:00:00Z"
-    }
-    ```
-
-#### 2. 查找文章
-
-查找文章，支持多关键字搜索和分页。
+获取文章列表，支持分页。
 
 *   **URL**: `/api/v1/posts`
 *   **Method**: `GET`
 *   **Headers**:
     *   `Authorization: Bearer <token>`
 *   **查询参数**:
-    *   `q` (可选): 搜索关键字，多个关键字用逗号分隔。例如: `golang,api`
-    *   `page` (可选): 页码，默认为 `1`。
-    *   `pageSize` (可选): 每页数量，默认为 `15`。
+    *   `page` (可选): 页码，默认为 `1`
+    *   `page_size` (可选): 每页数量，默认为 `10`
 
 *   **成功响应 (200 OK)**:
 
@@ -74,16 +34,127 @@ Authorization: Bearer your_site_password
     {
         "posts": [
             {
-                "ID": 1,
-                "CreatedAt": "2025-08-25T08:00:00Z",
-                "UpdatedAt": "2025-08-25T08:00:00Z",
+                "id": 1,
                 "title": "文章标题",
                 "slug": "article-title",
-                "content": "文章内容",
-                "excerpt": "文章摘要",
-                "is_private": false,
-                "published_at": "2025-08-25T08:00:00Z"
+                "excerpt": "文章摘要描述",
+                "has_cover": true,
+                "cover": "https://example.com/cover.jpg",
+                "published_at": "2025-01-01 12:00:00",
+                "is_private": false
             }
         ],
-        "total": 1
+        "total": 100,
+        "page": 1,
+        "page_size": 10
     }
+    ```
+
+### 2. 获取文章详情
+
+获取单篇文章的完整内容。
+
+*   **URL**: `/api/v1/posts/:id`
+*   **Method**: `GET`
+*   **Headers**:
+    *   `Authorization: Bearer <token>`
+*   **路径参数**:
+    *   `id`: 文章 ID
+
+*   **成功响应 (200 OK)**:
+
+    ```json
+    {
+        "id": 1,
+        "title": "文章标题",
+        "slug": "article-title",
+        "content": "文章原始 Markdown 内容",
+        "cover": "https://example.com/cover.jpg",
+        "published_at": "2025-01-01 12:00:00"
+    }
+    ```
+
+*   **错误响应**:
+    *   `400 Bad Request`: 无效的文章 ID
+    *   `404 Not Found`: 文章不存在
+
+### 3. 更新文章摘要
+
+更新指定文章的摘要描述。
+
+*   **URL**: `/api/v1/posts/:id/excerpt`
+*   **Method**: `PUT`
+*   **Headers**:
+    *   `Authorization: Bearer <token>`
+    *   `Content-Type: application/json`
+*   **路径参数**:
+    *   `id`: 文章 ID
+*   **Body**:
+
+    ```json
+    {
+        "excerpt": "新的文章摘要，最多 500 字符"
+    }
+    ```
+
+*   **成功响应 (200 OK)**:
+
+    ```json
+    {
+        "status": "success"
+    }
+    ```
+
+*   **错误响应**:
+    *   `400 Bad Request`: 无效的文章 ID 或请求格式错误
+    *   `500 Internal Server Error`: 更新失败
+
+### 4. 更新文章封面
+
+更新指定文章的封面图片 URL。
+
+*   **URL**: `/api/v1/posts/:id/cover`
+*   **Method**: `PUT`
+*   **Headers**:
+    *   `Authorization: Bearer <token>`
+    *   `Content-Type: application/json`
+*   **路径参数**:
+    *   `id`: 文章 ID
+*   **Body**:
+
+    ```json
+    {
+        "cover": "https://example.com/new-cover.jpg"
+    }
+    ```
+
+*   **成功响应 (200 OK)**:
+
+    ```json
+    {
+        "status": "success"
+    }
+    ```
+
+*   **错误响应**:
+    *   `400 Bad Request`: 无效的文章 ID 或请求格式错误
+    *   `500 Internal Server Error`: 更新失败
+
+## 错误响应格式
+
+所有错误响应遵循以下格式：
+
+```json
+{
+    "error": "错误描述信息"
+}
+```
+
+## 使用场景
+
+这些 API 设计用于与外部 AI 服务集成：
+
+1. **获取文章列表** - 外部程序可以获取所有文章的基本信息，包括摘要和是否有封面图
+2. **获取文章内容** - 外部程序可以读取文章的原始 Markdown 内容进行分析
+3. **更新摘要** - AI 服务生成摘要后，通过 API 更新到文章
+4. **更新封面** - AI 服务生成封面图后，通过 API 更新封面 URL

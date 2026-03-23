@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,26 +23,19 @@ import (
 	"github.com/yeka/zip"
 )
 
-// 封面生成同步接口超时时间
-const coverGenerateTimeout = 10 * time.Minute
-
 type AdminHandler struct {
-	postService      *services.PostService
-	settingService   *services.SettingService
-	aiService        *services.AIService
-	coverTaskService *services.CoverTaskService
-	backupService    *services.BackupService
-	scheduler        *tasks.Scheduler
+	postService    *services.PostService
+	settingService *services.SettingService
+	backupService  *services.BackupService
+	scheduler      *tasks.Scheduler
 }
 
-func NewAdminHandler(postService *services.PostService, settingService *services.SettingService, aiService *services.AIService, coverTaskService *services.CoverTaskService, backupService *services.BackupService, scheduler *tasks.Scheduler) *AdminHandler {
+func NewAdminHandler(postService *services.PostService, settingService *services.SettingService, backupService *services.BackupService, scheduler *tasks.Scheduler) *AdminHandler {
 	return &AdminHandler{
-		postService:      postService,
-		settingService:   settingService,
-		aiService:        aiService,
-		coverTaskService: coverTaskService,
-		backupService:    backupService,
-		scheduler:        scheduler,
+		postService:    postService,
+		settingService: settingService,
+		backupService:  backupService,
+		scheduler:      scheduler,
 	}
 }
 
@@ -58,7 +50,7 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 	for key, values := range c.Request.PostForm {
 		if len(values) > 0 {
 			value := values[0]
-			if (key == constants.SettingPassword || key == constants.SettingOpenAIToken || key == constants.SettingGithubToken || key == constants.SettingWebdavPassword || key == constants.SettingImageAPIToken) && value == "" {
+			if (key == constants.SettingPassword || key == constants.SettingGithubToken || key == constants.SettingWebdavPassword) && value == "" {
 				continue
 			}
 			settingsToUpdate[key] = value
@@ -113,13 +105,14 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 }
 
 func (h *AdminHandler) NewPost(c *gin.Context) {
-	loc, _ := time.LoadLocation("Asia/Shanghai")
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		loc = time.FixedZone("CST", 8*3600)
+	}
 	now := time.Now().In(loc).Format("2006-01-02 15:04")
 	render(c, http.StatusOK, "editor.html", gin.H{
-		"post":              nil,
-		"now":               now,
-		"isCoverGenerating": false,
-		"coverPrompt":       "",
+		"post": nil,
+		"now":  now,
 	})
 }
 
@@ -144,17 +137,9 @@ func (h *AdminHandler) Editor(c *gin.Context) {
 		return
 	}
 
-	isCoverGenerating := post.CoverStatus == services.CoverStatusGenerating
-	coverPrompt := post.Cover
-	if isCoverGenerating {
-		coverPrompt = ""
-	}
-
 	render(c, http.StatusOK, "editor.html", gin.H{
-		"post":              post,
-		"status":            status,
-		"isCoverGenerating": isCoverGenerating,
-		"coverPrompt":       coverPrompt,
+		"post":   post,
+		"status": status,
 	})
 }
 
@@ -164,14 +149,10 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	content := c.PostForm("content")
 	publishedAtStr := c.PostForm("published_at")
 	isPrivate := c.PostForm("is_private") == "on"
-	aiSummary := c.PostForm("ai_summary") == "on"
-	aiCover := c.PostForm("ai_cover") == "on"
-	aiCoverPrompt := c.PostForm("ai_cover_prompt")
 
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "服务器时间配置错误"})
-		return
+		loc = time.FixedZone("CST", 8*3600)
 	}
 	publishedAt, err := time.ParseInLocation("2006-01-02 15:04", publishedAtStr, loc)
 	if err != nil {
@@ -179,29 +160,13 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 		return
 	}
 
-	if idStr != "" && idStr != "0" {
-		id, _ := strconv.ParseUint(idStr, 10, 64)
-		if h.postService.CheckPostLock(uint(id)) {
-			c.JSON(http.StatusConflict, gin.H{
-				"status":  "locked",
-				"message": "正在生成AI内容，文章已锁定，请稍候再试...",
-			})
-			return
-		}
-	}
-
 	var post *models.Post
-	var aiTriggered bool
 
 	if idStr == "" || idStr == "0" {
-		post, aiTriggered, err = h.postService.CreatePost(title, content, isPrivate, aiSummary, aiCover, aiCoverPrompt, publishedAt)
+		post, err = h.postService.CreatePost(title, content, isPrivate, publishedAt)
 	} else {
 		id, _ := strconv.ParseUint(idStr, 10, 64)
-		// 修复并发竞态：在更新文章前，先取消可能正在进行的旧封面任务。
-		// 否则，如果旧任务在 UpdatePost 之后、新任务创建之前完成，它会用旧的生成结果覆盖用户刚保存的封面设置（例如用户刚手动填写的 URL 或提取的图片）。
-		h.coverTaskService.CancelTaskByPostID(uint(id))
-
-		post, aiTriggered, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, aiSummary, aiCover, aiCoverPrompt, publishedAt)
+		post, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, publishedAt)
 	}
 
 	if err != nil {
@@ -220,60 +185,12 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 		return
 	}
 
-	coverTaskTriggered := false
-	coverTaskCreateFailed := false
-
-	// 只有点击保存才激活后台封面任务。
-	if aiCover && !utils.IsHTTPURL(aiCoverPrompt) {
-		if _, taskErr := h.coverTaskService.CreateTask(post.ID, aiCoverPrompt, content); taskErr != nil {
-			coverTaskCreateFailed = true
-			_ = h.postService.MarkCoverTaskCreationFailed(post.ID, "AI 封面任务创建失败: "+taskErr.Error())
-			post.CoverStatus = services.CoverStatusFailed
-		} else {
-			coverTaskTriggered = true
-			post.CoverStatus = services.CoverStatusGenerating
-		}
-	} else {
-		// 用户关闭 AI 封面或手动指定了封面 URL 时，取消关联后台任务，避免覆盖手动结果。
-		h.coverTaskService.CancelTaskByPostID(post.ID)
-	}
-
-	message := "文章已保存！"
-	if aiTriggered {
-		message = "文章已保存，AI 内容正在生成中，请稍后刷新查看..."
-	}
-	if coverTaskTriggered {
-		message = "文章已保存，AI 封面正在后台生成中，请稍后刷新查看..."
-	}
-	if aiTriggered && coverTaskTriggered {
-		message = "文章已保存，AI 摘要与封面正在后台生成中，请稍后刷新查看..."
-	}
-	if coverTaskCreateFailed {
-		message = "文章已保存，但 AI 封面任务创建失败，请稍后重试。"
-	}
-
-	response := gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": message,
+		"message": "文章已保存！",
 		"post_id": post.ID,
-	}
-
-	coverStatus := strings.TrimSpace(post.CoverStatus)
-	if coverStatus == "" {
-		coverStatus = services.CoverStatusNone
-	}
-	if coverTaskTriggered {
-		coverStatus = services.CoverStatusGenerating
-	} else if coverTaskCreateFailed {
-		coverStatus = services.CoverStatusFailed
-	}
-	response["cover_status"] = coverStatus
-
-	if !(aiTriggered && title == "未命名标题") {
-		response["slug"] = post.Slug
-	}
-
-	c.JSON(http.StatusOK, response)
+		"slug":    post.Slug,
+	})
 }
 
 func (h *AdminHandler) DeletePost(c *gin.Context) {
@@ -283,9 +200,6 @@ func (h *AdminHandler) DeletePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的文章 ID"})
 		return
 	}
-
-	// 删除文章前先取消关联封面任务，避免任务完成后回写已删除文章。
-	h.coverTaskService.CancelTaskByPostID(uint(id))
 
 	err = h.postService.DeletePost(uint(id))
 	if err != nil {
@@ -299,129 +213,18 @@ func (h *AdminHandler) DeletePost(c *gin.Context) {
 func (h *AdminHandler) ShowSettingsPage(c *gin.Context) {
 	settings, err := h.settingService.GetAllSettings()
 	if err != nil {
-		// Render the page with an error message or default values
 		render(c, http.StatusInternalServerError, "settings.html", gin.H{
 			"error": "无法加载设置",
 		})
 		return
 	}
-	// Convert map[string]string to gin.H
+
 	data := make(gin.H)
 	for k, v := range settings {
 		data[k] = v
 	}
 
-	if strings.TrimSpace(settings[constants.SettingImagePromptTplByPost]) == "" {
-		data[constants.SettingImagePromptTplByPost] = h.aiService.DefaultCoverPromptTemplateByPost()
-	}
-	if strings.TrimSpace(settings[constants.SettingImagePromptTplByHint]) == "" {
-		data[constants.SettingImagePromptTplByHint] = h.aiService.DefaultCoverPromptTemplateByHint()
-	}
-	if strings.TrimSpace(settings[constants.SettingImageAPIStyle]) == "" {
-		data[constants.SettingImageAPIStyle] = h.aiService.DefaultCoverImageStyle()
-	}
-	data["imageapi_style_default"] = h.aiService.DefaultCoverImageStyle()
-	data["image_prompt_template_by_post_default"] = h.aiService.DefaultCoverPromptTemplateByPost()
-	data["image_prompt_template_by_hint_default"] = h.aiService.DefaultCoverPromptTemplateByHint()
-
 	render(c, http.StatusOK, "settings.html", data)
-}
-
-func (h *AdminHandler) TestAISettings(c *gin.Context) {
-	baseURL := c.PostForm(constants.SettingOpenAIBaseURL)
-	token := c.PostForm(constants.SettingOpenAIToken)
-	model := c.PostForm(constants.SettingOpenAIModel)
-
-	finalToken := token
-	if finalToken == "" {
-		settings, err := h.settingService.GetAllSettings()
-		if err == nil {
-			finalToken = settings[constants.SettingOpenAIToken]
-		}
-	}
-
-	testContent := "这是一个用于测试AI摘要功能的文本。"
-	_, err := h.aiService.GenerateSummaryAndTitle(c.Request.Context(), testContent, false, baseURL, finalToken, model)
-
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "测试失败: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "测试成功！连接和配置均有效。"})
-}
-
-func (h *AdminHandler) TestImageAPIHandler(c *gin.Context) {
-	apiURL := c.PostForm(constants.SettingImageAPIURL)
-	apiToken := c.PostForm(constants.SettingImageAPIToken)
-
-	if apiToken == "" {
-		settings, err := h.settingService.GetAllSettings()
-		if err == nil {
-			apiToken = settings[constants.SettingImageAPIToken]
-		}
-	}
-
-	models, err := h.aiService.TestImageAPI(c.Request.Context(), apiURL, apiToken)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "连接失败: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "连接成功！",
-		"models":  models,
-	})
-}
-
-func (h *AdminHandler) GenerateCover(c *gin.Context) {
-	title := strings.TrimSpace(c.PostForm("title"))
-	content := strings.TrimSpace(c.PostForm("content"))
-	prompt := strings.TrimSpace(c.PostForm("ai_cover_prompt"))
-
-	if content == "" && prompt == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "文章内容为空且未提供提示词，无法生成封面"})
-		return
-	}
-
-	settings, err := h.settingService.GetAllSettings()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "获取 AI 设置失败: " + err.Error()})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), coverGenerateTimeout)
-	defer cancel()
-
-	coverURL, err := h.aiService.GenerateCover(
-		ctx,
-		prompt,
-		content,
-		settings[constants.SettingOpenAIBaseURL],
-		settings[constants.SettingOpenAIToken],
-		settings[constants.SettingOpenAIModel],
-		settings[constants.SettingImageAPIURL],
-		settings[constants.SettingImageAPIToken],
-		settings[constants.SettingImageAPIModel],
-		settings[constants.SettingImageAPIStyle],
-		settings[constants.SettingImagePromptTplByPost],
-		settings[constants.SettingImagePromptTplByHint],
-	)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "AI 封面生成失败: " + err.Error()})
-		return
-	}
-
-	if title == "" {
-		title = "当前文章"
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": fmt.Sprintf("%s 的封面已生成", title),
-		"cover":   coverURL,
-	})
 }
 
 func (h *AdminHandler) BackupSite(c *gin.Context) {
@@ -592,12 +395,6 @@ func (h *AdminHandler) BatchUpdatePosts(c *gin.Context) {
 	if len(req.IDs) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "请至少选择一篇文章"})
 		return
-	}
-
-	if req.Action == "delete" {
-		for _, id := range req.IDs {
-			h.coverTaskService.CancelTaskByPostID(id)
-		}
 	}
 
 	err := h.postService.BatchUpdatePosts(req.IDs, req.Action, req.IsPrivate)

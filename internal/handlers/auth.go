@@ -22,7 +22,6 @@ func (h *AuthHandler) ShowLoginPage(c *gin.Context) {
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
-	session := sessions.Default(c)
 	submittedPassword := c.PostForm(constants.SettingPassword)
 
 	adminPassword, err := h.settingService.GetSetting(constants.SettingPassword)
@@ -42,6 +41,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	session := sessions.Default(c)
+	session.Clear()
 	session.Set(constants.SessionKeyAuthenticated, true)
 	session.Save()
 	c.JSON(http.StatusOK, gin.H{

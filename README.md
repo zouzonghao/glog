@@ -1,16 +1,15 @@
 # Glog - 一个简洁、高效的 Go 博客系统
 
-Glog 是一个使用 Go 语言编写的轻量级博客系统。它设计简洁，易于部署和使用，并内置了 AI 辅助功能，可以自动生成文章摘要和标题。
+Glog 是一个使用 Go 语言编写的轻量级博客系统。它设计简洁，易于部署和使用，专注于核心博客功能，同时提供 REST API 供外部程序集成。
 
 ## 特性
 
 -   **轻量级**: 基于 Gin 框架，性能卓越，资源占用少。
 -   **易于部署**: 支持 Docker 和二进制文件直接部署。
 -   **Markdown 编辑器**: 内置 Markdown 编辑器，支持实时预览。
--   **AI 辅助**: 可选集成 OpenAI API，自动生成文章摘要和标题。
 -   **数据备份**: 支持本地备份、GitHub 和 WebDAV 自动备份。
 -   **全文搜索**: 内置简单的全文搜索功能。
--   **API**: 提供 API 用于文章的增删改查。
+-   **REST API**: 提供 API 用于外部程序集成（如 AI 摘要、封面生成等）。
 
 ## 架构
 
@@ -163,6 +162,8 @@ bash <(curl -sL https://zfff.de/glogsh) uninstall
     go run .
     ```
 
+    > **注意**: 请使用 `go run .` 而不是 `go run main.go`，因为项目使用了编译标签来区分开发和生产模式的资源加载。
+
     服务将启动在 `http://localhost:37371`。
 
 ### 构建
@@ -192,7 +193,7 @@ bash <(curl -sL https://zfff.de/glogsh) uninstall
 
 ## API 文档
 
-Glog 提供了 RESTful API 用于文章管理。
+Glog 提供 REST API 用于外部程序集成。你可以使用这些 API 实现自动生成文章摘要、封面图片等功能。
 
 ### 认证
 
@@ -208,26 +209,137 @@ Authorization: Bearer your_site_password
 
 ### API 端点
 
-#### 1. 创建文章
+#### 1. 获取文章列表
 
--   **URL**: `/api/v1/posts`
--   **Method**: `POST`
--   **Body**:
-
-    ```json
-    {
-      "title": "文章标题",
-      "content": "文章内容",
-      "is_private": false,
-      "published_at": "2025-08-25T16:00:00+08:00"
-    }
-    ```
-
-#### 2. 查找文章
+获取所有文章列表，包含摘要和封面状态信息。
 
 -   **URL**: `/api/v1/posts`
 -   **Method**: `GET`
 -   **查询参数**:
-    -   `query` (可选): 搜索关键字。
     -   `page` (可选): 页码，默认为 `1`。
     -   `page_size` (可选): 每页数量，默认为 `10`。
+-   **响应示例**:
+
+    ```json
+    {
+      "posts": [
+        {
+          "id": 1,
+          "title": "文章标题",
+          "slug": "article-slug",
+          "excerpt": "文章摘要...",
+          "cover": "https://example.com/cover.jpg",
+          "has_cover": true,
+          "is_private": false,
+          "published_at": "2025-01-15T10:00:00+08:00"
+        }
+      ],
+      "total": 100,
+      "page": 1,
+      "page_size": 10
+    }
+    ```
+
+#### 2. 获取文章详情
+
+获取单篇文章的完整内容。
+
+-   **URL**: `/api/v1/posts/:id`
+-   **Method**: `GET`
+-   **响应示例**:
+
+    ```json
+    {
+      "id": 1,
+      "title": "文章标题",
+      "slug": "article-slug",
+      "content": "完整的文章内容...",
+      "excerpt": "文章摘要...",
+      "cover": "https://example.com/cover.jpg",
+      "is_private": false,
+      "published_at": "2025-01-15T10:00:00+08:00"
+    }
+    ```
+
+#### 3. 更新文章摘要
+
+更新指定文章的摘要内容。
+
+-   **URL**: `/api/v1/posts/:id/excerpt`
+-   **Method**: `PUT`
+-   **请求体**:
+
+    ```json
+    {
+      "excerpt": "新的文章摘要"
+    }
+    ```
+
+-   **响应示例**:
+
+    ```json
+    {
+      "status": "success",
+      "message": "摘要已更新"
+    }
+    ```
+
+#### 4. 更新文章封面
+
+更新指定文章的封面图片 URL。
+
+-   **URL**: `/api/v1/posts/:id/cover`
+-   **Method**: `PUT`
+-   **请求体**:
+
+    ```json
+    {
+      "cover": "https://example.com/new-cover.jpg"
+    }
+    ```
+
+-   **响应示例**:
+
+    ```json
+    {
+      "status": "success",
+      "message": "封面已更新"
+    }
+    ```
+
+### 使用示例
+
+以下是一个使用 API 自动生成文章摘要的 Python 示例：
+
+```python
+import requests
+
+API_BASE = "http://localhost:37371/api/v1"
+API_KEY = "your_site_password"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# 获取文章列表
+response = requests.get(f"{API_BASE}/posts", headers=headers)
+posts = response.json()["posts"]
+
+for post in posts:
+    if not post["excerpt"]:
+        # 获取文章内容
+        detail = requests.get(f"{API_BASE}/posts/{post['id']}", headers=headers).json()
+        content = detail["content"]
+        
+        # 调用 AI 生成摘要（示例）
+        summary = generate_summary_with_ai(content)
+        
+        # 更新摘要
+        requests.put(
+            f"{API_BASE}/posts/{post['id']}/excerpt",
+            headers=headers,
+            json={"excerpt": summary}
+        )
+```
+
+## 许可证
+
+MIT License

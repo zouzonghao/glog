@@ -5,10 +5,6 @@ const macaronColors = [
 ];
 
 function generatePseudoCover(card) {
-    if (card.dataset.coverGenerating === 'true') {
-        return;
-    }
-
     const cover = card.querySelector('.pseudo-cover');
     if (cover) {
         const randomColor = macaronColors[Math.floor(Math.random() * macaronColors.length)];
@@ -32,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.querySelector('.post-cards-container');
     if (!container) return;
 
-    // --- Masonry Layout Logic ---
     const column1 = document.createElement('div');
     column1.className = 'card-column';
     const column2 = document.createElement('div');
@@ -43,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
     container.appendChild(column1);
     container.appendChild(column2);
 
-    // A robust function to distribute cards based on the number of children in each column
     function distributeCards(cards) {
         const frag1 = document.createDocumentFragment();
         const frag2 = document.createDocumentFragment();
@@ -64,16 +58,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (frag2.childElementCount > 0) column2.appendChild(frag2);
     }
 
-    // Generate covers for initial cards before distributing them
     initialCards.forEach(generatePseudoCover);
     
-    // Distribute initial cards using requestAnimationFrame to prevent blocking paint
     requestAnimationFrame(() => {
         distributeCards(initialCards);
-        container.style.opacity = '1'; // Fade in nicely if we added opacity:0 in CSS
+        container.style.opacity = '1';
     });
 
-    // --- Logic for handling cover image errors using event delegation ---
     container.addEventListener('error', (event) => {
         if (event.target.tagName === 'IMG') {
             const cardCover = event.target.parentElement;
@@ -81,9 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
             cardCover.innerHTML = '<div class="pseudo-cover"></div>';
             generatePseudoCover(card);
         }
-    }, true); // Use capture phase to catch the event early
+    }, true);
 
-    // --- Logic for infinite scroll ---
     const trigger = document.getElementById('infinite-scroll-trigger');
     if (!trigger) return;
 
@@ -123,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         generatePseudoCover(importedCard);
                         return importedCard;
                     });
-                    // Distribute newly loaded cards
                     distributeCards(importedCards);
                 }
 

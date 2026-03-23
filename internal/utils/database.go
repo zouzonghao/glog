@@ -43,9 +43,6 @@ func seedSettings(db *gorm.DB) error {
 		"password":         "admin",
 		"favicon":          "",
 		"site_description": "由 Glog 驱动的博客",
-		"openai_base_url":  "",
-		"openai_token":     "",
-		"openai_model":     "gemini-2.5-flash",
 	}
 
 	for key, value := range defaultSettings {

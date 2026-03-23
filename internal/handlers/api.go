@@ -1,12 +1,16 @@
 package handlers
 
 import (
-	"glog/internal/models"
 	"glog/internal/services"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	maxExcerptLength = 500
+	maxCoverLength   = 2048
 )
 
 type APIHandler struct {
@@ -19,60 +23,140 @@ func NewAPIHandler(postService *services.PostService) *APIHandler {
 	}
 }
 
-// CreatePost handles the API request to create a new post.
-func (h *APIHandler) CreatePost(c *gin.Context) {
-	var post models.Post
-	if err := c.ShouldBindJSON(&post); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// For API creation, we don't trigger AI summary by default.
-	// PublishedAt will be set by the service if not provided.
-	createdPost, _, err := h.postService.CreatePost(post.Title, post.Content, post.IsPrivate, false, false, "", post.PublishedAt)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, createdPost)
+type PostListItem struct {
+	ID          uint   `json:"id"`
+	Title       string `json:"title"`
+	Slug        string `json:"slug"`
+	Excerpt     string `json:"excerpt"`
+	HasCover    bool   `json:"has_cover"`
+	Cover       string `json:"cover,omitempty"`
+	PublishedAt string `json:"published_at"`
+	IsPrivate   bool   `json:"is_private"`
 }
 
-// FindPosts handles the API request to find posts.
-func (h *APIHandler) FindPosts(c *gin.Context) {
+type PostContent struct {
+	ID          uint   `json:"id"`
+	Title       string `json:"title"`
+	Slug        string `json:"slug"`
+	Content     string `json:"content"`
+	Cover       string `json:"cover,omitempty"`
+	PublishedAt string `json:"published_at"`
+}
+
+type UpdateExcerptRequest struct {
+	Excerpt string `json:"excerpt"`
+}
+
+type UpdateCoverRequest struct {
+	Cover string `json:"cover"`
+}
+
+func (h *APIHandler) GetPosts(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-	query := c.Query("query")
 
-	var posts []models.RenderedPost
-	var total int64
-	var err error
-
-	if query != "" {
-		renderedPosts, totalInt, searchErr := h.postService.SearchPostsPage(query, page, pageSize, true)
-		if searchErr != nil {
-			err = searchErr
-		} else {
-			posts = renderedPosts
-			total = int64(totalInt)
-		}
-	} else {
-		renderedPosts, totalInt, pageErr := h.postService.GetPostsPage(page, pageSize, true)
-		if pageErr != nil {
-			err = pageErr
-		} else {
-			posts = renderedPosts
-			total = int64(totalInt)
-		}
-	}
-
+	posts, total, err := h.postService.GetPostsPage(page, pageSize, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	items := make([]PostListItem, len(posts))
+	for i, post := range posts {
+		items[i] = PostListItem{
+			ID:          post.ID,
+			Title:       post.Title,
+			Slug:        post.Slug,
+			Excerpt:     post.Excerpt,
+			HasCover:    post.Cover != "",
+			Cover:       post.Cover,
+			PublishedAt: post.PublishedAt.Format("2006-01-02 15:04:05"),
+			IsPrivate:   post.IsPrivate,
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"posts": posts,
-		"total": total,
+		"posts":     items,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
 	})
+}
+
+func (h *APIHandler) GetPost(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章 ID"})
+		return
+	}
+
+	post, err := h.postService.GetPostByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		return
+	}
+
+	c.JSON(http.StatusOK, PostContent{
+		ID:          post.ID,
+		Title:       post.Title,
+		Slug:        post.Slug,
+		Content:     post.Content,
+		Cover:       post.Cover,
+		PublishedAt: post.PublishedAt.Format("2006-01-02 15:04:05"),
+	})
+}
+
+func (h *APIHandler) UpdateExcerpt(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章 ID"})
+		return
+	}
+
+	var req UpdateExcerptRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误"})
+		return
+	}
+
+	if len(req.Excerpt) > maxExcerptLength {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "摘要长度不能超过 500 字符"})
+		return
+	}
+
+	if err := h.postService.UpdateExcerptByID(uint(id), req.Excerpt); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+func (h *APIHandler) UpdateCover(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章 ID"})
+		return
+	}
+
+	var req UpdateCoverRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误"})
+		return
+	}
+
+	if len(req.Cover) > maxCoverLength {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "封面 URL 长度不能超过 2048 字符"})
+		return
+	}
+
+	if err := h.postService.UpdateCoverByID(uint(id), req.Cover); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
