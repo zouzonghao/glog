@@ -2,20 +2,20 @@
 
 {{ define "content" }}
     <div class="posts-group">
-        <h2 class="group-title">搜索结果: "{{ .query }}"</h2>
+        <h2 class="group-title">{{ if .tag }}标签: {{ .tag }}{{ if .query }} 搜索结果: "{{ .query }}"{{ end }}{{ else }}搜索结果: "{{ .query }}"{{ end }}</h2>
         <ul class="post-list-minimal">
-            {{ range .posts }}
+            {{ range $post := .posts }}
                 <li>
-                    <span class="date">{{ .PublishedAt.Format "2006年01月02日" }}</span>
-                    <a href="/post/{{ .Slug }}" class="title">
-                        {{ .Title }}
-                        {{ if .IsPrivate }}
+                    <span class="date">{{ $post.PublishedAt.Format "2006年01月02日" }}</span>
+                    <a href="/post/{{ $post.Slug }}" class="title">
+                        {{ $post.Title }}
+                        {{ if $post.IsPrivate }}
                             <span class="private-icon"></span>
                         {{ end }}
                     </a>
                 </li>
             {{ else }}
-                <li><p>没有找到与 "{{ .query }}" 相关的文章。</p></li>
+                <li><p>没有找到相关文章。</p></li>
             {{ end }}
         </ul>
     </div>

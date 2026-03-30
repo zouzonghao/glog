@@ -11,20 +11,116 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gosimple/slug"
 )
 
+const maxTagLength = 20
+
+var (
+	tagSplitRegex = regexp.MustCompile(`[,，、;\s]+`)
+	tagCleanRegex = regexp.MustCompile(`[^\p{Han}\w\-\+\#\.]+`)
+)
+
+func normalizeTags(input string) string {
+	if input == "" {
+		return ""
+	}
+	parts := tagSplitRegex.Split(input, -1)
+	var result []string
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		part = strings.ToLower(part)
+		part = tagCleanRegex.ReplaceAllString(part, "")
+		if part == "" {
+			continue
+		}
+		if utf8.RuneCountInString(part) > maxTagLength {
+			part = string([]rune(part)[:maxTagLength])
+		}
+		result = append(result, part)
+	}
+	return strings.Join(result, ",")
+}
+
+func normalizeSingleTag(tag string) string {
+	tag = strings.TrimSpace(tag)
+	tag = strings.ToLower(tag)
+	tag = tagCleanRegex.ReplaceAllString(tag, "")
+	if utf8.RuneCountInString(tag) > maxTagLength {
+		tag = string([]rune(tag)[:maxTagLength])
+	}
+	return tag
+}
+
+var keywordSplitRegex = regexp.MustCompile(`[\s,，]+`)
+
+func extractKeywords(query string) []string {
+	keywords := keywordSplitRegex.Split(strings.TrimSpace(query), -1)
+	var cleaned []string
+	for _, kw := range keywords {
+		if kw != "" {
+			cleaned = append(cleaned, kw)
+		}
+	}
+	return cleaned
+}
+
 type PostService struct {
 	repo           *repository.PostRepository
 	settingService *SettingService
+	tagsCache      *tagsCache
+}
+
+type tagsCache struct {
+	mu       sync.RWMutex
+	data     []string
+	expireAt time.Time
+	maxAge   time.Duration
+	maxSize  int
+}
+
+func newTagsCache(maxAge time.Duration, maxSize int) *tagsCache {
+	return &tagsCache{
+		maxAge:  maxAge,
+		maxSize: maxSize,
+	}
+}
+
+func (c *tagsCache) Get() ([]string, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.data == nil || time.Now().After(c.expireAt) {
+		return nil, false
+	}
+	return c.data, true
+}
+
+func (c *tagsCache) Set(tags []string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if len(tags) > c.maxSize {
+		tags = append([]string(nil), tags[:c.maxSize]...)
+	}
+	c.data = tags
+	c.expireAt = time.Now().Add(c.maxAge)
+}
+
+func (c *tagsCache) Clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.data = nil
+	c.expireAt = time.Time{}
 }
 
 func NewPostService(repo *repository.PostRepository, settingService *SettingService) *PostService {
 	return &PostService{
 		repo:           repo,
 		settingService: settingService,
+		tagsCache:      newTagsCache(30*time.Minute, 1000),
 	}
 }
 
@@ -56,10 +152,12 @@ func (s *PostService) processAndRenderContent(md string) (string, error) {
 	return string(fullHtml), nil
 }
 
-func (s *PostService) CreatePost(title, content string, isPrivate bool, publishedAt time.Time) (*models.Post, error) {
+func (s *PostService) CreatePost(title, content, tag string, isPrivate bool, publishedAt time.Time) (*models.Post, error) {
 	if title == "" {
 		title = "未命名标题"
 	}
+
+	tag = normalizeTags(tag)
 
 	excerpt := utils.GenerateExcerpt(content, 150)
 	coverURL := utils.ExtractFirstImageURL(content)
@@ -77,6 +175,7 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, publishe
 	post := &models.Post{
 		Title:       title,
 		Slug:        slugStr,
+		Tag:         tag,
 		Content:     content,
 		ContentHTML: htmlContent,
 		Excerpt:     excerpt,
@@ -89,11 +188,12 @@ func (s *PostService) CreatePost(title, content string, isPrivate bool, publishe
 	if err != nil {
 		return nil, err
 	}
+	s.tagsCache.Clear()
 
 	return post, nil
 }
 
-func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool, publishedAt time.Time) (*models.Post, error) {
+func (s *PostService) UpdatePost(id uint, title, content, tag string, isPrivate bool, publishedAt time.Time) (*models.Post, error) {
 	if strings.TrimSpace(content) == "" {
 		return nil, s.DeletePost(id)
 	}
@@ -105,6 +205,8 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	if title == "" {
 		title = "未命名标题"
 	}
+
+	tag = normalizeTags(tag)
 
 	htmlContent, err := s.processAndRenderContent(content)
 	if err != nil {
@@ -120,6 +222,7 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	}
 
 	post.Title = title
+	post.Tag = tag
 	post.Content = content
 	post.ContentHTML = htmlContent
 	post.Excerpt = utils.GenerateExcerpt(content, 150)
@@ -131,12 +234,18 @@ func (s *PostService) UpdatePost(id uint, title, content string, isPrivate bool,
 	if err != nil {
 		return nil, err
 	}
+	s.tagsCache.Clear()
 
 	return post, nil
 }
 
 func (s *PostService) DeletePost(id uint) error {
-	return s.repo.Delete(id)
+	err := s.repo.Delete(id)
+	if err != nil {
+		return err
+	}
+	s.tagsCache.Clear()
+	return nil
 }
 
 func (s *PostService) UpdateExcerptByID(id uint, excerpt string) error {
@@ -182,16 +291,10 @@ func (s *PostService) GetPostsPage(page, pageSize int, isLoggedIn bool) ([]model
 		return nil, 0, err
 	}
 
-	renderedPosts := make([]models.RenderedPost, len(posts))
-	for i, post := range posts {
-		renderedPost, err := s.renderPost(&post)
-		if err != nil {
-			return nil, 0, fmt.Errorf("渲染文章失败 ID %d: %w", post.ID, err)
-		}
-		renderedPosts[i] = *renderedPost
+	renderedPosts, err := s.renderPosts(posts)
+	if err != nil {
+		return nil, 0, err
 	}
-
-	s.applyCoverPrefix(renderedPosts)
 	return renderedPosts, int(total), nil
 }
 
@@ -208,14 +311,7 @@ func (s *PostService) GetPostsPageByAdmin(page, pageSize int, query, status stri
 }
 
 func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
-	re := regexp.MustCompile(`[\s,，]+`)
-	keywords := re.Split(strings.TrimSpace(query), -1)
-	var cleanedKeywords []string
-	for _, keyword := range keywords {
-		if keyword != "" {
-			cleanedKeywords = append(cleanedKeywords, keyword)
-		}
-	}
+	cleanedKeywords := extractKeywords(query)
 
 	if len(cleanedKeywords) == 0 {
 		return []models.RenderedPost{}, 0, nil
@@ -230,16 +326,10 @@ func (s *PostService) SearchPostsPage(query string, page, pageSize int, isLogged
 		return nil, 0, err
 	}
 
-	renderedPosts := make([]models.RenderedPost, len(posts))
-	for i, post := range posts {
-		renderedPost, err := s.renderPost(&post)
-		if err != nil {
-			return nil, 0, fmt.Errorf("渲染文章失败 ID %d: %w", post.ID, err)
-		}
-		renderedPosts[i] = *renderedPost
+	renderedPosts, err := s.renderPosts(posts)
+	if err != nil {
+		return nil, 0, err
 	}
-
-	s.applyCoverPrefix(renderedPosts)
 	return renderedPosts, int(total), nil
 }
 
@@ -260,12 +350,26 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 		PublishedAt: post.PublishedAt,
 		Title:       post.Title,
 		Slug:        post.Slug,
+		Tag:         post.Tag,
 		Cover:       post.Cover,
 		Body:        template.HTML(post.ContentHTML),
 		Excerpt:     post.Excerpt,
 		IsPrivate:   post.IsPrivate,
 	}
 	return renderedPost, nil
+}
+
+func (s *PostService) renderPosts(posts []models.Post) ([]models.RenderedPost, error) {
+	rendered := make([]models.RenderedPost, len(posts))
+	for i, post := range posts {
+		r, err := s.renderPost(&post)
+		if err != nil {
+			return nil, fmt.Errorf("渲染文章失败 ID %d: %w", post.ID, err)
+		}
+		rendered[i] = *r
+	}
+	s.applyCoverPrefix(rendered)
+	return rendered, nil
 }
 
 func (s *PostService) generateUniqueSlug(title string, postID uint) (string, error) {
@@ -317,6 +421,7 @@ func (s *PostService) GetAllPostsForBackup() ([]models.PostBackup, error) {
 	for i, p := range posts {
 		backupPosts[i] = models.PostBackup{
 			Title:       p.Title,
+			Tag:         p.Tag,
 			Cover:       p.Cover,
 			Content:     p.Content,
 			IsPrivate:   p.IsPrivate,
@@ -347,6 +452,7 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 		newPosts = append(newPosts, models.Post{
 			Title:       p.Title,
 			Slug:        slugStr,
+			Tag:         normalizeTags(p.Tag),
 			Content:     p.Content,
 			ContentHTML: htmlContent,
 			IsPrivate:   p.IsPrivate,
@@ -360,6 +466,7 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 		return fmt.Errorf("批量导入文章失败: %w", err)
 	}
 
+	s.tagsCache.Clear()
 	return nil
 }
 
@@ -414,4 +521,68 @@ func (s *PostService) applyCoverPrefix(data interface{}) {
 			}
 		}
 	}
+}
+
+func (s *PostService) GetPostsPageByTag(tag string, page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
+	tag = normalizeSingleTag(tag)
+	if tag == "" {
+		return nil, 0, nil
+	}
+	posts, err := s.repo.FindPageByTag(tag, page, pageSize, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.repo.CountByTag(tag, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	renderedPosts, err := s.renderPosts(posts)
+	if err != nil {
+		return nil, 0, err
+	}
+	return renderedPosts, int(total), nil
+}
+
+func (s *PostService) GetAllTags(isLoggedIn bool) ([]string, error) {
+	if !isLoggedIn {
+		if tags, ok := s.tagsCache.Get(); ok {
+			return tags, nil
+		}
+	}
+	tags, err := s.repo.GetAllTags(isLoggedIn)
+	if err != nil {
+		return nil, err
+	}
+	if !isLoggedIn {
+		s.tagsCache.Set(tags)
+	}
+	return tags, nil
+}
+
+func (s *PostService) SearchPostsPageByTag(query string, tag string, page, pageSize int, isLoggedIn bool) ([]models.RenderedPost, int, error) {
+	tag = normalizeSingleTag(tag)
+	if tag == "" {
+		return nil, 0, nil
+	}
+	cleanedKeywords := extractKeywords(query)
+
+	if len(cleanedKeywords) == 0 {
+		return s.GetPostsPageByTag(tag, page, pageSize, isLoggedIn)
+	}
+
+	posts, err := s.repo.SearchPageByLikeAndTag(cleanedKeywords, tag, page, pageSize, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.repo.CountByQueryByLikeAndTag(cleanedKeywords, tag, isLoggedIn)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	renderedPosts, err := s.renderPosts(posts)
+	if err != nil {
+		return nil, 0, err
+	}
+	return renderedPosts, int(total), nil
 }

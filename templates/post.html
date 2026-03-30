@@ -17,9 +17,21 @@
             </h1>
             <div class="meta">
                 <span>{{ .post.PublishedAt.Format "2006-01-02" }}</span>
+                {{ if .post.Tag }}
+                <span class="meta-sep">|</span>
+                <span class="post-tags">
+                    {{ range $tags := split .post.Tag "," }}
+                        {{ $t := trim $tags " " }}
+                        {{ if $t }}
+                            <a href="/search?tag={{ $t }}" class="tag-link">#{{ $t }}</a>
+                        {{ end }}
+                    {{ end }}
+                </span>
+                {{ end }}
                 {{ if .IsLoggedIn }}
-                <span class="edit-link" style="margin-left: 10px; gap: 5px";>
-                |   <a href="/admin/editor?id={{ .post.ID }}" style="margin-left: 8px;">编辑此文章</a>
+                <span class="meta-sep">|</span>
+                <span class="edit-link">
+                    <a href="/admin/editor?id={{ .post.ID }}">编辑此文章</a>
                 </span>
                 {{ end }}
             </div>

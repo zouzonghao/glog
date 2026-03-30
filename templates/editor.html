@@ -1,3 +1,5 @@
+{{ template "base.html" . }}
+
 {{ define "title" }}{{ if .post }}编辑文章{{ else }}写新文章{{ end }}{{ end }}
 
 {{ define "content" }}
@@ -7,8 +9,9 @@
             <input type="hidden" id="post-id" name="id" value="{{ if .post }}{{ .post.ID }}{{ else }}0{{ end }}">
             
             <div class="editor-form-group editor-title-group">
-                <input type="text" id="title" name="title" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名标题{{ end }}" required>
-                <input type="text" id="published_at" name="published_at" value="{{ if .post }}{{ .post.PublishedAt.Format "2006-01-02 15:04" }}{{ else }}{{ .now }}{{ end }}">
+                <input type="text" id="title" name="title" class="title-input" value="{{ if .post }}{{ .post.Title }}{{ else }}未命名标题{{ end }}" required>
+                <input type="text" id="tag" name="tag" class="tag-input" value="{{ if .post }}{{ .post.Tag }}{{ else }}{{ end }}" placeholder="标签">
+                <input type="text" id="published_at" name="published_at" class="date-input" value="{{ if .post }}{{ .post.PublishedAt.Format "2006-01-02 15:04" }}{{ else }}{{ .now }}{{ end }}">
             </div>
             
             <div class="editor-form-group">

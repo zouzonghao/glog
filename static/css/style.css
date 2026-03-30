@@ -234,6 +234,30 @@ footer.main-footer {
     font-size: 0.875rem;
 }
 
+/* 标签页面 */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.tag-item {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--color-bg-list-header);
+    border-radius: 4px;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.tag-item:hover {
+    background: var(--color-accent-primary);
+    color: #fff;
+}
+
 /* 7. 文章列表
 ---------------------------------------------------------------------------------------------------- */
 /* 首页简约列表 */
@@ -677,13 +701,17 @@ footer.main-footer {
     gap: 1rem;
     align-items: center;
 }
-.editor-title-group #title {
+.app-form .editor-title-group .title-input {
     flex-grow: 1;
 }
-.editor-title-group #published_at {
-    width: 150px;
-
+.app-form .editor-title-group .tag-input {
+    max-width: 150px;
+    width: auto; /* Ensure it doesn't take 100% from default rule */
 }
+.app-form .editor-title-group .date-input {
+    width: 150px;
+}
+
 /* Editor Toolbar & Switches */
 .editor-toolbar {
     display: flex;
@@ -808,6 +836,30 @@ footer.main-footer {
 ---------------------------------------------------------------------------------------------------- */
 .post-header {
     margin-bottom: 2rem;
+}
+.post-header .meta {
+    color: var(--color-text-primary);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+.post-header .meta .meta-sep {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+}
+.post-header .meta .post-tags {
+    display: flex;
+    gap: 0.6rem;
+}
+.post-header .meta .post-tags a {
+    color: var(--color-text-primary);
+    text-decoration: none;
+}
+.post-header .meta .post-tags a:hover {
+    color: var(--color-accent-primary);
+    text-decoration: none;
 }
 .post-content {
     line-height: 1.35;

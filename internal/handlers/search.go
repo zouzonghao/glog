@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"glog/internal/constants"
+	"glog/internal/models"
 	"glog/internal/services"
 	"glog/internal/utils"
 	"math"
@@ -25,12 +26,13 @@ func (h *SearchHandler) Search(c *gin.Context) {
 	if query == "" {
 		query = c.Query("query")
 	}
-	if query == "" {
+	tag := c.Query("tag")
+
+	if query == "" && tag == "" {
 		c.Redirect(http.StatusFound, "/")
 		return
 	}
 
-	// --- 视图切换逻辑 Start ---
 	view := c.Query("view")
 	if view == "" {
 		cookie, err := c.Cookie("view")
@@ -50,14 +52,25 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		view = "list"
 	}
 	c.SetCookie("view", view, 3600*24*365, "/", "", false, true)
-	// --- 视图切换逻辑 End ---
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize := 10 // 与首页保持一致
+	pageSize := 10
 
-	isLoggedIn, _ := c.Get(constants.ContextKeyIsLoggedIn)
+	isLoggedInVal, _ := c.Get(constants.ContextKeyIsLoggedIn)
+	isLoggedIn := isLoggedInVal != nil && isLoggedInVal.(bool)
 
-	posts, total, err := h.postService.SearchPostsPage(query, page, pageSize, isLoggedIn.(bool))
+	var posts []models.RenderedPost
+	var total int
+	var err error
+
+	if tag != "" && query != "" {
+		posts, total, err = h.postService.SearchPostsPageByTag(query, tag, page, pageSize, isLoggedIn)
+	} else if tag != "" {
+		posts, total, err = h.postService.GetPostsPageByTag(tag, page, pageSize, isLoggedIn)
+	} else {
+		posts, total, err = h.postService.SearchPostsPage(query, page, pageSize, isLoggedIn)
+	}
+
 	if err != nil {
 		render(c, http.StatusInternalServerError, "404.html", gin.H{
 			"error": "Search failed",
@@ -69,17 +82,27 @@ func (h *SearchHandler) Search(c *gin.Context) {
 
 	pagination := utils.GeneratePagination(page, totalPages)
 
-	// 根据视图选择渲染的模板
 	templateName := "search.html"
 	if view == "cards" {
 		templateName = "search_cards.html"
+	}
+
+	pageTitle := query
+	if tag != "" {
+		if query != "" {
+			pageTitle = tag + " / " + query
+		} else {
+			pageTitle = tag
+		}
 	}
 
 	render(c, http.StatusOK, templateName, gin.H{
 		"posts":      posts,
 		"query":      query,
 		"Query":      query,
+		"tag":        tag,
+		"pageTitle":  pageTitle,
 		"Pagination": pagination,
-		"View":       view, // 将视图名称传递给模板
+		"View":       view,
 	})
 }

@@ -16,14 +16,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
+
+	_ "time/tzdata"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	_ "time/tzdata"
 )
 
 var IsRelease bool
@@ -33,8 +35,15 @@ var staticFS fs.FS
 func createRenderer() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
 
+	funcMap := template.FuncMap{
+		"split": strings.Split,
+		"trim":  strings.Trim,
+	}
+
 	add := func(name string, files ...string) {
-		tpl, err := template.ParseFS(templatesFS, files...)
+		tpl := template.New(name).Funcs(funcMap)
+		var err error
+		tpl, err = tpl.ParseFS(templatesFS, files...)
 		if err != nil {
 			log.Fatalf("解析模板失败： %s: %v", name, err)
 		}
@@ -50,6 +59,7 @@ func createRenderer() multitemplate.Renderer {
 	add("login.html", "base.html", "login.html")
 	add("search.html", "base.html", "search.html", "_pagination.html")
 	add("search_cards.html", "base.html", "search_cards.html", "_pagination.html")
+	add("tags.html", "base.html", "tags.html")
 	add("404.html", "base.html", "404.html")
 
 	return r
@@ -81,6 +91,7 @@ func main() {
 	searchHandler := handlers.NewSearchHandler(postService)
 	authHandler := handlers.NewAuthHandler(settingService)
 	apiHandler := handlers.NewAPIHandler(postService)
+	tagHandler := handlers.NewTagHandler(postService)
 
 	r := gin.Default()
 	r.HTMLRender = createRenderer()
@@ -110,6 +121,7 @@ func main() {
 	r.GET("/", blogHandler.Index)
 	r.GET("/post/:slug", blogHandler.ShowPost)
 	r.GET("/search", searchHandler.Search)
+	r.GET("/tags", tagHandler.ListTags)
 
 	r.GET("/login", authHandler.ShowLoginPage)
 	r.POST("/login", authHandler.Login)

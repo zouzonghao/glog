@@ -61,6 +61,7 @@
                     <nav class="main-nav" id="main-nav">
                         <ul>
                             <li><a href="/">主页</a></li>
+                            <li><a href="/tags">标签</a></li>
                             {{ if .IsLoggedIn }}
                                 <li><a href="/admin/new">新建</a></li>
                                 <li><a href="/admin/">管理</a></li>
@@ -75,6 +76,7 @@
             </div>
             <div class="header-right">
                 <form id="search-form" action="/search" method="get" class="search-form">
+                    {{ if .tag }}<input type="hidden" name="tag" value="{{ .tag }}">{{ end }}
                     <input type="search" name="q" placeholder="搜索..." class="search-input" value="{{ .query }}">
                     <button type="submit" id="search-button" class="search-button" aria-label="Search">
                         <img src="/static/pic/search.png" alt="Search" class="search-icon">

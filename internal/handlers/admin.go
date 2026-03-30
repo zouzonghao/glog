@@ -147,6 +147,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	idStr := c.PostForm("id")
 	title := c.PostForm("title")
 	content := c.PostForm("content")
+	tag := c.PostForm("tag")
 	publishedAtStr := c.PostForm("published_at")
 	isPrivate := c.PostForm("is_private") == "on"
 
@@ -163,10 +164,10 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	var post *models.Post
 
 	if idStr == "" || idStr == "0" {
-		post, err = h.postService.CreatePost(title, content, isPrivate, publishedAt)
+		post, err = h.postService.CreatePost(title, content, tag, isPrivate, publishedAt)
 	} else {
 		id, _ := strconv.ParseUint(idStr, 10, 64)
-		post, err = h.postService.UpdatePost(uint(id), title, content, isPrivate, publishedAt)
+		post, err = h.postService.UpdatePost(uint(id), title, content, tag, isPrivate, publishedAt)
 	}
 
 	if err != nil {

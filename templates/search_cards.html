@@ -2,13 +2,13 @@
 
 {{ define "content" }}
     <div class="cards-view">
-        <h2 class="group-title">搜索结果: "{{ .query }}"</h2>
+        <h2 class="group-title">{{ if .tag }}标签: {{ .tag }}{{ if .query }} 搜索结果: "{{ .query }}"{{ end }}{{ else }}搜索结果: "{{ .query }}"{{ end }}</h2>
         <div class="post-cards-container" data-current-page="{{ .Pagination.CurrentPage }}" data-next-page="{{ .Pagination.NextPage }}" data-total-pages="{{ .Pagination.TotalPages }}" data-has-next="{{ .Pagination.HasNext }}">
-            {{ range .posts }}
-                <a href="/post/{{ .Slug }}" class="post-card" data-title="{{ .Title }}">
+            {{ range $post := .posts }}
+                <a href="/post/{{ $post.Slug }}" class="post-card" data-title="{{ $post.Title }}">
                     <div class="card-cover">
-                        {{ if .Cover }}
-                            <img src="{{ .Cover }}" alt="{{ .Title }}" loading="lazy">
+                        {{ if $post.Cover }}
+                            <img src="{{ $post.Cover }}" alt="{{ $post.Title }}" loading="lazy">
                         {{ else }}
                             <div class="pseudo-cover">
                             </div>
@@ -16,15 +16,15 @@
                     </div>
                     <div class="card-info">
                         <h3 class="card-title">
-                            {{ .Title }}
-                            {{ if .IsPrivate }}
+                            {{ $post.Title }}
+                            {{ if $post.IsPrivate }}
                                 <span class="private-icon"></span>
                             {{ end }}
                         </h3>
                     </div>
                 </a>
             {{ else }}
-                <p>没有找到与 "{{ .query }}" 相关的文章。</p>
+                <p>没有找到相关文章。</p>
             {{ end }}
         </div>
 
