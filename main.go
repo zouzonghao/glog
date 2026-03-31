@@ -84,7 +84,8 @@ func main() {
 	settingService := services.NewSettingService(settingRepo)
 	postService := services.NewPostService(postRepo, settingService)
 	backupService := services.NewBackupService(postService, settingService)
-	scheduler := tasks.NewScheduler(settingService, backupService)
+	syncService := services.NewSyncService(postService, settingService)
+	scheduler := tasks.NewScheduler(settingService, syncService)
 
 	blogHandler := handlers.NewBlogHandler(postService)
 	adminHandler := handlers.NewAdminHandler(postService, settingService, backupService, scheduler)
@@ -92,6 +93,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(settingService)
 	apiHandler := handlers.NewAPIHandler(postService)
 	tagHandler := handlers.NewTagHandler(postService)
+	syncHandler := handlers.NewSyncHandler(syncService)
 
 	r := gin.Default()
 	r.HTMLRender = createRenderer()
@@ -103,10 +105,13 @@ func main() {
 	sessionSecret := sha256.Sum256([]byte(password + "-glog-session"))
 	store := cookie.NewStore(sessionSecret[:])
 	store.Options(sessions.Options{
+		Path:     "/",
 		HttpOnly: true,
 		Secure:   !*unsafe,
 		SameSite: http.SameSiteLaxMode,
+		MaxAge:   86400 * 30,
 	})
+	r.Use(handlers.CleanSessionCookie())
 	r.Use(sessions.Sessions("glog_sess", store))
 
 	r.Use(handlers.SettingsMiddleware(settingService))
@@ -116,7 +121,12 @@ func main() {
 	staticGroup.StaticFS("/", http.FS(staticFS))
 
 	r.GET("/favicon.ico", func(c *gin.Context) {
-		c.File("./static/pic/favicon.ico")
+		data, err := fs.ReadFile(staticFS, "pic/favicon.ico")
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.Data(http.StatusOK, "image/x-icon", data)
 	})
 	r.GET("/", blogHandler.Index)
 	r.GET("/post/:slug", blogHandler.ShowPost)
@@ -145,10 +155,8 @@ func main() {
 		settings.POST("/", adminHandler.UpdateSettings)
 		settings.GET("/backup", adminHandler.BackupSite)
 		settings.POST("/upload", adminHandler.UploadBackup)
-		settings.POST("/test-github", adminHandler.TestGithubSettings)
-		settings.POST("/test-webdav", adminHandler.TestWebdavSettings)
-		settings.POST("/backup-github-now", adminHandler.BackupToGithubNow)
-		settings.POST("/backup-webdav-now", adminHandler.BackupToWebdavNow)
+		settings.POST("/status", syncHandler.TestConnection)
+		settings.POST("/sync", syncHandler.Sync)
 	}
 
 	api := r.Group("/api/v1")

@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"glog/internal/constants"
 	"glog/internal/models"
@@ -47,10 +46,26 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 		return
 	}
 
+	allowedSettings := map[string]bool{
+		constants.SettingPassword:        true,
+		constants.SettingFavicon:         true,
+		constants.SettingSiteTitle:       true,
+		constants.SettingSiteDescription: true,
+		constants.SettingCoverPrefix:     true,
+		constants.SettingWebdavURL:       true,
+		constants.SettingWebdavUser:      true,
+		constants.SettingWebdavPassword:  true,
+		constants.SettingSyncInterval:    true,
+		constants.SettingSyncMaxBackups:  true,
+	}
+
 	for key, values := range c.Request.PostForm {
+		if !allowedSettings[key] {
+			continue
+		}
 		if len(values) > 0 {
 			value := values[0]
-			if (key == constants.SettingPassword || key == constants.SettingGithubToken || key == constants.SettingWebdavPassword) && value == "" {
+			if (key == constants.SettingPassword || key == constants.SettingWebdavPassword) && value == "" {
 				continue
 			}
 			settingsToUpdate[key] = value
@@ -69,11 +84,7 @@ func (h *AdminHandler) UpdateSettings(c *gin.Context) {
 }
 
 func (h *AdminHandler) ListPosts(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	if pageSize <= 0 {
-		pageSize = 10
-	}
+	page, pageSize := utils.ParsePagination(c, 10)
 	query := c.Query("q")
 	if query == "" {
 		query = c.Query("query")
@@ -105,11 +116,7 @@ func (h *AdminHandler) ListPosts(c *gin.Context) {
 }
 
 func (h *AdminHandler) NewPost(c *gin.Context) {
-	loc, err := time.LoadLocation("Asia/Shanghai")
-	if err != nil {
-		loc = time.FixedZone("CST", 8*3600)
-	}
-	now := time.Now().In(loc).Format("2006-01-02 15:04")
+	now := time.Now().UTC().Format("2006-01-02 15:04")
 	render(c, http.StatusOK, "editor.html", gin.H{
 		"post": nil,
 		"now":  now,
@@ -151,11 +158,7 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	publishedAtStr := c.PostForm("published_at")
 	isPrivate := c.PostForm("is_private") == "on"
 
-	loc, err := time.LoadLocation("Asia/Shanghai")
-	if err != nil {
-		loc = time.FixedZone("CST", 8*3600)
-	}
-	publishedAt, err := time.ParseInLocation("2006-01-02 15:04", publishedAtStr, loc)
+	publishedAt, err := time.Parse("2006-01-02 15:04", publishedAtStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的发布时间格式"})
 		return
@@ -166,7 +169,11 @@ func (h *AdminHandler) SavePost(c *gin.Context) {
 	if idStr == "" || idStr == "0" {
 		post, err = h.postService.CreatePost(title, content, tag, isPrivate, publishedAt)
 	} else {
-		id, _ := strconv.ParseUint(idStr, 10, 64)
+		id, parseErr := strconv.ParseUint(idStr, 10, 64)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的文章 ID"})
+			return
+		}
 		post, err = h.postService.UpdatePost(uint(id), title, content, tag, isPrivate, publishedAt)
 	}
 
@@ -283,101 +290,78 @@ func (h *AdminHandler) BackupSite(c *gin.Context) {
 
 func (h *AdminHandler) UploadBackup(c *gin.Context) {
 	contentType := c.GetHeader("Content-Type")
-	var backupData models.SiteBackup
-	var postCount int
 
 	if strings.Contains(contentType, "application/json") {
-		if err := c.ShouldBindJSON(&backupData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "解析 JSON 数据失败: " + err.Error()})
-			return
-		}
-		if err := h.restoreFromBackupData(&backupData); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
-			return
-		}
-		postCount = len(backupData.Posts)
-	} else {
-		password := c.PostForm("password")
-		if password == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "请输入备份文件密码。"})
-			return
-		}
-
-		file, err := c.FormFile("backup")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "获取上传文件失败: " + err.Error()})
-			return
-		}
-
-		src, err := file.Open()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "打开上传文件失败: " + err.Error()})
-			return
-		}
-		defer src.Close()
-
-		tempFile, err := os.CreateTemp("", "glog-backup-*.zip")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "创建临时文件失败: " + err.Error()})
-			return
-		}
-		defer os.Remove(tempFile.Name())
-
-		_, err = io.Copy(tempFile, src)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "保存上传文件失败: " + err.Error()})
-			return
-		}
-
-		zipReader, err := zip.OpenReader(tempFile.Name())
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的 ZIP 文件: " + err.Error()})
-			return
-		}
-		defer zipReader.Close()
-
-		if len(zipReader.File) == 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "空的 ZIP 文件。"})
-			return
-		}
-
-		backupFile := zipReader.File[0]
-		backupFile.SetPassword(password)
-
-		jsonFile, err := backupFile.Open()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "打开 backup.json 失败，请检查密码是否正确。"})
-			return
-		}
-		defer jsonFile.Close()
-
-		importedCount, err := h.postService.CreatePostsFromBackupStream(jsonFile)
+		postCount, err := h.postService.CreatePostsFromBackupStream(c.Request.Body)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
 			return
 		}
-		postCount = importedCount
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": fmt.Sprintf("恢复成功！导入 %d 篇文章并更新了站点设置。", postCount)})
+		return
+	}
+
+	password := c.PostForm("password")
+	if password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "请输入备份文件密码。"})
+		return
+	}
+
+	file, err := c.FormFile("backup")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "获取上传文件失败: " + err.Error()})
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "打开上传文件失败: " + err.Error()})
+		return
+	}
+	defer src.Close()
+
+	tempFile, err := os.CreateTemp("", "glog-backup-*.zip")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "创建临时文件失败: " + err.Error()})
+		return
+	}
+	defer os.Remove(tempFile.Name())
+
+	_, err = io.Copy(tempFile, src)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "保存上传文件失败: " + err.Error()})
+		return
+	}
+
+	zipReader, err := zip.OpenReader(tempFile.Name())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的 ZIP 文件: " + err.Error()})
+		return
+	}
+	defer zipReader.Close()
+
+	if len(zipReader.File) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "空的 ZIP 文件。"})
+		return
+	}
+
+	backupFile := zipReader.File[0]
+	backupFile.SetPassword(password)
+
+	jsonFile, err := backupFile.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "打开 backup.json 失败，请检查密码是否正确。"})
+		return
+	}
+	defer jsonFile.Close()
+
+	postCount, err := h.postService.CreatePostsFromBackupStream(jsonFile)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": fmt.Sprintf("恢复成功！导入 %d 篇文章并更新了站点设置。", postCount)})
-}
-
-func (h *AdminHandler) restoreFromBackupData(backupData *models.SiteBackup) error {
-	if len(backupData.Settings) > 0 {
-		if newPass, ok := backupData.Settings[constants.SettingPassword]; !ok || newPass == "" {
-			delete(backupData.Settings, constants.SettingPassword)
-		}
-
-		if err := h.settingService.UpdateSettings(backupData.Settings); err != nil {
-			return fmt.Errorf("恢复设置失败: %w", err)
-		}
-	}
-
-	if err := h.postService.CreatePostsFromBackup(backupData.Posts); err != nil {
-		return fmt.Errorf("导入文章失败: %w", err)
-	}
-
-	return nil
 }
 
 type BatchUpdateRequest struct {
@@ -405,103 +389,4 @@ func (h *AdminHandler) BatchUpdatePosts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "操作成功！"})
-}
-
-func (h *AdminHandler) TestGithubSettings(c *gin.Context) {
-	repo := c.PostForm(constants.SettingGithubRepo)
-	token := c.PostForm(constants.SettingGithubToken)
-
-	finalToken := token
-	if finalToken == "" {
-		settings, err := h.settingService.GetAllSettings()
-		if err == nil {
-			finalToken = settings[constants.SettingGithubToken]
-		}
-	}
-
-	err := h.backupService.TestGithubConnection(repo, finalToken)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "GitHub 连接测试失败: " + err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "GitHub 连接成功！"})
-}
-
-func (h *AdminHandler) TestWebdavSettings(c *gin.Context) {
-	url := c.PostForm(constants.SettingWebdavURL)
-	user := c.PostForm(constants.SettingWebdavUser)
-	password := c.PostForm(constants.SettingWebdavPassword)
-
-	finalPassword := password
-	if finalPassword == "" {
-		settings, err := h.settingService.GetAllSettings()
-		if err == nil {
-			finalPassword = settings[constants.SettingWebdavPassword]
-		}
-	}
-
-	err := h.backupService.TestWebdavConnection(url, user, finalPassword)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"status": "error", "message": "WebDAV 连接测试失败: " + err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "WebDAV 连接成功！"})
-}
-
-func (h *AdminHandler) BackupToGithubNow(c *gin.Context) {
-	settings, err := h.settingService.GetAllSettings()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "获取设置失败: " + err.Error()})
-		return
-	}
-
-	repo := settings[constants.SettingGithubRepo]
-	branch := settings[constants.SettingGithubBranch]
-	token := settings[constants.SettingGithubToken]
-
-	if repo == "" || branch == "" || token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "GitHub 备份配置不完整，请先保存设置。"})
-		return
-	}
-
-	err = h.backupService.BackupToGithub(repo, branch, token)
-	if err != nil {
-		if errors.Is(err, services.ErrBackupNoChange) {
-			c.JSON(http.StatusOK, gin.H{"status": "info", "message": "数据无变化，无需备份。"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "执行 GitHub 备份失败: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "已成功触发 GitHub 备份！"})
-}
-
-func (h *AdminHandler) BackupToWebdavNow(c *gin.Context) {
-	settings, err := h.settingService.GetAllSettings()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "获取设置失败: " + err.Error()})
-		return
-	}
-
-	url := settings[constants.SettingWebdavURL]
-	user := settings[constants.SettingWebdavUser]
-	password := settings[constants.SettingWebdavPassword]
-
-	if url == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "WebDAV URL 未配置，请先保存设置。"})
-		return
-	}
-
-	err = h.backupService.BackupToWebdav(url, user, password)
-	if err != nil {
-		if errors.Is(err, services.ErrBackupNoChange) {
-			c.JSON(http.StatusOK, gin.H{"status": "info", "message": "数据无变化，无需备份。"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "执行 WebDAV 备份失败: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "已成功触发 WebDAV 备份！"})
 }

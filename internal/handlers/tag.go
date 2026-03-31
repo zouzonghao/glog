@@ -18,7 +18,8 @@ func NewTagHandler(postService *services.PostService) *TagHandler {
 
 func (h *TagHandler) ListTags(c *gin.Context) {
 	isLoggedInValue, exists := c.Get(constants.ContextKeyIsLoggedIn)
-	isLoggedIn := exists && isLoggedInValue.(bool)
+	isLoggedIn, _ := isLoggedInValue.(bool)
+	isLoggedIn = exists && isLoggedIn
 
 	tags, err := h.postService.GetAllTags(isLoggedIn)
 	if err != nil {

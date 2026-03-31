@@ -7,8 +7,6 @@ import (
 	"glog/internal/utils"
 	"math"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,27 +31,9 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		return
 	}
 
-	view := c.Query("view")
-	if view == "" {
-		cookie, err := c.Cookie("view")
-		if err == nil {
-			view = cookie
-		}
-	}
-	if view == "" {
-		userAgent := c.Request.UserAgent()
-		if strings.Contains(strings.ToLower(userAgent), "mobile") || strings.Contains(strings.ToLower(userAgent), "android") || strings.Contains(strings.ToLower(userAgent), "iphone") {
-			view = "cards"
-		} else {
-			view = "list"
-		}
-	}
-	if view != "cards" {
-		view = "list"
-	}
-	c.SetCookie("view", view, 3600*24*365, "/", "", false, true)
+	view := GetViewPreference(c)
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page := utils.ParsePage(c)
 	pageSize := 10
 
 	isLoggedInVal, _ := c.Get(constants.ContextKeyIsLoggedIn)

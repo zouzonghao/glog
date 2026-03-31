@@ -17,20 +17,20 @@ import (
 type Scheduler struct {
 	cron           *cron.Cron
 	settingService *services.SettingService
-	backupService  *services.BackupService
+	syncService    *services.SyncService
 	mu             sync.Mutex
 }
 
-func NewScheduler(settingService *services.SettingService, backupService *services.BackupService) *Scheduler {
+func NewScheduler(settingService *services.SettingService, syncService *services.SyncService) *Scheduler {
 	return &Scheduler{
 		cron:           cron.New(),
 		settingService: settingService,
-		backupService:  backupService,
+		syncService:    syncService,
 	}
 }
 
 func (s *Scheduler) Start() {
-	log.Println("定时备份调度器正在初始化...")
+	log.Println("定时同步调度器正在初始化...")
 	s.ReloadTasks()
 	s.cron.Start()
 }
@@ -56,7 +56,6 @@ func (s *Scheduler) ReloadTasks() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Stop the old cron scheduler and create a new one
 	if s.cron != nil {
 		s.cron.Stop()
 	}
@@ -68,27 +67,7 @@ func (s *Scheduler) ReloadTasks() {
 		return
 	}
 
-	// --- GitHub Scheduler ---
-	s.addBackupTask(settings, constants.SettingGithubInterval, "GitHub", func() error {
-		repo := settings[constants.SettingGithubRepo]
-		branch := settings[constants.SettingGithubBranch]
-		token := settings[constants.SettingGithubToken]
-		if repo == "" || branch == "" || token == "" {
-			return errors.New("备份配置不完整")
-		}
-		return s.backupService.BackupToGithub(repo, branch, token)
-	})
-
-	// --- WebDAV Scheduler ---
-	s.addBackupTask(settings, constants.SettingWebdavInterval, "WebDAV", func() error {
-		url := settings[constants.SettingWebdavURL]
-		user := settings[constants.SettingWebdavUser]
-		password := settings[constants.SettingWebdavPassword]
-		if url == "" {
-			return errors.New("URL 未配置")
-		}
-		return s.backupService.BackupToWebdav(url, user, password)
-	})
+	s.addSyncTask(settings)
 
 	if len(s.cron.Entries()) > 0 {
 		s.cron.Start()
@@ -98,8 +77,8 @@ func (s *Scheduler) ReloadTasks() {
 	}
 }
 
-func (s *Scheduler) addBackupTask(settings map[string]string, intervalKey, taskName string, backupFunc func() error) {
-	intervalStr := settings[intervalKey]
+func (s *Scheduler) addSyncTask(settings map[string]string) {
+	intervalStr := settings[constants.SettingSyncInterval]
 	if intervalStr == "" {
 		return
 	}
@@ -109,26 +88,26 @@ func (s *Scheduler) addBackupTask(settings map[string]string, intervalKey, taskN
 		return
 	}
 
-	spec := fmt.Sprintf("@every %dh", interval)
+	spec := fmt.Sprintf("@every %dm", interval)
 	job := func() {
-		log.Printf("开始执行 %s 定时备份...", taskName)
-		err := backupFunc()
+		log.Printf("开始执行定时同步...")
+		result, err := s.syncService.Sync()
 		if err != nil {
-			if errors.Is(err, services.ErrBackupNoChange) {
-				log.Printf("%s 备份检查：数据无变化，无需备份。", taskName)
+			if errors.Is(err, services.ErrSyncNoChange) {
+				log.Printf("同步检查：数据无变化，无需同步。")
 			} else {
-				log.Printf("%s 定时备份失败: %v", taskName, err)
+				log.Printf("定时同步失败: %v", err)
 			}
 		} else {
-			log.Printf("%s 定时备份成功！", taskName)
+			log.Printf("定时同步成功！动作: %s, 本地: %d, 远程: %d", result.Action, result.LocalCount, result.RemoteCount)
 		}
 	}
 
 	_, err = s.cron.AddFunc(spec, recoveryWrapper(job))
 	if err != nil {
-		log.Printf("添加 %s 备份任务失败: %v", taskName, err)
+		log.Printf("添加同步任务失败: %v", err)
 	} else {
-		log.Printf("已成功安排 %s 备份任务，每 %d 小时执行一次。", taskName, interval)
+		log.Printf("已成功安排同步任务，每 %d 分钟执行一次。", interval)
 	}
 }
 

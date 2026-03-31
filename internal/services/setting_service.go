@@ -46,14 +46,10 @@ func (s *SettingService) GetAllSettings() (map[string]string, error) {
 	return settingsCopy, nil
 }
 
-// UpdateSettings updates multiple settings at once and refreshes the cache.
 func (s *SettingService) UpdateSettings(settings map[string]string) error {
-	for key, value := range settings {
-		if err := s.repo.UpdateSetting(key, value); err != nil {
-			return err
-		}
+	if err := s.repo.UpdateSettingsInTransaction(settings); err != nil {
+		return err
 	}
-	// Reload settings into cache after update
 	s.loadSettings()
 	return nil
 }

@@ -38,6 +38,7 @@ type RenderedPost struct {
 
 // PostBackup is a simplified struct for backup and restore operations.
 type PostBackup struct {
+	Slug        string    `json:"slug"`
 	Title       string    `json:"title"`
 	Tag         string    `json:"tag"`
 	Cover       string    `json:"cover"`

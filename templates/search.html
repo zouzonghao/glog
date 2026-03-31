@@ -2,7 +2,7 @@
 
 {{ define "content" }}
     <div class="posts-group">
-        <h2 class="group-title">{{ if .tag }}标签: {{ .tag }}{{ if .query }} 搜索结果: "{{ .query }}"{{ end }}{{ else }}搜索结果: "{{ .query }}"{{ end }}</h2>
+        <h2 class="group-title">{{ if .tag }}标签： {{ .tag }}{{ if .query }} ， 搜索关键词： {{ .query }}{{ end }}{{ else }}搜索关键词： {{ .query }}{{ end }}</h2>
         <ul class="post-list-minimal">
             {{ range $post := .posts }}
                 <li>

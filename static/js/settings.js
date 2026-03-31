@@ -8,17 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    setupGlobalModal('github-modal', 'github-backup-btn');
-    setupGlobalModal('webdav-modal', 'webdav-backup-btn');
+    setupGlobalModal('sync-modal', 'sync-btn');
 
-    attachModalFormLogic('save-github-btn', 'github-settings-form', 'github-modal');
-    attachModalFormLogic('save-webdav-btn', 'webdav-settings-form', 'webdav-modal');
+    attachModalFormLogic('save-sync-btn', 'sync-settings-form', 'sync-modal');
 
-    attachTestConnectionLogic('test-github-btn', 'github-settings-form', '/admin/setting/test-github');
-    attachTestConnectionLogic('test-webdav-btn', 'webdav-settings-form', '/admin/setting/test-webdav');
+    attachSyncTestLogic('test-sync-btn');
 
-    attachBackupNowLogic('backup-github-now-btn', '/admin/setting/backup-github-now');
-    attachBackupNowLogic('backup-webdav-now-btn', '/admin/setting/backup-webdav-now');
+    attachSyncNowLogic('sync-now-btn');
 
     const uploadBtn = document.getElementById('upload-btn');
     const backupFile = document.getElementById('backup-file');
@@ -149,54 +145,6 @@ function attachModalFormLogic(saveBtnId, formId, modalId) {
     }
 }
 
-function attachTestConnectionLogic(testBtnId, formId, testUrl) {
-    const testBtn = document.getElementById(testBtnId);
-    const form = document.getElementById(formId);
-    if (testBtn && form) {
-        testBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const testButton = e.target;
-            showNotification('测试中...', 'info');
-            testButton.disabled = true;
-
-            fetch(testUrl, {
-                method: 'POST',
-                body: new URLSearchParams(new FormData(form))
-            })
-            .then(res => res.json())
-            .then(data => showNotification(data.message, data.status))
-            .catch(err => {
-                console.error('测试连接失败:', err);
-                showNotification('测试请求失败，请检查网络或后台日志！', 'error');
-            })
-            .finally(() => testButton.disabled = false);
-        });
-    }
-}
-
-function attachBackupNowLogic(backupNowBtnId, backupNowUrl) {
-    const backupNowBtn = document.getElementById(backupNowBtnId);
-    if (backupNowBtn) {
-        backupNowBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const backupButton = e.target;
-            showNotification('正在备份...', 'info');
-            backupButton.disabled = true;
-
-            fetch(backupNowUrl, {
-                method: 'POST'
-            })
-            .then(res => res.json())
-            .then(data => showNotification(data.message, data.status))
-            .catch(err => {
-                console.error('立即备份失败:', err);
-                showNotification('备份请求失败，请检查网络或后台日志！', 'error');
-            })
-            .finally(() => backupButton.disabled = false);
-        });
-    }
-}
-
 function saveFormData(formElement, callback, options = {}) {
     const shouldNotify = options.notify !== false;
     const formData = new FormData(formElement);
@@ -222,4 +170,129 @@ function saveFormData(formElement, callback, options = {}) {
         }
         if (callback) callback(fallback);
     });
+}
+
+function attachSyncTestLogic(testBtnId) {
+    const testBtn = document.getElementById(testBtnId);
+    const form = document.getElementById('sync-settings-form');
+    if (testBtn && form) {
+        testBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const testButton = e.target;
+            showNotification('测试中...', 'info');
+            testButton.disabled = true;
+
+            fetch('/admin/setting/status', {
+                method: 'POST',
+                body: new URLSearchParams(new FormData(form))
+            })
+            .then(res => res.json())
+            .then(data => {
+                showNotification(data.message, data.status);
+                if (data.status === 'success' && data.data) {
+                    updateSyncStatusDisplay(data.data);
+                }
+            })
+            .catch(err => {
+                console.error('测试连接失败:', err);
+                showNotification('测试请求失败，请检查网络或后台日志！', 'error');
+            })
+            .finally(() => testButton.disabled = false);
+        });
+    }
+}
+
+function formatDateTime(isoString) {
+    if (!isoString || isoString === '0001-01-01T00:00:00Z') {
+        return '';
+    }
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) {
+        return isoString;
+    }
+    return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+}
+
+function updateSyncStatusDisplay(statusData) {
+    const statusInfo = document.getElementById('sync-status-info');
+    const statusText = document.getElementById('sync-status-text');
+    
+    if (statusInfo && statusText && statusData) {
+        statusInfo.style.display = 'block';
+        
+        let statusHtml = '';
+        if (!statusData.configured) {
+            statusHtml = '<span style="color: #999;">未配置 WebDAV</span>';
+        } else {
+            const statusMap = {
+                'synced': '<span style="color: #4CAF50;">✓ 已同步</span>',
+                'local_ahead': '<span style="color: #FF9800;">↑ 本地有更新</span>',
+                'remote_ahead': '<span style="color: #2196F3;">↓ 远程有更新</span>',
+                'no_remote': '<span style="color: #999;">远程无数据</span>'
+            };
+            statusHtml = statusMap[statusData.status] || statusData.status;
+            const localTime = formatDateTime(statusData.local_modified_at);
+            const remoteTime = formatDateTime(statusData.remote_modified_at);
+            if (localTime) {
+                statusHtml += `<br><small>本地更新: ${localTime}</small>`;
+            }
+            if (remoteTime) {
+                statusHtml += `<br><small>远程更新: ${remoteTime}</small>`;
+            }
+        }
+        statusText.innerHTML = statusHtml;
+    }
+}
+
+function attachSyncNowLogic(syncNowBtnId) {
+    const syncNowBtn = document.getElementById(syncNowBtnId);
+    if (syncNowBtn) {
+        syncNowBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const syncButton = e.target;
+            showNotification('正在同步...', 'info');
+            syncButton.disabled = true;
+
+            fetch('/admin/setting/sync', {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                showNotification(data.message, data.status);
+                loadSyncStatus();
+            })
+            .catch(err => {
+                console.error('同步失败:', err);
+                showNotification('同步请求失败，请检查网络或后台日志！', 'error');
+            })
+            .finally(() => syncButton.disabled = false);
+        });
+    }
+}
+
+function loadSyncStatus() {
+    const form = document.getElementById('sync-settings-form');
+    if (!form) return;
+    
+    fetch('/admin/setting/status', {
+        method: 'POST',
+        body: new URLSearchParams(new FormData(form))
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success' && data.data) {
+                updateSyncStatusDisplay(data.data);
+            }
+        })
+        .catch(err => {
+            console.error('获取同步状态失败:', err);
+        });
 }

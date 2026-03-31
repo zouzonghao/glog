@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/subtle"
 	"glog/internal/constants"
 	"glog/internal/services"
 	"net/http"
@@ -33,7 +34,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if submittedPassword != adminPassword {
+	if subtle.ConstantTimeCompare([]byte(submittedPassword), []byte(adminPassword)) != 1 {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
 			"message": "密码错误，请重新输入！",
@@ -42,7 +43,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	session := sessions.Default(c)
-	session.Clear()
 	session.Set(constants.SessionKeyAuthenticated, true)
 	session.Save()
 	c.JSON(http.StatusOK, gin.H{

@@ -15,13 +15,6 @@ function generatePseudoCover(card) {
         cover.innerHTML = '';
         cover.appendChild(titleSpan);
     }
-    
-    function handleCoverError(img) {
-        const cardCover = img.parentElement;
-        const card = cardCover.closest('.post-card');
-        cardCover.innerHTML = '<div class="pseudo-cover"></div>';
-        generatePseudoCover(card);
-    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

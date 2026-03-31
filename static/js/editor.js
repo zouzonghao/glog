@@ -1,4 +1,23 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const publishedAtInput = document.getElementById('published_at');
+    if (publishedAtInput && publishedAtInput.value) {
+        const timeStr = publishedAtInput.value;
+        let date;
+        if (timeStr.includes('T')) {
+            date = new Date(timeStr);
+        } else {
+            date = new Date(timeStr.replace(' ', 'T') + 'Z');
+        }
+        if (!isNaN(date.getTime())) {
+            const localYear = date.getFullYear();
+            const localMonth = String(date.getMonth() + 1).padStart(2, '0');
+            const localDay = String(date.getDate()).padStart(2, '0');
+            const localHours = String(date.getHours()).padStart(2, '0');
+            const localMinutes = String(date.getMinutes()).padStart(2, '0');
+            publishedAtInput.value = `${localYear}-${localMonth}-${localDay} ${localHours}:${localMinutes}`;
+        }
+    }
+
     const saveBtn = document.getElementById('save-btn');
     const contentArea = document.getElementById('content');
     const titleInput = document.getElementById('title');
@@ -42,7 +61,6 @@ document.addEventListener('DOMContentLoaded', function() {
     saveBtn.addEventListener('click', function(event) {
         event.preventDefault();
 
-        const publishedAtInput = document.getElementById('published_at');
         const publishedAtValue = publishedAtInput.value;
         const dateTimeRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
 
@@ -51,8 +69,17 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        const localDate = new Date(publishedAtValue.replace(' ', 'T'));
+        const utcYear = localDate.getUTCFullYear();
+        const utcMonth = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+        const utcDay = String(localDate.getUTCDate()).padStart(2, '0');
+        const utcHours = String(localDate.getUTCHours()).padStart(2, '0');
+        const utcMinutes = String(localDate.getUTCMinutes()).padStart(2, '0');
+        const utcTimeStr = `${utcYear}-${utcMonth}-${utcDay} ${utcHours}:${utcMinutes}`;
+
         const form = document.getElementById('app-form');
         const formData = new FormData(form);
+        formData.set('published_at', utcTimeStr);
 
         fetch(form.action, {
             method: 'POST',

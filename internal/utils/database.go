@@ -45,16 +45,17 @@ func seedSettings(db *gorm.DB) error {
 		"site_description": "由 Glog 驱动的博客",
 	}
 
-	for key, value := range defaultSettings {
-		setting := models.Setting{Key: key}
+	for key, defaultValue := range defaultSettings {
+		var setting models.Setting
 		result := db.FirstOrCreate(&setting, models.Setting{Key: key})
 		if result.Error != nil {
 			return result.Error
 		}
-		if result.RowsAffected > 0 {
-			// Only set the value if the record was just created
-			setting.Value = value
-			db.Save(&setting)
+		if setting.Value == "" {
+			setting.Value = defaultValue
+			if err := db.Save(&setting).Error; err != nil {
+				return err
+			}
 		}
 	}
 

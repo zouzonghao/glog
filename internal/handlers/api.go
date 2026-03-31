@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"glog/internal/services"
+	"glog/internal/utils"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -52,12 +54,12 @@ type UpdateCoverRequest struct {
 }
 
 func (h *APIHandler) GetPosts(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	page, pageSize := utils.ParsePagination(c, 10)
 
 	posts, total, err := h.postService.GetPostsPage(page, pageSize, true)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("API error: GetPostsPage: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "获取文章列表失败"})
 		return
 	}
 
@@ -76,10 +78,14 @@ func (h *APIHandler) GetPosts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"posts":     items,
-		"total":     total,
-		"page":      page,
-		"page_size": pageSize,
+		"status":  "success",
+		"message": "获取文章列表成功",
+		"data": gin.H{
+			"posts":     items,
+			"total":     total,
+			"page":      page,
+			"page_size": pageSize,
+		},
 	})
 }
 
@@ -87,23 +93,27 @@ func (h *APIHandler) GetPost(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章 ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的文章 ID"})
 		return
 	}
 
 	post, err := h.postService.GetPostByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"status": "error", "message": "文章不存在"})
 		return
 	}
 
-	c.JSON(http.StatusOK, PostContent{
-		ID:          post.ID,
-		Title:       post.Title,
-		Slug:        post.Slug,
-		Content:     post.Content,
-		Cover:       post.Cover,
-		PublishedAt: post.PublishedAt.Format("2006-01-02 15:04:05"),
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "获取文章成功",
+		"data": PostContent{
+			ID:          post.ID,
+			Title:       post.Title,
+			Slug:        post.Slug,
+			Content:     post.Content,
+			Cover:       post.Cover,
+			PublishedAt: post.PublishedAt.Format("2006-01-02 15:04:05"),
+		},
 	})
 }
 
@@ -111,52 +121,62 @@ func (h *APIHandler) UpdateExcerpt(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章 ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的文章 ID"})
 		return
 	}
 
 	var req UpdateExcerptRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "请求格式错误"})
 		return
 	}
 
 	if len(req.Excerpt) > maxExcerptLength {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "摘要长度不能超过 500 字符"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "摘要长度不能超过 500 字符"})
 		return
 	}
 
 	if err := h.postService.UpdateExcerptByID(uint(id), req.Excerpt); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("API error: UpdateExcerptByID: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "更新摘要失败"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "摘要更新成功",
+		"data":    gin.H{"id": id},
+	})
 }
 
 func (h *APIHandler) UpdateCover(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章 ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的文章 ID"})
 		return
 	}
 
 	var req UpdateCoverRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "请求格式错误"})
 		return
 	}
 
 	if len(req.Cover) > maxCoverLength {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "封面 URL 长度不能超过 2048 字符"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "封面 URL 长度不能超过 2048 字符"})
 		return
 	}
 
 	if err := h.postService.UpdateCoverByID(uint(id), req.Cover); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("API error: UpdateCoverByID: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "message": "更新封面失败"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success"})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "封面更新成功",
+		"data":    gin.H{"id": id},
+	})
 }

@@ -8,6 +8,7 @@ Guidelines for AI agents working on the Glog codebase, a lightweight Go blog sys
 # Development
 make run              # Run in development mode
 go run .              # Alternative development run
+go run . --unsafe     # Run without HTTPS (for local dev)
 go mod tidy           # Update dependencies
 
 # Production Build
@@ -28,12 +29,21 @@ go test -race ./...                                   # With race detector
 ## Project Structure
 
 ```
-├── main.go              # Entry point, router setup
+├── main.go              # Entry point, router setup, session config
 ├── internal/
-│   ├── constants/       # Application-wide constants
+│   ├── constants/       # Application-wide constants (keys.go)
 │   ├── handlers/        # HTTP request handlers (Gin)
+│   │   ├── admin.go     # Admin panel, backup/restore
+│   │   ├── auth.go      # Login/logout
+│   │   ├── middleware.go # Session, auth, cookie cleanup
+│   │   └── sync_handler.go # WebDAV sync endpoints
 │   ├── services/        # Business logic layer
+│   │   ├── post_service.go   # Post CRUD, backup restore
+│   │   ├── setting_service.go # Settings with cache
+│   │   └── sync_service.go   # WebDAV sync logic
 │   ├── repository/      # Data access layer (GORM)
+│   │   ├── post_repo.go  # Post queries, batch operations
+│   │   └── setting_repo.go
 │   ├── models/          # Data models/structs
 │   ├── tasks/           # Background tasks (scheduler)
 │   └── utils/           # Utility functions
@@ -47,16 +57,20 @@ go test -race ./...                                   # With race detector
 ### Formatting
 - Use `gofmt` (tabs for indentation), run `go fmt ./...` before committing
 - Line length: ~120 characters (soft limit)
+- **No comments** unless explicitly requested
 
 ### Import Organization
 Three groups separated by blank lines:
 ```go
 import (
-    "fmt"                          // 1. Standard library
+    "errors"
+    "fmt"
 
-    "glog/internal/services"       // 2. Internal packages
+    "glog/internal/constants"
+    "glog/internal/services"
 
-    "github.com/gin-gonic/gin"     // 3. External dependencies
+    "github.com/gin-gonic/gin"
+    "gorm.io/gorm"
 )
 ```
 
@@ -66,38 +80,154 @@ import (
 - **Constructors**: `NewXxxService()`, `NewXxxHandler()`, `NewXxxRepository()`
 - **Constants**: PascalCase with category prefix: `SettingPassword`, `ContextKeyIsLoggedIn`
 
-### Handler Pattern
+## Security Best Practices
+
+### Type Assertions
+Always use safe type assertions to prevent panic:
 ```go
-type BlogHandler struct {
-    postService *services.PostService
+// Correct
+isLoggedIn, _ := isLoggedInValue.(bool)
+if settingsMap, ok := settings.(map[string]string); ok {
+    // use settingsMap
 }
 
-func NewBlogHandler(postService *services.PostService) *BlogHandler {
-    return &BlogHandler{postService: postService}
-}
+// Wrong - can panic
+isLoggedIn := isLoggedInValue.(bool)
+```
 
-func (h *BlogHandler) Index(c *gin.Context) {
-    posts, total, err := h.postService.GetPostsPage(page, pageSize, isLoggedIn)
-    if err != nil {
-        render(c, http.StatusInternalServerError, "404.html", gin.H{"error": "加载文章失败"})
-        return
-    }
-    render(c, http.StatusOK, "index.html", gin.H{"posts": posts})
+### Password Comparison
+Use `crypto/subtle.ConstantTimeCompare` for password comparison:
+```go
+import "crypto/subtle"
+
+if subtle.ConstantTimeCompare([]byte(submitted), []byte(stored)) != 1 {
+    // password mismatch
 }
 ```
 
-### Service/Repository Pattern
-```go
-type PostService struct {
-    repo           *repository.PostRepository
-    settingService *SettingService
-}
+### Session Management
+- Session cookie path must be `/` to avoid multiple cookies
+- Use `CleanSessionCookie` middleware to handle duplicate session cookies
+- Clear session before setting new values on login
 
-func (r *PostRepository) FindByID(id uint) (*models.Post, error) {
-    var post models.Post
-    err := r.db.First(&post, id).Error
-    return &post, err
+### Settings Whitelist
+Always validate settings keys against a whitelist:
+```go
+allowedSettings := map[string]bool{
+    constants.SettingPassword:       true,
+    constants.SettingWebdavURL:      true,
+    // ...
 }
+for key := range c.Request.PostForm {
+    if !allowedSettings[key] {
+        continue
+    }
+}
+```
+
+## Database Operations (GORM)
+
+### Basic Operations
+```go
+err := r.db.Create(post).Error
+err := r.db.Save(post).Error
+err := r.db.Model(&models.Post{}).Where("id = ?", id).Updates(fields).Error
+```
+
+### Batch Upsert (for sync/restore)
+Use `clause.OnConflict` for efficient batch operations:
+```go
+import "gorm.io/gorm/clause"
+
+func (r *PostRepository) UpsertAllPosts(posts []models.Post) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        return tx.Clauses(clause.OnConflict{
+            Columns:   []clause.Column{{Name: "slug"}},
+            DoUpdates: clause.AssignmentColumns([]string{"title", "content", ...}),
+        }).Create(&posts).Error
+    })
+}
+```
+
+### Transaction for Replace All
+```go
+func (r *PostRepository) ReplaceAllPosts(posts []models.Post) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        if err := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Post{}).Error; err != nil {
+            return err
+        }
+        if len(posts) > 0 {
+            return tx.Create(&posts).Error
+        }
+        return nil
+    })
+}
+```
+
+### Error Handling with GORM
+```go
+import "errors"
+import "gorm.io/gorm"
+
+existingPost, err := s.repo.FindBySlugIgnorePrivacy(slug)
+if err != nil {
+    if !errors.Is(err, gorm.ErrRecordNotFound) {
+        return fmt.Errorf("查询失败: %w", err)
+    }
+    // Record not found - create new
+}
+```
+
+## Backup & Restore
+
+### Backup Format
+- ZIP file containing `backup.json` with posts and settings
+- Encrypted with AES-256 using site password
+- Includes both posts and settings for full site backup
+
+### Restore Logic
+1. Use `ReplaceAllPosts` for complete replacement (transactional)
+2. Use `UpsertAllPosts` for WebDAV sync (merge with existing)
+3. Filter out sensitive settings: `password` (if empty), `db_modified_at`
+4. Always use transactions for data integrity
+
+### WebDAV Sync
+- Timestamp stored as nanoseconds in `db_modified_at` setting
+- Local timestamp updated to remote timestamp after download (not `time.Now()`)
+- Cleanup old backups based on `sync_max_backups` setting
+
+#### Timestamp Logic
+- Remote backup filename: `{timestamp_nanos}.zip` (e.g., `1704067200000000000.zip`)
+- When uploading: filename uses `localTimestamp` from `db_modified_at`
+- When syncing: `getRemoteTimestamp()` parses filename to get remote timestamp
+- No need to update `db_modified_at` after upload because:
+  - Remote timestamp comes from filename (equals upload-time local timestamp)
+  - If no local changes, `localTimestamp == remoteTimestamp` → skip sync
+  - If local changes exist, `localTimestamp > remoteTimestamp` → upload
+
+#### Download & Restore Logic
+- When downloading: delete all local posts first, then restore from remote
+- After restore: `db_modified_at` must be set to `remoteTimestamp` (from filename)
+- Never use `time.Now()` for `db_modified_at` after download - this would cause:
+  - Local timestamp > remote timestamp
+  - Next sync would incorrectly trigger upload, overwriting remote data
+
+## Time Handling
+
+### UTC Storage
+- All times stored as UTC in database
+- Frontend converts UTC to local time for display
+- Frontend converts local time to UTC before submission
+
+### Frontend Time Conversion (editor.js)
+```javascript
+// Display: UTC -> Local
+const utcDate = new Date(utcTimeStr + 'Z');
+publishedAtInput.value = localFormat(utcDate);
+
+// Submit: Local -> UTC
+const localDate = new Date(localTimeStr.replace(' ', 'T'));
+formData.set('published_at', utcFormat(localDate));
 ```
 
 ## Error Handling
@@ -107,7 +237,7 @@ func (r *PostRepository) FindByID(id uint) (*models.Post, error) {
 return nil, fmt.Errorf("渲染文章失败: %w", err)
 
 // Sentinel errors for expected conditions
-var ErrBackupNoChange = errors.New("backup: no changes detected")
+var ErrSyncNotConfigured = errors.New("WebDAV 同步未配置")
 
 // HTTP error responses (consistent structure)
 c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "无效的文章 ID"})
@@ -120,32 +250,21 @@ c.JSON(http.StatusOK, gin.H{"status": "success", "message": "文章已保存！"
 
 Always use constants from `internal/constants/keys.go`:
 ```go
-constants.ContextKeyIsLoggedIn    // Context keys
-constants.SessionKeyAuthenticated // Session keys
-constants.SettingPassword         // Setting keys
-constants.SettingOpenAIBaseURL
-```
+// Context keys
+constants.ContextKeyIsLoggedIn
+constants.ContextKeySettings
 
-## Database (GORM)
+// Session keys
+constants.SessionKeyAuthenticated
 
-```go
-err := r.db.Create(post).Error                                        // Create
-err := r.db.Save(post).Error                                          // Update all
-err := r.db.Model(&models.Post{}).Where("id = ?", id).Updates(f).Error // Partial update
-query := r.db.Where("is_private = ?", false).Order("published_at desc")
-err := query.Offset((page-1) * pageSize).Limit(pageSize).Find(&posts).Error
-```
-
-## Comments
-
-- Chinese for business logic comments (this is a Chinese-language project)
-- English for GoDoc-style documentation on exported types/functions
-
-```go
-// AIService handles interactions with an OpenAI compatible API.
-type AIService struct { ... }
-
-// 摘要严格限制50字以内，需简短精炼
+// Setting keys
+constants.SettingPassword
+constants.SettingWebdavURL
+constants.SettingWebdavUser
+constants.SettingWebdavPassword
+constants.SettingSyncInterval
+constants.SettingSyncMaxBackups
+constants.SettingDBModifiedAt
 ```
 
 ## Template Rendering
@@ -155,20 +274,12 @@ Use the shared `render()` helper:
 render(c, http.StatusOK, "template.html", gin.H{"data": value})
 ```
 
-## Concurrency
-
-For background AI operations, use goroutines with locking:
-```go
-s.LockPost(post.ID)
-go func() {
-    defer s.UnlockPost(post.ID)
-    // Background work
-}()
-```
-
 ## Common Gotchas
 
-1. **Timezone**: Always use `Asia/Shanghai` for time operations
+1. **Timezone**: All times in UTC, frontend handles conversion
 2. **CGO**: Pure-Go SQLite (`glebarez/sqlite`), no CGO required
 3. **Build Tags**: Use `-tags release` for production to embed assets
 4. **Assets**: Static assets embedded in release builds via `assets_prod.go`
+5. **Session Cookies**: Must set `Path: "/"` to avoid multiple cookies
+6. **Variable Shadowing**: Be careful with `:=` in nested scopes
+7. **Type Assertions**: Always use safe assertion with `,ok` pattern

@@ -13,7 +13,10 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
-var md goldmark.Markdown
+var (
+	md             goldmark.Markdown
+	separatorRegex = regexp.MustCompile(`<!--\s*more\s*-->`)
+)
 
 func init() {
 	md = goldmark.New(
@@ -90,9 +93,6 @@ func stripMarkdown(md string) string {
 
 // GenerateExcerpt creates a plain text excerpt from Markdown content based on a separator.
 func GenerateExcerpt(md string, length int) string {
-	// Use a regex to find the separator, allowing for optional whitespace.
-	// This makes the separator detection more robust.
-	separatorRegex := regexp.MustCompile(`<!--\s*more\s*-->`)
 	var excerpt string
 
 	split := separatorRegex.Split(md, 2)

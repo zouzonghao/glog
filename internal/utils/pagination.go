@@ -2,7 +2,34 @@ package utils
 
 import (
 	"math"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
+
+func ParsePagination(c *gin.Context, defaultPageSize int) (page, pageSize int) {
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ = strconv.Atoi(c.DefaultQuery("pageSize", strconv.Itoa(defaultPageSize)))
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = defaultPageSize
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+	return
+}
+
+func ParsePage(c *gin.Context) (page int) {
+	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	return
+}
 
 type Page struct {
 	Number int

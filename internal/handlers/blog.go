@@ -6,8 +6,6 @@ import (
 	"glog/internal/utils"
 	"math"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,43 +19,14 @@ func NewBlogHandler(postService *services.PostService) *BlogHandler {
 }
 
 func (h *BlogHandler) Index(c *gin.Context) {
-	// 视图切换逻辑
-	// 1. 从查询参数获取 (最高优先级)
-	view := c.Query("view")
+	view := GetViewPreference(c)
 
-	// 2. 如果查询参数没有，从 cookie 获取
-	if view == "" {
-		cookie, err := c.Cookie("view")
-		if err == nil {
-			view = cookie
-		}
-	}
-
-	// 3. 如果都没有，根据 User-Agent 判断
-	if view == "" {
-		userAgent := c.Request.UserAgent()
-		// 简单的移动端判断逻辑
-		if strings.Contains(strings.ToLower(userAgent), "mobile") || strings.Contains(strings.ToLower(userAgent), "android") || strings.Contains(strings.ToLower(userAgent), "iphone") {
-			view = "cards"
-		} else {
-			view = "list"
-		}
-	}
-
-	// 规范化 view 的值，防止注入等问题
-	if view != "cards" {
-		view = "list"
-	}
-
-	// 设置 cookie，以便记住用户的选择
-	// 域名设置为根路径，有效期设置为一年
-	c.SetCookie("view", view, 3600*24*365, "/", "", false, true)
-
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize := 10 // 每页显示10篇文章
+	page := utils.ParsePage(c)
+	pageSize := 10
 
 	isLoggedInValue, exists := c.Get(constants.ContextKeyIsLoggedIn)
-	isLoggedIn := exists && isLoggedInValue.(bool)
+	isLoggedIn, _ := isLoggedInValue.(bool)
+	isLoggedIn = exists && isLoggedIn
 	posts, total, err := h.postService.GetPostsPage(page, pageSize, isLoggedIn)
 	if err != nil {
 		render(c, http.StatusInternalServerError, "404.html", gin.H{

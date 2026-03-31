@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"glog/internal/constants"
 	"glog/internal/models"
@@ -10,19 +11,22 @@ import (
 	"html/template"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/gosimple/slug"
+	"gorm.io/gorm"
 )
 
 const maxTagLength = 20
 
 var (
-	tagSplitRegex = regexp.MustCompile(`[,，、;\s]+`)
-	tagCleanRegex = regexp.MustCompile(`[^\p{Han}\w\-\+\#\.]+`)
+	tagSplitRegex  = regexp.MustCompile(`[,，、;\s]+`)
+	tagCleanRegex  = regexp.MustCompile(`[^\p{Han}\w\-\+\#\.]+`)
+	separatorRegex = regexp.MustCompile(`<!--\s*more\s*-->`)
 )
 
 func normalizeTags(input string) string {
@@ -32,16 +36,10 @@ func normalizeTags(input string) string {
 	parts := tagSplitRegex.Split(input, -1)
 	var result []string
 	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		part = strings.ToLower(part)
-		part = tagCleanRegex.ReplaceAllString(part, "")
-		if part == "" {
-			continue
+		normalized := normalizeSingleTag(part)
+		if normalized != "" {
+			result = append(result, normalized)
 		}
-		if utf8.RuneCountInString(part) > maxTagLength {
-			part = string([]rune(part)[:maxTagLength])
-		}
-		result = append(result, part)
 	}
 	return strings.Join(result, ",")
 }
@@ -124,8 +122,13 @@ func NewPostService(repo *repository.PostRepository, settingService *SettingServ
 	}
 }
 
+func (s *PostService) TouchDBModified() {
+	s.settingService.UpdateSettings(map[string]string{
+		constants.SettingDBModifiedAt: strconv.FormatInt(time.Now().UnixNano(), 10),
+	})
+}
+
 func (s *PostService) processAndRenderContent(md string) (string, error) {
-	separatorRegex := regexp.MustCompile(`<!--\s*more\s*-->`)
 	parts := separatorRegex.Split(md, 2)
 
 	if len(parts) > 1 {
@@ -189,6 +192,7 @@ func (s *PostService) CreatePost(title, content, tag string, isPrivate bool, pub
 		return nil, err
 	}
 	s.tagsCache.Clear()
+	s.TouchDBModified()
 
 	return post, nil
 }
@@ -235,6 +239,7 @@ func (s *PostService) UpdatePost(id uint, title, content, tag string, isPrivate 
 		return nil, err
 	}
 	s.tagsCache.Clear()
+	s.TouchDBModified()
 
 	return post, nil
 }
@@ -245,6 +250,7 @@ func (s *PostService) DeletePost(id uint) error {
 		return err
 	}
 	s.tagsCache.Clear()
+	s.TouchDBModified()
 	return nil
 }
 
@@ -298,6 +304,108 @@ func (s *PostService) GetPostsPage(page, pageSize int, isLoggedIn bool) ([]model
 	return renderedPosts, int(total), nil
 }
 
+func (s *PostService) UpsertPostFromBackup(p models.PostBackup) error {
+	existingPost, err := s.repo.FindBySlugIgnorePrivacy(p.Slug)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("查询文章失败: %w", err)
+		}
+
+		htmlContent, renderErr := s.processAndRenderContent(p.Content)
+		if renderErr != nil {
+			return fmt.Errorf("渲染 HTML 失败: %w", renderErr)
+		}
+
+		cover := p.Cover
+		if cover == "" {
+			cover = utils.ExtractFirstImageURL(p.Content)
+		}
+
+		newPost := &models.Post{
+			Title:       p.Title,
+			Slug:        p.Slug,
+			Tag:         normalizeTags(p.Tag),
+			Content:     p.Content,
+			ContentHTML: htmlContent,
+			IsPrivate:   p.IsPrivate,
+			PublishedAt: p.PublishedAt,
+			Excerpt:     utils.GenerateExcerpt(p.Content, 150),
+			Cover:       cover,
+		}
+
+		if err := s.repo.Create(newPost); err != nil {
+			return fmt.Errorf("创建文章失败: %w", err)
+		}
+
+		s.tagsCache.Clear()
+		return nil
+	}
+
+	htmlContent, renderErr := s.processAndRenderContent(p.Content)
+	if renderErr != nil {
+		return fmt.Errorf("渲染 HTML 失败: %w", renderErr)
+	}
+
+	cover := p.Cover
+	if cover == "" {
+		cover = utils.ExtractFirstImageURL(p.Content)
+	}
+
+	existingPost.Title = p.Title
+	existingPost.Tag = normalizeTags(p.Tag)
+	existingPost.Content = p.Content
+	existingPost.ContentHTML = htmlContent
+	existingPost.IsPrivate = p.IsPrivate
+	existingPost.PublishedAt = p.PublishedAt
+	existingPost.Excerpt = utils.GenerateExcerpt(p.Content, 150)
+	existingPost.Cover = cover
+
+	if err := s.repo.Update(existingPost); err != nil {
+		return fmt.Errorf("更新文章失败: %w", err)
+	}
+
+	s.tagsCache.Clear()
+	return nil
+}
+
+func (s *PostService) UpsertPostsFromBackup(posts []models.PostBackup) error {
+	if len(posts) == 0 {
+		return nil
+	}
+
+	processedPosts := make([]models.Post, 0, len(posts))
+	for _, p := range posts {
+		htmlContent, err := s.processAndRenderContent(p.Content)
+		if err != nil {
+			return fmt.Errorf("渲染文章 '%s' HTML 失败: %w", p.Title, err)
+		}
+
+		cover := p.Cover
+		if cover == "" {
+			cover = utils.ExtractFirstImageURL(p.Content)
+		}
+
+		processedPosts = append(processedPosts, models.Post{
+			Title:       p.Title,
+			Slug:        p.Slug,
+			Tag:         normalizeTags(p.Tag),
+			Content:     p.Content,
+			ContentHTML: htmlContent,
+			IsPrivate:   p.IsPrivate,
+			PublishedAt: p.PublishedAt,
+			Excerpt:     utils.GenerateExcerpt(p.Content, 150),
+			Cover:       cover,
+		})
+	}
+
+	if err := s.repo.UpsertAllPosts(processedPosts); err != nil {
+		return fmt.Errorf("批量导入文章失败: %w", err)
+	}
+
+	s.tagsCache.Clear()
+	return nil
+}
+
 func (s *PostService) GetPostsPageByAdmin(page, pageSize int, query, status string) ([]models.Post, int, error) {
 	posts, err := s.repo.FindAllByAdmin(page, pageSize, query, status)
 	if err != nil {
@@ -340,6 +448,7 @@ func (s *PostService) renderPost(post *models.Post) (*models.RenderedPost, error
 			fmt.Printf("按需渲染 Markdown 失败 for post ID %d: %v\n", post.ID, err)
 		} else {
 			post.ContentHTML = html
+			go s.repo.UpdateFields(post.ID, map[string]interface{}{"content_html": html})
 		}
 	}
 
@@ -420,6 +529,7 @@ func (s *PostService) GetAllPostsForBackup() ([]models.PostBackup, error) {
 	backupPosts := make([]models.PostBackup, len(posts))
 	for i, p := range posts {
 		backupPosts[i] = models.PostBackup{
+			Slug:        p.Slug,
 			Title:       p.Title,
 			Tag:         p.Tag,
 			Cover:       p.Cover,
@@ -431,19 +541,28 @@ func (s *PostService) GetAllPostsForBackup() ([]models.PostBackup, error) {
 	return backupPosts, nil
 }
 
-func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
-	newPosts := make([]models.Post, 0, len(posts))
+func (s *PostService) CreatePostsFromBackupStream(backupReader io.Reader) (int, error) {
+	var backupData models.SiteBackup
+	if err := json.NewDecoder(backupReader).Decode(&backupData); err != nil {
+		return 0, fmt.Errorf("解析备份 JSON 数据失败: %w", err)
+	}
+
+	return s.RestoreFromBackupData(&backupData)
+}
+
+func (s *PostService) RestoreFromBackupData(backupData *models.SiteBackup) (int, error) {
+	newPosts := make([]models.Post, 0, len(backupData.Posts))
 	usedSlugs := make(map[string]bool)
-	for _, p := range posts {
+	for _, p := range backupData.Posts {
 		slugStr, err := s.generateUniqueSlugWithUsed(p.Title, 0, usedSlugs)
 		if err != nil {
-			return fmt.Errorf("为导入的文章 '%s' 生成 slug 失败: %w", p.Title, err)
+			return 0, fmt.Errorf("为导入的文章 '%s' 生成 slug 失败: %w", p.Title, err)
 		}
 		usedSlugs[slugStr] = true
 
 		htmlContent, err := s.processAndRenderContent(p.Content)
 		if err != nil {
-			return fmt.Errorf("为导入的文章 '%s' 渲染 HTML 失败: %w", p.Title, err)
+			return 0, fmt.Errorf("为导入的文章 '%s' 渲染 HTML 失败: %w", p.Title, err)
 		}
 		cover := p.Cover
 		if cover == "" {
@@ -462,34 +581,24 @@ func (s *PostService) CreatePostsFromBackup(posts []models.PostBackup) error {
 		})
 	}
 
-	if err := s.repo.CreateBatchFromBackup(newPosts); err != nil {
-		return fmt.Errorf("批量导入文章失败: %w", err)
+	if err := s.repo.ReplaceAllPosts(newPosts); err != nil {
+		return 0, fmt.Errorf("导入文章失败: %w", err)
 	}
 
 	s.tagsCache.Clear()
-	return nil
-}
-
-func (s *PostService) CreatePostsFromBackupStream(backupReader io.Reader) (int, error) {
-	var backupData models.SiteBackup
-	if err := json.NewDecoder(backupReader).Decode(&backupData); err != nil {
-		return 0, fmt.Errorf("解析备份 JSON 数据失败: %w", err)
-	}
-
-	if err := s.CreatePostsFromBackup(backupData.Posts); err != nil {
-		return 0, err
-	}
 
 	if len(backupData.Settings) > 0 {
-		if newPass, ok := backupData.Settings[constants.SettingPassword]; !ok || newPass == "" {
-			delete(backupData.Settings, constants.SettingPassword)
+		settings := backupData.Settings
+		if newPass, ok := settings[constants.SettingPassword]; !ok || newPass == "" {
+			delete(settings, constants.SettingPassword)
 		}
-		if err := s.settingService.UpdateSettings(backupData.Settings); err != nil {
-			return 0, fmt.Errorf("恢复设置失败: %w", err)
+		delete(settings, constants.SettingDBModifiedAt)
+		if err := s.settingService.UpdateSettings(settings); err != nil {
+			return len(newPosts), fmt.Errorf("文章已恢复，但设置恢复失败: %w", err)
 		}
 	}
 
-	return len(backupData.Posts), nil
+	return len(newPosts), nil
 }
 
 func (s *PostService) BatchUpdatePosts(ids []uint, action string, isPrivate bool) error {

@@ -6,19 +6,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
-
-var (
-	shanghaiLocation *time.Location
-)
-
-func init() {
-	var err error
-	shanghaiLocation, err = time.LoadLocation("Asia/Shanghai")
-	if err != nil {
-		shanghaiLocation = time.FixedZone("CST", 8*3600)
-	}
-}
 
 func escapeLikePattern(s string) string {
 	s = strings.ReplaceAll(s, "%", "\\%")
@@ -26,8 +15,8 @@ func escapeLikePattern(s string) string {
 	return s
 }
 
-func nowInShanghai() time.Time {
-	return time.Now().In(shanghaiLocation)
+func nowUTC() time.Time {
+	return time.Now().UTC()
 }
 
 type PostRepository struct {
@@ -64,9 +53,15 @@ func (r *PostRepository) FindBySlug(slug string, isLoggedIn bool) (*models.Post,
 	var post models.Post
 	query := r.db
 	if !isLoggedIn {
-		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowInShanghai())
+		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowUTC())
 	}
 	err := query.Where("slug = ?", slug).First(&post).Error
+	return &post, err
+}
+
+func (r *PostRepository) FindBySlugIgnorePrivacy(slug string) (*models.Post, error) {
+	var post models.Post
+	err := r.db.Where("slug = ?", slug).First(&post).Error
 	return &post, err
 }
 
@@ -74,7 +69,7 @@ func (r *PostRepository) FindPage(page, pageSize int, isLoggedIn bool) ([]models
 	var posts []models.Post
 	query := r.db.Order("published_at desc")
 	if !isLoggedIn {
-		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowInShanghai())
+		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowUTC())
 	}
 	err := query.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "tag", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
@@ -84,7 +79,7 @@ func (r *PostRepository) Count(isLoggedIn bool) (int64, error) {
 	var count int64
 	query := r.db.Model(&models.Post{})
 	if !isLoggedIn {
-		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowInShanghai())
+		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowUTC())
 	}
 	err := query.Count(&count).Error
 	return count, err
@@ -98,7 +93,7 @@ func (r *PostRepository) FindAllByAdmin(page, pageSize int, query, status string
 		dbQuery = dbQuery.Where("title LIKE ?", "%"+query+"%")
 	}
 
-	now := nowInShanghai()
+	now := nowUTC()
 	switch status {
 	case "published":
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, now)
@@ -120,7 +115,7 @@ func (r *PostRepository) CountAllByAdmin(query, status string) (int64, error) {
 		dbQuery = dbQuery.Where("title LIKE ?", "%"+query+"%")
 	}
 
-	now := nowInShanghai()
+	now := nowUTC()
 	switch status {
 	case "published":
 		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, now)
@@ -160,11 +155,33 @@ func (r *PostRepository) DeleteByIDs(ids []uint) error {
 	return r.db.Delete(&models.Post{}, ids).Error
 }
 
+func (r *PostRepository) ReplaceAllPosts(posts []models.Post) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Post{}).Error; err != nil {
+			return err
+		}
+		if len(posts) > 0 {
+			return tx.Create(&posts).Error
+		}
+		return nil
+	})
+}
+
+func (r *PostRepository) UpsertAllPosts(posts []models.Post) error {
+	if len(posts) == 0 {
+		return nil
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "slug"}},
+			DoUpdates: clause.AssignmentColumns([]string{"title", "tag", "content", "content_html", "is_private", "published_at", "excerpt", "cover"}),
+		}).Create(&posts).Error
+	})
+}
+
 func (r *PostRepository) UpdatePrivacyByIDs(ids []uint, isPrivate bool) error {
 	return r.db.Model(&models.Post{}).Where("id IN ?", ids).Update("is_private", isPrivate).Error
 }
-
-// --- LIKE Search Methods ---
 
 func (r *PostRepository) SearchPageByLike(keywords []string, page, pageSize int, isLoggedIn bool) ([]models.Post, error) {
 	var posts []models.Post
@@ -176,7 +193,7 @@ func (r *PostRepository) SearchPageByLike(keywords []string, page, pageSize int,
 	}
 
 	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowInShanghai())
+		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowUTC())
 	}
 
 	err := dbQuery.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
@@ -193,7 +210,7 @@ func (r *PostRepository) CountByQueryByLike(keywords []string, isLoggedIn bool) 
 	}
 
 	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowInShanghai())
+		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowUTC())
 	}
 
 	err := dbQuery.Count(&count).Error
@@ -205,7 +222,7 @@ func (r *PostRepository) FindPageByTag(tag string, page, pageSize int, isLoggedI
 	safeTag := escapeLikePattern(strings.ToLower(tag))
 	query := r.db.Where("',' || tag || ',' LIKE ? ESCAPE '\\'", "%,"+safeTag+",%").Order("published_at desc")
 	if !isLoggedIn {
-		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowInShanghai())
+		query = query.Where("is_private = ?", false).Where("published_at <= ?", nowUTC())
 	}
 	err := query.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "tag", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
 	return posts, err
@@ -216,7 +233,7 @@ func (r *PostRepository) CountByTag(tag string, isLoggedIn bool) (int64, error) 
 	safeTag := escapeLikePattern(strings.ToLower(tag))
 	query := r.db.Model(&models.Post{}).Where("',' || tag || ',' LIKE ? ESCAPE '\\'", "%,"+safeTag+",%")
 	if !isLoggedIn {
-		query = query.Where("is_private = ? AND published_at <= ?", false, nowInShanghai())
+		query = query.Where("is_private = ? AND published_at <= ?", false, nowUTC())
 	}
 	err := query.Count(&count).Error
 	return count, err
@@ -226,7 +243,7 @@ func (r *PostRepository) GetAllTags(isLoggedIn bool) ([]string, error) {
 	var tagStrings []string
 	query := r.db.Model(&models.Post{}).Distinct("tag").Where("tag != ?", "")
 	if !isLoggedIn {
-		query = query.Where("is_private = ? AND published_at <= ?", false, nowInShanghai())
+		query = query.Where("is_private = ? AND published_at <= ?", false, nowUTC())
 	}
 	err := query.Pluck("tag", &tagStrings).Error
 	if err != nil {
@@ -261,7 +278,7 @@ func (r *PostRepository) SearchPageByLikeAndTag(keywords []string, tag string, p
 	}
 
 	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowInShanghai())
+		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowUTC())
 	}
 
 	err := dbQuery.Select("id", "created_at", "updated_at", "published_at", "title", "slug", "tag", "cover", "excerpt", "is_private").Offset((page - 1) * pageSize).Limit(pageSize).Find(&posts).Error
@@ -279,7 +296,7 @@ func (r *PostRepository) CountByQueryByLikeAndTag(keywords []string, tag string,
 	}
 
 	if !isLoggedIn {
-		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowInShanghai())
+		dbQuery = dbQuery.Where("is_private = ? AND published_at <= ?", false, nowUTC())
 	}
 
 	err := dbQuery.Count(&count).Error
